@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/Tuinet.App/Tuinet.App.csproj" />
+    <Project Path="src/Tuinet.Harness/Tuinet.Harness.csproj" />
+    <Project Path="src/Tuinet.Kernel/Tuinet.Kernel.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/Tuinet.App.Tests/Tuinet.App.Tests.csproj" />
+    <Project Path="tests/Tuinet.Kernel.Tests/Tuinet.Kernel.Tests.csproj" />
+  </Folder>
+</Solution>
