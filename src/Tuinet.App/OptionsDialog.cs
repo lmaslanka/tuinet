@@ -2,7 +2,7 @@ using System.Text;
 
 namespace Tuinet;
 
-public sealed class OptionsScreen
+public sealed class OptionsDialog
 {
     private const int Org = 0;
     private const int Pat = 1;
@@ -10,18 +10,14 @@ public sealed class OptionsScreen
     private const int Save = 3;
     private const int Close = 4;
     private const int FocusCount = 5;
-    private const int LabelWidth = 16;
 
     private readonly IAzureProjects _azure;
     private readonly SettingsStore _store;
     private readonly Action<object> _post;
     private readonly Action<Action> _background;
-    private readonly string _directory;
-    private readonly GitBranch[] _branches;
     private readonly Field _org = new();
     private readonly Field _pat = new(masked: true);
     private int _focus;
-    private bool _dialogOpen;
     private bool _dropdownOpen;
     private string[] _projects = [];
     private int _projectSel;
@@ -30,23 +26,18 @@ public sealed class OptionsScreen
     private int _fetchGen;
     private string _selectedProject = "";
 
-    public OptionsScreen(
+    public OptionsDialog(
         IAzureProjects azure,
         SettingsStore store,
         Action<object> post,
-        string directory,
-        IGitBranches git,
         Action<Action>? background = null)
     {
         _azure = azure;
         _store = store;
         _post = post;
-        _directory = directory;
-        _branches = git.ListLocal(directory);
         _background = background ?? StartBackground;
 
         Settings settings = store.Load();
-
         _org.Set(settings.Organization);
         _pat.Set(settings.Pat);
         _selectedProject = settings.Project;
@@ -61,11 +52,7 @@ public sealed class OptionsScreen
     {
         if (ev.Kind == EventKind.Message)
         {
-            return HandleMessage(ev.Message);
-        }
-
-        if (ev.Kind == EventKind.Resize)
-        {
+            HandleMessage(ev.Message);
             return true;
         }
 
@@ -77,21 +64,31 @@ public sealed class OptionsScreen
         return HandleKey(ev.Key);
     }
 
+    public void Prepare() => _dropdownOpen = false;
+
     public void Paint(CellBuffer buffer)
     {
-        buffer.Fill(new Rect(0, 0, buffer.Width, buffer.Height), Theme.Screen);
-        buffer.DrawBox(new Rect(0, 0, buffer.Width, buffer.Height), Title(), Theme.Title);
+        Rect dialog = DialogRect(buffer);
+        buffer.Fill(dialog, Theme.Screen);
+        buffer.DrawBox(dialog, "Options", Theme.Title);
 
-        if (!_dialogOpen)
+        int y = dialog.Y + 2;
+        PaintField(buffer, dialog, y, "Organization", _org, _focus == Org);
+        PaintField(buffer, dialog, y + 3, "PAT", _pat, _focus == Pat);
+        PaintProject(buffer, dialog, y + 6);
+
+        if (_dropdownOpen)
         {
-            PaintMain(buffer);
-            return;
+            PaintDropdown(buffer, dialog, y + 9);
         }
 
-        PaintDialog(buffer);
+        int buttonsY = dialog.Y + dialog.Height - 3;
+        PaintButton(buffer, dialog.X + 3, buttonsY, "Save", _focus == Save);
+        PaintButton(buffer, dialog.X + 15, buttonsY, "Close", _focus == Close);
+        buffer.Put(dialog.X + 2, dialog.Y + dialog.Height - 2, _status, Theme.Status);
     }
 
-    private bool HandleMessage(object? message)
+    private void HandleMessage(object? message)
     {
         switch (message)
         {
@@ -111,22 +108,10 @@ public sealed class OptionsScreen
                 _dropdownOpen = false;
                 break;
         }
-
-        return true;
     }
 
     private bool HandleKey(KeyEvent key)
     {
-        if (key.IsCtrl('c') || key.IsChar('q'))
-        {
-            return false;
-        }
-
-        if (!_dialogOpen)
-        {
-            return HandleMain(key);
-        }
-
         if (key.Code == KeyCode.Escape)
         {
             if (_dropdownOpen)
@@ -135,13 +120,13 @@ public sealed class OptionsScreen
                 return true;
             }
 
-            CloseDialog();
-            return true;
+            return false;
         }
 
         if (_dropdownOpen)
         {
-            return HandleDropdown(key);
+            HandleDropdown(key);
+            return true;
         }
 
         return _focus switch
@@ -153,28 +138,6 @@ public sealed class OptionsScreen
             _ => true,
         };
     }
-
-    private bool HandleMain(KeyEvent key)
-    {
-        if (IsOptionsKey(key))
-        {
-            _dialogOpen = true;
-            _dropdownOpen = false;
-            return true;
-        }
-
-        if (key.Code == KeyCode.Escape)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    private static bool IsOptionsKey(KeyEvent key) =>
-        key.Code == KeyCode.Char
-        && (key.Rune.Value is 'o' or 'O')
-        && (key.Modifiers & Modifiers.Ctrl) == 0;
 
     private bool HandleText(KeyEvent key)
     {
@@ -221,7 +184,6 @@ public sealed class OptionsScreen
             {
                 _dropdownOpen = true;
             }
-            return true;
         }
 
         return true;
@@ -242,19 +204,19 @@ public sealed class OptionsScreen
                 Persist();
             }
 
-            CloseDialog();
+            return false;
         }
 
         return true;
     }
 
-    private bool HandleDropdown(KeyEvent key)
+    private void HandleDropdown(KeyEvent key)
     {
         if (key.Code == KeyCode.Tab)
         {
             _dropdownOpen = false;
             CycleFocus(TabDelta(key));
-            return true;
+            return;
         }
 
         if (key.IsChar('j') || key.Code == KeyCode.Down)
@@ -269,8 +231,6 @@ public sealed class OptionsScreen
         {
             PickProject();
         }
-
-        return true;
     }
 
     private static int TabDelta(KeyEvent key) =>
@@ -296,6 +256,7 @@ public sealed class OptionsScreen
         {
             return;
         }
+
         _projectSel = Math.Clamp(_projectSel + delta, 0, _projects.Length - 1);
     }
 
@@ -322,12 +283,6 @@ public sealed class OptionsScreen
         _status = string.IsNullOrEmpty(_selectedProject)
             ? "Saved"
             : $"Saved {_selectedProject}";
-    }
-
-    private void CloseDialog()
-    {
-        _dialogOpen = false;
-        _dropdownOpen = false;
     }
 
     private void StartFetch()
@@ -359,82 +314,16 @@ public sealed class OptionsScreen
     private static void StartBackground(Action work) =>
         new Thread(() => work()) { IsBackground = true }.Start();
 
-    private string Title()
-    {
-        string name = System.IO.Path.GetFileName(
-            System.IO.Path.GetFullPath(_directory).TrimEnd(System.IO.Path.DirectorySeparatorChar));
-        return string.IsNullOrEmpty(name) ? "tuinet" : name;
-    }
-
-    private void PaintMain(CellBuffer buffer)
-    {
-        int top = 2;
-        int vis = Math.Max(1, buffer.Height - 4);
-        int current = Array.FindIndex(_branches, b => b.Current);
-        int scroll = 0;
-        if (current >= vis)
-        {
-            scroll = current - vis + 1;
-        }
-
-        if (_branches.Length == 0)
-        {
-            buffer.Put(2, top, "No local branches.", Theme.Status);
-        }
-        else
-        {
-            for (int row = 0; row < vis && scroll + row < _branches.Length; row++)
-            {
-                GitBranch branch = _branches[scroll + row];
-                Style style = branch.Current ? Theme.ListCursor : Theme.Title;
-                string mark = branch.Current ? "* " : "  ";
-                buffer.Put(2, top + row, mark + branch.Name, style);
-            }
-        }
-
-        buffer.Put(2, buffer.Height - 2, "o options  q quit", Theme.Status);
-    }
-
-    private void PaintDialog(CellBuffer buffer)
-    {
-        Rect dialog = DialogRect(buffer);
-        buffer.Fill(dialog, Theme.Screen);
-        buffer.DrawBox(dialog, "Options", Theme.Title);
-
-        int y = dialog.Y + 2;
-        PaintField(buffer, dialog, y, "Organization:", _org, _focus == Org);
-        PaintField(buffer, dialog, y + 2, "PAT:", _pat, _focus == Pat);
-        PaintProject(buffer, dialog, y + 4);
-
-        if (_dropdownOpen)
-        {
-            PaintDropdown(buffer, dialog, y + 5);
-        }
-
-        int buttonsY = dialog.Y + dialog.Height - 3;
-        PaintButton(buffer, dialog.X + 3, buttonsY, "Save", _focus == Save);
-        PaintButton(buffer, dialog.X + 11, buttonsY, "Close", _focus == Close);
-        buffer.Put(dialog.X + 2, dialog.Y + dialog.Height - 2, _status, Theme.Status);
-    }
-
     private void PaintField(CellBuffer buffer, Rect dialog, int y, string label, Field field, bool focused)
     {
-        buffer.Put(dialog.X + 2, y, label, Theme.Label);
-        Rect bar = Bar(dialog, y);
-        if (bar.Width < 3)
+        Rect box = FieldRect(dialog, y);
+        PaintOutline(buffer, box, label, focused, required: true);
+        if (box.Width < 3)
         {
             return;
         }
 
-        Style style = focused ? Theme.FieldFocus : Theme.FieldIdle;
-        buffer.Fill(bar, style);
-
-        int inner = bar.Width - 2;
-        if (inner < 1)
-        {
-            inner = 1;
-        }
-
+        int inner = box.Width - 2;
         int caret = field.Caret;
         int scroll = 0;
         if (caret - scroll >= inner)
@@ -443,6 +332,8 @@ public sealed class OptionsScreen
         }
 
         int col = 0;
+        int valueY = box.Y + 1;
+        int valueX = box.X + 1;
         for (int i = scroll; i < field.Length; i++)
         {
             Rune rune = field.DisplayRune(i);
@@ -457,31 +348,27 @@ public sealed class OptionsScreen
                 break;
             }
 
-            Style glyph = focused && i == caret ? Theme.Caret : style;
-            buffer.Put(bar.X + 1 + col, y, rune, glyph);
+            Style glyph = focused && i == caret ? Theme.Caret : Theme.Title;
+            buffer.Put(valueX + col, valueY, rune, glyph);
             col += width;
         }
 
         if (focused && caret >= field.Length && col < inner)
         {
-            buffer.Put(bar.X + 1 + col, y, new Rune(' '), Theme.Caret);
+            buffer.Put(valueX + col, valueY, new Rune(' '), Theme.Caret);
         }
     }
 
     private void PaintProject(CellBuffer buffer, Rect dialog, int y)
     {
-        buffer.Put(dialog.X + 2, y, "Project:", Theme.Label);
-        Rect bar = Bar(dialog, y);
-        if (bar.Width < 3)
+        Rect box = FieldRect(dialog, y);
+        PaintOutline(buffer, box, "Project", _focus == Project, required: true);
+        if (box.Width < 3)
         {
             return;
         }
 
-        bool focused = _focus == Project;
-        Style style = focused ? Theme.FieldFocus : Theme.FieldIdle;
-        buffer.Fill(bar, style);
-
-        int inner = bar.Width - 3;
+        int inner = box.Width - 3;
         if (inner < 1)
         {
             inner = 1;
@@ -489,6 +376,8 @@ public sealed class OptionsScreen
 
         string text = string.IsNullOrEmpty(_selectedProject) ? "select a project" : _selectedProject;
         int col = 0;
+        int valueY = box.Y + 1;
+        int valueX = box.X + 1;
         foreach (Rune rune in text.EnumerateRunes())
         {
             int width = Cell.WidthOf(rune);
@@ -502,11 +391,11 @@ public sealed class OptionsScreen
                 break;
             }
 
-            buffer.Put(bar.X + 1 + col, y, rune, style);
+            buffer.Put(valueX + col, valueY, rune, Theme.Title);
             col += width;
         }
 
-        buffer.Put(bar.X + bar.Width - 1, y, new Rune('▾'), style);
+        buffer.Put(box.X + box.Width - 2, valueY, new Rune('▾'), Theme.Title);
     }
 
     private void PaintDropdown(CellBuffer buffer, Rect dialog, int y)
@@ -516,9 +405,9 @@ public sealed class OptionsScreen
             return;
         }
 
-        Rect bar = Bar(dialog, y - 1);
+        Rect box = FieldRect(dialog, y - 3);
         int height = Math.Max(0, dialog.Y + dialog.Height - 3 - y);
-        var clip = new Rect(bar.X, y, bar.Width, height);
+        var clip = new Rect(box.X, y, box.Width, height);
         if (clip.Width < 1 || clip.Height < 1)
         {
             return;
@@ -542,6 +431,7 @@ public sealed class OptionsScreen
             {
                 break;
             }
+
             Style style = index == _projectSel ? Theme.ListCursor : Theme.FieldIdle;
             buffer.Put(clip, 1, row, _projects[index], style);
         }
@@ -550,24 +440,103 @@ public sealed class OptionsScreen
     private static void PaintButton(CellBuffer buffer, int x, int y, string label, bool focused)
     {
         Style style = focused ? Theme.FieldFocus : Theme.FieldIdle;
-        buffer.Fill(new Rect(x, y, label.Length + 2, 1), style);
-        buffer.Put(x + 1, y, label, style);
+        buffer.Fill(new Rect(x, y, label.Length + 4, 1), style);
+        buffer.Put(x + 2, y, label, style);
     }
 
     private static Rect DialogRect(CellBuffer buffer)
     {
         int width = Math.Clamp(buffer.Width - 4, 2, 60);
-        int height = Math.Clamp(buffer.Height - 4, 2, 14);
+        int height = Math.Clamp(buffer.Height - 4, 2, 18);
         int x = Math.Max(0, (buffer.Width - width) / 2);
         int y = Math.Max(0, (buffer.Height - height) / 2);
         return new Rect(x, y, width, height);
     }
 
-    private static Rect Bar(Rect dialog, int y)
+    private static Rect FieldRect(Rect dialog, int y)
     {
-        int x = dialog.X + 2 + LabelWidth;
-        int width = Math.Max(2, dialog.X + dialog.Width - 2 - x);
-        return new Rect(x, y, width, 1);
+        int x = dialog.X + 2;
+        int width = Math.Max(4, dialog.Width - 4);
+        return new Rect(x, y, width, 3);
+    }
+
+    private static void PaintOutline(CellBuffer buffer, Rect box, string label, bool focused, bool required)
+    {
+        if (box.Width < 2 || box.Height < 3)
+        {
+            return;
+        }
+
+        Style border = focused ? Theme.OutlineFocus : Theme.Label;
+        int x0 = box.X;
+        int y0 = box.Y;
+        int x1 = box.X + box.Width - 1;
+        int y1 = box.Y + 2;
+
+        buffer.Put(x0, y0, new Rune('╭'), border);
+        buffer.Put(x1, y0, new Rune('╮'), border);
+        buffer.Put(x0, y1, new Rune('╰'), border);
+        buffer.Put(x1, y1, new Rune('╯'), border);
+        buffer.Put(x0, y0 + 1, new Rune('│'), border);
+        buffer.Put(x1, y0 + 1, new Rune('│'), border);
+
+        for (int x = x0 + 1; x < x1; x++)
+        {
+            buffer.Put(x, y0, new Rune('─'), border);
+            buffer.Put(x, y1, new Rune('─'), border);
+        }
+
+        int col = x0 + 1;
+        if (col < x1)
+        {
+            buffer.Put(col, y0, new Rune('─'), border);
+            col++;
+        }
+
+        if (col < x1)
+        {
+            buffer.Put(col, y0, new Rune(' '), border);
+            col++;
+        }
+
+        foreach (Rune rune in label.EnumerateRunes())
+        {
+            int width = Cell.WidthOf(rune);
+            if (width <= Cell.ZeroWidth)
+            {
+                continue;
+            }
+
+            if (col + width >= x1)
+            {
+                break;
+            }
+
+            buffer.Put(col, y0, rune, border);
+            col += width;
+        }
+
+        if (col < x1)
+        {
+            buffer.Put(col, y0, new Rune(' '), border);
+            col++;
+        }
+
+        while (col < x1)
+        {
+            buffer.Put(col, y0, new Rune('─'), border);
+            col++;
+        }
+
+        if (required)
+        {
+            ReadOnlySpan<char> mark = "( *)";
+            int start = x1 - 2 - mark.Length;
+            if (start > x0)
+            {
+                buffer.Put(start, y1, mark, border);
+            }
+        }
     }
 }
 
