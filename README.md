@@ -50,10 +50,10 @@ while (running)
 | Piece | What it is |
 |---|---|
 | `Terminal` | Alternate screen, raw input, double buffering. `BeginFrame()` → draw → `Present()`. `Poll` returns keys, mouse, paste, focus, resize, and messages from `Post` (thread-safe, wakes `Poll`). |
-| `CellBuffer` | The frame: 16-byte `Cell`s (rune, style, width). `SetString` / `SetRune` / `Fill` / `SetStyle` clip, keep wide glyphs whole and drop control characters, so user text can never inject escape sequences. `SetCursor` places the real terminal cursor. |
+| `CellBuffer` | The frame: 16-byte `Cell`s (rune, style, width). `SetString` / `SetRune` / `Fill` / `Erase` / `SetStyle` clip, keep wide glyphs whole and drop control characters, so user text can never inject escape sequences. Text layers: a default color in the style keeps the color already in the cell, so text on a panel keeps the panel's background. `SetCursor` places the real terminal cursor. |
 | `Style`, `Color`, `Attr` | Foreground, background (default, 256-palette or RGB), bold, dim, italic, underline, blink, reverse, hidden, strike. Colors are downsampled to the terminal's `ColorMode` (detected from `COLORTERM`/`TERM`/…). |
 | `Layout`, `Constraint`, `Rect` | `Layout.Vertical(area, [Constraint.Length(1), Constraint.Fill(), Constraint.Length(1)], rows)` writes into a `stackalloc`'d span. |
-| Widgets (`Tuinet.Widgets`) | `Block`, `Paragraph`, `ListView<T>` + `ListState`, `TextInput` + `TextInputState`, `Button`, `Clear`. Widgets are `readonly ref struct` values built each frame. Persistent state (selection, scroll, caret) lives in state objects the app owns. |
+| Widgets (`Tuinet.Widgets`) | `Block` (plain, rounded, double, thick, dashed), `Paragraph`, `ListView<T>` + `ListState`, `TextInput` + `TextInputState`, `Dropdown<T>` + `DropdownState`, `Checkbox`, `Button`, `ProgressBar`, `Spinner`, `Clear`. Widgets are `readonly ref struct` values built each frame. Persistent state (selection, scroll, caret) lives in state objects the app owns. |
 | `IWidget`, `IStatefulWidget<T>` | Implement these for your own widgets. `ref struct` widgets can hold spans, e.g. text formatted with `stackalloc` + `TryWrite`. |
 | `ITty` | The platform seam. `Tuinet.Testing.TestTty` is an in-memory terminal for tests. |
 
@@ -61,7 +61,7 @@ while (running)
 // Testing your UI: render into a buffer and assert on text, or drive a Terminal over TestTty.
 var buffer = new CellBuffer(40, 10);
 app.Render(buffer);
-Assert.Contains("Organization", buffer.ToString());
+Assert.Contains("ITEMS · 20", buffer.ToString());
 ```
 
 Options (`TerminalOptions`): `Mouse` (SGR 1006), `MouseMotion`, `BracketedPaste`, `FocusEvents`,
@@ -92,7 +92,7 @@ hasn't tiered up yet can box values while formatting.
 
 ```
 src/Tuinet/                   the library (Internal/: renderer, VT parser, width tables; Platform/: Unix, Windows)
-samples/Tuinet.Samples.Branches   git branch browser with an Azure DevOps options dialog (`./run`)
+samples/Tuinet.Samples.Showcase   20-item list, edit form (text boxes, dropdowns, checkboxes, buttons), progress dialog (`./run`)
 samples/Tuinet.Samples.Stress     latency / throughput harness (`./run stress`)
 bench/Tuinet.Benchmarks       BenchmarkDotNet suite
 tests/                        unit, widget, allocation and renderer property tests

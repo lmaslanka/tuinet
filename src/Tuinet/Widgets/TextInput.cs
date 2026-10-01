@@ -190,7 +190,7 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
     {
     }
 
-    /// <summary>Fills the input row when not default.</summary>
+    /// <summary>Text style; the row is erased with it (default colors keep the background underneath).</summary>
     public Style Style { get; init; }
 
     /// <summary>Shown while the input is empty.</summary>
@@ -209,10 +209,7 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
         }
 
         var row = new Rect(area.X, area.Y, area.Width, 1);
-        if (!Style.Equals(default))
-        {
-            buffer.Fill(row, Style);
-        }
+        buffer.Erase(row, Style);
 
         if (state.IsEmpty && !Placeholder.IsEmpty)
         {
@@ -220,8 +217,10 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
         }
 
         int width = row.Width;
-        int caret = state.Caret;
-        int scroll = Math.Min(state.Scroll, caret);
+
+        // Unfocused inputs show their beginning; focused ones scroll to keep the caret visible.
+        int caret = Focused ? state.Caret : 0;
+        int scroll = Focused ? Math.Min(state.Scroll, caret) : 0;
 
         // Keep the caret cell on screen: columns from scroll to caret, plus one for the caret itself.
         int columns = 1;
@@ -236,7 +235,10 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
             scroll++;
         }
 
-        state.Scroll = scroll;
+        if (Focused)
+        {
+            state.Scroll = scroll;
+        }
 
         int x = row.X;
         int caretX = row.X;

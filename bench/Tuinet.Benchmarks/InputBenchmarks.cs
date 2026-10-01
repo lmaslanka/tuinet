@@ -55,6 +55,19 @@ public class TextBenchmarks
         return x;
     }
 
+    [Benchmark(Description = "SetString ascii 60 rows, explicit colors")]
+    public int SetStringAsciiExplicit()
+    {
+        var style = new Style(Color.Rgb(200, 210, 215), Color.Rgb(20, 24, 28));
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x += _buffer.SetString(0, y, Ascii, style);
+        }
+
+        return x;
+    }
+
     [Benchmark(Description = "SetString CJK 60 rows")]
     public int SetStringCjk()
     {

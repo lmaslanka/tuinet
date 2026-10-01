@@ -22,6 +22,11 @@ public class CellBufferTests
         Assert.Equal(2, cell.Width);
         Assert.Equal(new Style(Color.Red, Color.Blue, Attr.Bold), cell.Style);
         Assert.False(cell.IsContinuation);
+        ulong bits = Cell.ColorBits(ref cell);
+        var other = new Cell(new Rune('b'), new Style(Color.Red, Color.Blue));
+        Assert.Equal(bits, Cell.ColorBits(ref other));
+        var different = new Cell(new Rune('b'), new Style(Color.Red, Color.Green, Attr.Bold));
+        Assert.NotEqual(bits, Cell.ColorBits(ref different));
     }
 
     [Fact]
@@ -223,5 +228,67 @@ public class CellBufferTests
         buffer.SetString(0, 0, "ab");
         buffer.SetString(0, 1, "你");
         Assert.Equal("ab \n你 ", buffer.ToString());
+    }
+}
+
+public class LayeringTests
+{
+    private static readonly Style Panel = new(Color.White, Color.Blue);
+
+    [Fact]
+    public void Text_with_default_background_keeps_the_panel_background()
+    {
+        var buffer = new CellBuffer(10, 1);
+        buffer.Fill(buffer.Area, Panel);
+        buffer.SetString(0, 0, "ab你", new Style(Color.Red, default, Attr.Bold));
+        Assert.Equal(new Style(Color.Red, Color.Blue, Attr.Bold), buffer[0, 0].Style);
+        Assert.Equal(new Style(Color.Red, Color.Blue, Attr.Bold), buffer[2, 0].Style);
+        Assert.Equal(new Style(Color.Red, Color.Blue, Attr.Bold), buffer[3, 0].Style);
+        Assert.Equal(Panel, buffer[4, 0].Style);
+    }
+
+    [Fact]
+    public void Default_style_text_inherits_both_colors_but_not_attributes()
+    {
+        var buffer = new CellBuffer(4, 1);
+        buffer.Fill(buffer.Area, Panel.With(Attr.Underline));
+        buffer.SetRune(1, 0, new Rune('x'));
+        Assert.Equal(Panel, buffer[1, 0].Style);
+    }
+
+    [Fact]
+    public void Explicit_colors_replace()
+    {
+        var buffer = new CellBuffer(4, 1);
+        buffer.Fill(buffer.Area, Panel);
+        var explicitStyle = new Style(Color.Green, Color.Black);
+        buffer.SetString(0, 0, "ab", explicitStyle);
+        Assert.Equal(explicitStyle, buffer[1, 0].Style);
+    }
+
+    [Fact]
+    public void Layering_follows_changing_backgrounds_within_one_string()
+    {
+        var buffer = new CellBuffer(4, 1);
+        buffer.Fill(new Rect(0, 0, 2, 1), Panel);
+        buffer.SetString(0, 0, "abcd", new Style(Color.Red, default));
+        Assert.Equal(Color.Blue, buffer[1, 0].Style.Bg);
+        Assert.Equal(Color.Default, buffer[2, 0].Style.Bg);
+    }
+}
+
+public class EraseTests
+{
+    [Fact]
+    public void Erase_blanks_glyphs_and_keeps_background()
+    {
+        var buffer = new CellBuffer(4, 1);
+        buffer.Fill(buffer.Area, new Style(Color.White, Color.Blue));
+        buffer.SetString(0, 0, "a你");
+        buffer.Erase(new Rect(0, 0, 2, 1), new Style(Color.Red, default));
+        Assert.Equal("    ", buffer.RowText(0));
+        Assert.Equal(new Style(Color.Red, Color.Blue), buffer[0, 0].Style);
+        Assert.False(buffer[2, 0].IsContinuation);
+        Assert.Equal(Color.Blue, buffer[2, 0].Style.Bg);
     }
 }

@@ -1,0 +1,232 @@
+using Tuinet;
+using Tuinet.Samples.Showcase;
+
+namespace Tuinet.Samples.Showcase.Tests;
+
+public class ShowcaseTests
+{
+    [Fact]
+    public void Main_screen_lists_twenty_items_with_details()
+    {
+        var app = new ShowcaseApp();
+        string screen = Render(app).ToString();
+        Assert.Equal(20, app.Items.Count);
+        Assert.Contains("ITEMS · 20", screen);
+        Assert.Contains("01  parse & validate intent", screen);
+        Assert.Contains("20  telemetry export", screen);
+        Assert.Contains("SELECTED · 01", screen);
+    }
+
+    [Fact]
+    public void J_and_k_move_the_selection()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'j', 'j', 'j', 'k');
+        Assert.Equal(2, app.Selected);
+        Assert.Contains("SELECTED · 03", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Enter_opens_the_edit_form_with_all_controls()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        string screen = Render(app).ToString();
+        foreach (string label in (string[])["EDIT ITEM · 01", "name", "owner", "description", "kind", "priority", "enabled", "notify on finish", "Save", "Close"])
+        {
+            Assert.Contains(label, screen);
+        }
+    }
+
+    [Fact]
+    public void Focused_text_box_shows_the_real_cursor()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        CellBuffer buffer = Render(app);
+        Assert.True(buffer.CursorVisible);
+        Assert.Contains("parse & validate intent", buffer.RowText(buffer.CursorY));
+    }
+
+    [Fact]
+    public void Editing_all_controls_and_saving_updates_the_item()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Char, 'u', Modifiers.Ctrl);          // clear name
+        Type(app, "renamed");
+        Key(app, KeyCode.Tab);
+        Key(app, KeyCode.Char, 'u', Modifiers.Ctrl);
+        Type(app, "zoe");
+        Key(app, KeyCode.Tab);                                  // description: keep
+        Key(app, KeyCode.Tab);                                  // kind dropdown
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Down);
+        Key(app, KeyCode.Enter);                                // feature → bugfix
+        Key(app, KeyCode.Tab);                                  // priority dropdown
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.End);
+        Key(app, KeyCode.Enter);                                // → critical
+        Key(app, KeyCode.Tab);
+        Key(app, KeyCode.Char, ' ');                            // enabled off
+        Key(app, KeyCode.Tab);
+        Key(app, KeyCode.Enter);                                // notify toggled
+        Key(app, KeyCode.Tab);
+        Key(app, KeyCode.Enter);                                // Save
+
+        Item item = app.Items[0];
+        Assert.Null(app.Edit);
+        Assert.Equal("renamed", item.Name);
+        Assert.Equal("zoe", item.Owner);
+        Assert.Equal(1, item.Kind);
+        Assert.Equal(3, item.Priority);
+        Assert.False(item.Enabled);
+        Assert.False(item.Notify);
+        Assert.Contains("saved · renamed", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Close_and_escape_discard_changes()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Type(app, "XYZ");
+        Key(app, KeyCode.Escape);
+        Assert.Null(app.Edit);
+        Assert.Equal("parse & validate intent", app.Items[0].Name);
+
+        Key(app, KeyCode.Enter);
+        Type(app, "XYZ");
+        Key(app, KeyCode.Tab, Modifiers.Shift);                 // Close button
+        Key(app, KeyCode.Enter);
+        Assert.Null(app.Edit);
+        Assert.Equal("parse & validate intent", app.Items[0].Name);
+    }
+
+    [Fact]
+    public void Escape_in_an_open_dropdown_only_closes_the_dropdown()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        for (int i = 0; i < 3; i++)
+        {
+            Key(app, KeyCode.Tab);
+        }
+
+        Key(app, KeyCode.Enter);
+        Assert.Contains("spike", Render(app).ToString());
+        Key(app, KeyCode.Escape);
+        Assert.NotNull(app.Edit);
+        Key(app, KeyCode.Escape);
+        Assert.Null(app.Edit);
+    }
+
+    [Fact]
+    public void Empty_name_is_rejected()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Char, 'u', Modifiers.Ctrl);
+        Key(app, KeyCode.Char, 's', Modifiers.Ctrl);
+        Assert.NotNull(app.Edit);
+        Assert.Equal(EditDialog.Name, app.Edit!.Focus);
+        Assert.Contains("name is required", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Paste_goes_into_the_focused_text_box()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Char, 'u', Modifiers.Ctrl);
+        app.Handle(Event.FromPaste("pasted\nname"), 0);
+        Key(app, KeyCode.Char, 's', Modifiers.Ctrl);
+        Assert.Equal("pastedname", app.Items[0].Name);
+    }
+
+    [Fact]
+    public void Progress_dialog_animates_and_finishes()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('p'), 1000);
+        Assert.True(app.ProgressOpen);
+        Assert.True(app.IsAnimating(1000));
+
+        string early = Render(app, 2000).ToString();
+        Assert.Contains("PIPELINE · progress", early);
+        Assert.Contains("running", early);
+        Assert.Contains("░", early);
+
+        string done = Render(app, 60_000).ToString();
+        Assert.False(app.IsAnimating(60_000));
+        Assert.Contains("✓ done", done);
+        Assert.Contains("0.92 sharp", done);
+        Assert.Contains("100.0%", done);
+
+        app.Handle(Event.FromKey(KeyCode.Escape), 60_000);
+        Assert.False(app.ProgressOpen);
+    }
+
+    [Fact]
+    public void Progress_restart_resets_the_clock()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('p'), 0);
+        Assert.False(app.IsAnimating(60_000));
+        app.Handle(Event.FromChar('r'), 60_000);
+        Assert.True(app.IsAnimating(60_001));
+    }
+
+    [Fact]
+    public void Small_terminal_does_not_throw()
+    {
+        var app = new ShowcaseApp();
+        foreach ((int w, int h) in (ReadOnlySpan<(int, int)>)[(1, 1), (20, 5), (40, 12), (80, 24)])
+        {
+            var buffer = new CellBuffer(w, h);
+            app.Render(buffer, 0);
+            Key(app, KeyCode.Enter);
+            app.Render(buffer, 0);
+            Key(app, KeyCode.Escape);
+            app.Handle(Event.FromChar('p'), 0);
+            app.Render(buffer, 500);
+            Key(app, KeyCode.Escape);
+        }
+    }
+
+    [Fact]
+    public void Q_and_ctrl_c_quit()
+    {
+        Assert.False(new ShowcaseApp().Handle(Event.FromChar('q'), 0));
+        Assert.False(new ShowcaseApp().Handle(Event.FromChar('c', Modifiers.Ctrl), 0));
+    }
+
+    private static CellBuffer Render(ShowcaseApp app, long now = 0)
+    {
+        var buffer = new CellBuffer(110, 34);
+        app.Render(buffer, now);
+        return buffer;
+    }
+
+    private static void Press(ShowcaseApp app, params char[] keys)
+    {
+        foreach (char c in keys)
+        {
+            app.Handle(Event.FromChar(c), 0);
+        }
+    }
+
+    private static void Type(ShowcaseApp app, string text)
+    {
+        foreach (char c in text)
+        {
+            app.Handle(Event.FromChar(c), 0);
+        }
+    }
+
+    private static void Key(ShowcaseApp app, KeyCode code, Modifiers modifiers = Modifiers.None) =>
+        app.Handle(Event.FromKey(code, modifiers), 0);
+
+    private static void Key(ShowcaseApp app, KeyCode code, char c, Modifiers modifiers = Modifiers.None) =>
+        app.Handle(Event.FromChar(c, modifiers), 0);
+}

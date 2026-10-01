@@ -68,6 +68,9 @@ public readonly ref struct ListView<TSource> : IStatefulWidget<ListState>
     /// <summary>Drawn before the selected item (e.g. "> "); other rows are indented by its width.</summary>
     public ReadOnlySpan<char> HighlightSymbol { get; init; }
 
+    /// <summary>Layered over <see cref="SelectedStyle"/> for the highlight symbol.</summary>
+    public Style HighlightSymbolStyle { get; init; }
+
     public void Render(Rect area, CellBuffer buffer, ref ListState state)
     {
         area = area.Intersect(buffer.Area);
@@ -89,15 +92,14 @@ public readonly ref struct ListView<TSource> : IStatefulWidget<ListState>
 
             var line = new Rect(area.X, area.Y + row, area.Width, 1);
             bool selected = index == state.Selected;
-            if (selected && indent > 0)
-            {
-                buffer.SetString(line.X, line.Y, HighlightSymbol, SelectedStyle, line.Width);
-            }
-
             _source.RenderItem(index, new Rect(line.X + indent, line.Y, line.Width - indent, 1), buffer, selected);
             if (selected)
             {
                 buffer.SetStyle(line, SelectedStyle);
+                if (indent > 0)
+                {
+                    buffer.SetString(line.X, line.Y, HighlightSymbol, SelectedStyle.Patch(HighlightSymbolStyle), line.Width);
+                }
             }
         }
     }

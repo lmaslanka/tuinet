@@ -69,6 +69,12 @@ public readonly struct Cell : IEquatable<Cell>
     }
 
     private const int WidthOffset = 14;
+    private const int ColorsOffset = 4;
+
+    /// <summary>Foreground and background of a cell as one 8-byte value (cheap equality on hot paths).</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static ulong ColorBits(ref Cell cell) =>
+        Unsafe.ReadUnaligned<ulong>(ref Unsafe.Add(ref Unsafe.As<Cell, byte>(ref cell), ColorsOffset));
 
     public Rune Rune => _rune;
     public Style Style => _style;

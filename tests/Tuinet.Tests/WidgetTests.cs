@@ -154,6 +154,16 @@ public class WidgetTests
     }
 
     [Fact]
+    public void Unfocused_text_input_shows_the_beginning()
+    {
+        var state = new TextInputState("abcdefghij");
+        var buffer = new CellBuffer(5, 1);
+        buffer.Render(new TextInput(), buffer.Area, ref state);
+        Assert.Equal("abcde", buffer.RowText(0));
+        Assert.False(buffer.CursorVisible);
+    }
+
+    [Fact]
     public void Masked_input_never_draws_the_secret()
     {
         var state = new TextInputState("secret", mask: '•');
@@ -200,5 +210,146 @@ public class WidgetTests
         buffer.SetString(0, 0, "abcd");
         buffer.Render(new Clear(Style.Default), new Rect(1, 0, 2, 1));
         Assert.Equal("a  d", buffer.RowText(0));
+    }
+}
+
+public class InputWidgetTests
+{
+    [Fact]
+    public void Checkbox_shows_state_and_styles()
+    {
+        var accent = new Style(Color.Green, default);
+        var buffer = new CellBuffer(14, 2);
+        buffer.Render(new Checkbox("enabled", true) { CheckedStyle = accent }, new Rect(0, 0, 14, 1));
+        buffer.Render(new Checkbox("notify", false) { CheckedSymbol = "◆", UncheckedSymbol = "◇" }, new Rect(0, 1, 14, 1));
+        Assert.Equal("[x] enabled   ", buffer.RowText(0));
+        Assert.Equal(accent, buffer[1, 0].Style);
+        Assert.Equal(Style.Default, buffer[5, 0].Style);
+        Assert.Equal("◇ notify      ", buffer.RowText(1));
+    }
+
+    [Fact]
+    public void Boxed_checkbox_is_a_filled_square()
+    {
+        var green = new Style(Color.Green, default);
+        var buffer = new CellBuffer(14, 3);
+        buffer.Render(new Checkbox("enabled", true) { Boxed = true, CheckedStyle = green }, buffer.Area);
+        Assert.Equal("╭───╮         \n│███│ enabled \n╰───╯         ", buffer.ToString());
+        Assert.Equal(Color.Green, buffer[0, 0].Style.Fg);
+        Assert.Equal(Color.Green, buffer[2, 1].Style.Fg);
+
+        buffer.Clear();
+        buffer.Render(new Checkbox("enabled", false) { Boxed = true, CheckedStyle = green }, buffer.Area);
+        Assert.Equal("│   │ enabled ", buffer.RowText(1));
+        Assert.Equal(Color.Default, buffer[0, 0].Style.Fg);
+    }
+
+    [Fact]
+    public void Unchecked_style_colors_only_the_symbol()
+    {
+        var faint = new Style(Color.BrightBlack, default);
+        var buffer = new CellBuffer(12, 1);
+        buffer.Render(new Checkbox("notify", false) { CheckedSymbol = "▐█▌", UncheckedSymbol = "▐█▌", UncheckedStyle = faint }, buffer.Area);
+        Assert.Equal("▐█▌ notify  ", buffer.RowText(0));
+        Assert.Equal(Color.BrightBlack, buffer[1, 0].Style.Fg);
+        Assert.Equal(Color.Default, buffer[4, 0].Style.Fg);
+    }
+
+    [Fact]
+    public void Boxed_checkbox_falls_back_to_one_row_when_short()
+    {
+        var buffer = new CellBuffer(14, 1);
+        buffer.Render(new Checkbox("enabled", true) { Boxed = true }, buffer.Area);
+        Assert.Equal("[x] enabled   ", buffer.RowText(0));
+    }
+
+    [Theory]
+    [InlineData(0.0, "░░░░░░░░░░")]
+    [InlineData(0.5, "█████░░░░░")]
+    [InlineData(1.0, "██████████")]
+    [InlineData(0.55, "█████▌░░░░")]
+    [InlineData(2.0, "██████████")]
+    [InlineData(double.NaN, "░░░░░░░░░░")]
+    public void Progress_bar_fills_with_eighth_precision(double ratio, string expected)
+    {
+        var buffer = new CellBuffer(10, 1);
+        buffer.Render(new ProgressBar(ratio), buffer.Area);
+        Assert.Equal(expected, buffer.RowText(0));
+    }
+
+    [Fact]
+    public void Progress_bar_segments_without_smoothing()
+    {
+        var buffer = new CellBuffer(4, 1);
+        buffer.Render(new ProgressBar(0.6) { FilledChar = '▮', EmptyChar = '▯' }, buffer.Area);
+        Assert.Equal("▮▮▯▯", buffer.RowText(0));
+    }
+
+    [Fact]
+    public void Spinner_frame_follows_time()
+    {
+        Assert.Equal('|', Spinner.Frame(Spinner.Line, 0));
+        Assert.Equal('/', Spinner.Frame(Spinner.Line, 100));
+        Assert.Equal('|', Spinner.Frame(Spinner.Line, 400));
+    }
+
+    [Fact]
+    public void Dropdown_opens_moves_commits_and_cancels()
+    {
+        string[] items = ["low", "medium", "high"];
+        var state = new DropdownState(0);
+        Assert.False(state.Handle(new KeyEvent(KeyCode.Tab), 3));
+        Assert.True(state.Handle(new KeyEvent(KeyCode.Enter), 3));
+        Assert.True(state.IsOpen);
+        state.Handle(new KeyEvent(KeyCode.Down), 3);
+        state.Handle(new KeyEvent(KeyCode.Down), 3);
+        state.Handle(new KeyEvent(KeyCode.Enter), 3);
+        Assert.False(state.IsOpen);
+        Assert.Equal(2, state.Selected);
+
+        state.Handle(new KeyEvent(KeyCode.Enter), 3);
+        state.Handle(new KeyEvent(KeyCode.Up), 3);
+        state.Handle(new KeyEvent(KeyCode.Escape), 3);
+        Assert.Equal(2, state.Selected);
+
+        var buffer = new CellBuffer(10, 5);
+        buffer.Render(new Dropdown<TextItems>(new TextItems(items)), new Rect(0, 0, 10, 1), ref state);
+        Assert.Equal("high     ▾", buffer.RowText(0));
+    }
+
+    [Fact]
+    public void Dropdown_popup_draws_below_the_anchor_on_top()
+    {
+        string[] items = ["low", "medium", "high"];
+        var state = new DropdownState(1);
+        state.Open();
+        var buffer = new CellBuffer(10, 6);
+        buffer.SetString(0, 1, "underneath");
+        var dropdown = new Dropdown<TextItems>(new TextItems(items)) { SelectedStyle = new Style(Color.Black, Color.White) };
+        dropdown.Render(new Rect(0, 0, 10, 1), buffer, ref state);
+        dropdown.RenderPopup(new Rect(0, 0, 10, 1), buffer, ref state);
+        Assert.Equal("medium   ▴", buffer.RowText(0));
+        Assert.Equal("low       ", buffer.RowText(1));
+        Assert.Equal("medium    ", buffer.RowText(2));
+        Assert.Equal(new Style(Color.Black, Color.White), buffer[0, 2].Style);
+    }
+
+    [Fact]
+    public void Dropdown_popup_flips_above_when_no_room_below()
+    {
+        string[] items = ["a", "b", "c"];
+        var state = new DropdownState(0);
+        state.Open();
+        var buffer = new CellBuffer(6, 6);
+        new Dropdown<TextItems>(new TextItems(items)).RenderPopup(new Rect(0, 5, 6, 1), buffer, ref state);
+        Assert.Equal("a     \nb     \nc     ", string.Join('\n', buffer.ToString().Split('\n')[2..5]));
+    }
+
+    [Fact]
+    public void Dashed_block()
+    {
+        var buffer = new CellBuffer(5, 3);
+        buffer.Render(new Block { BorderType = BorderType.Dashed }, buffer.Area);
+        Assert.Equal("╭┄┄┄╮\n┆   ┆\n╰┄┄┄╯", buffer.ToString());
     }
 }

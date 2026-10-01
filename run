@@ -1,13 +1,10 @@
 #!/usr/bin/env bash
-# ./run [dir]        branch browser sample (defaults to this repo)
-# ./run stress       latency / throughput harness
+# ./run          showcase sample: list, edit dialog, progress dialog
+# ./run stress   latency / throughput harness
 set -euo pipefail
 root="$(cd "$(dirname "$0")" && pwd)"
 if [ "${1:-}" = "stress" ]; then
   shift
   exec dotnet run -c Release --project "$root/samples/Tuinet.Samples.Stress" -- "$@"
 fi
-if [ $# -eq 0 ]; then
-  exec dotnet run --project "$root/samples/Tuinet.Samples.Branches" -- "$root"
-fi
-exec dotnet run --project "$root/samples/Tuinet.Samples.Branches" -- "$@"
+exec dotnet run -c Release --project "$root/samples/Tuinet.Samples.Showcase" -- "$@"

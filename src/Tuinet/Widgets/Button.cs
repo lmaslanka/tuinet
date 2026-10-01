@@ -22,7 +22,7 @@ public readonly ref struct Button : IWidget
 
         Style style = Focused ? FocusedStyle : Style;
         var row = new Rect(area.X, area.Y, Math.Min(area.Width, WidthOf(Label)), 1);
-        buffer.Fill(row, style);
+        buffer.Erase(row, style);
         buffer.SetString(row.X + 2, row.Y, Label, style, row.Width - 2);
     }
 }

@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -17,7 +16,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\samples\Tuinet.Samples.Branches\Tuinet.Samples.Branches.csproj" />
+    <ProjectReference Include="..\..\samples\Tuinet.Samples.Showcase\Tuinet.Samples.Showcase.csproj" />
   </ItemGroup>
 
 </Project>

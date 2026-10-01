@@ -1,4 +1,5 @@
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Tuinet;
@@ -15,6 +16,12 @@ public enum Overflow
 /// <summary>
 /// A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
 /// consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.
+/// <para>
+/// Text writes (<see cref="SetString"/>, <see cref="SetRune"/>) layer: a default foreground or
+/// background in the style keeps the color already in the cell, so text drawn on a filled panel
+/// keeps the panel's background. Attributes are replaced. <see cref="Fill(Rect, Style)"/> and
+/// <see cref="SetCell"/> replace whole cells.
+/// </para>
 /// </summary>
 public sealed class CellBuffer
 {
@@ -121,6 +128,27 @@ public sealed class CellBuffer
         }
     }
 
+    /// <summary>
+    /// Blank the glyphs in <paramref name="area"/>, layering <paramref name="style"/>: default colors keep
+    /// the colors already there (so erasing an input row on a panel keeps the panel background).
+    /// </summary>
+    public void Erase(Rect area, Style style = default)
+    {
+        Rect r = area.Intersect(Area);
+        for (int y = r.Y; y < r.Bottom; y++)
+        {
+            Span<Cell> row = RowSpan(y);
+            FixLeft(row, r.X);
+            Span<Cell> cells = row.Slice(r.X, r.Width);
+            for (int i = 0; i < cells.Length; i++)
+            {
+                cells[i] = Cell.Blank(Layer(style, cells[i].Style));
+            }
+
+            FixRight(row, r.Right);
+        }
+    }
+
     /// <summary>Layer <paramref name="style"/> over every cell in <paramref name="area"/>, keeping glyphs.</summary>
     public void SetStyle(Rect area, Style style)
     {
@@ -139,7 +167,13 @@ public sealed class CellBuffer
     public int SetRune(int x, int y, Rune rune, Style style = default)
     {
         int width = UnicodeWidth.Of(rune.Value);
-        return width == 0 ? 0 : Place(x, y, new Cell(rune, style, width, CellFlags.None));
+        if (width == 0 || (uint)y >= (uint)Height || x < 0 || x + width > Width)
+        {
+            return 0;
+        }
+
+        Style under = _cells[y * Width + x].Style;
+        return Place(x, y, new Cell(rune, Layer(style, under), width, CellFlags.None));
     }
 
     /// <summary>Place one glyph cell. Returns the columns written: 0 if it does not fit.</summary>
@@ -259,15 +293,19 @@ public sealed class CellBuffer
         bool wrote = false;
         int i = 0;
 
-        // Cells are built by copying a prebuilt cell and patching the rune/width: copying the
-        // 10-byte style field by field per glyph is several times slower.
+        // Cells are built by copying a prebuilt template and patching the rune/width: building
+        // each cell's 10-byte style field by field is several times slower. With layering, the
+        // template is rebuilt only where the colors underneath change.
+        bool layered = style.Fg.IsDefault || style.Bg.IsDefault;
         var template = new Cell(Cell.Space, style, 1, CellFlags.None);
         var continuation = Cell.Continuation(style);
+        ulong under = 0;
+        bool primed = !layered;
         while (i < text.Length)
         {
             char c = text[i];
 
-            // Fast path: a run of printable ASCII, one cell per char.
+            // Fast path: a run of printable ASCII, one cell per char, in constant-color segments.
             if (col >= 0 && (uint)(c - 0x20) < 0x5F)
             {
                 if (!wrote)
@@ -282,20 +320,36 @@ public sealed class CellBuffer
                     break;
                 }
 
-                ReadOnlySpan<char> chars = text.Slice(i, run);
                 Span<Cell> dest = row.Slice(col, run);
+                ReadOnlySpan<char> chars = text.Slice(i, run);
                 int n = 0;
-                for (; n < chars.Length; n++)
+                while (n < run)
                 {
-                    char a = chars[n];
-                    if ((uint)(a - 0x20) >= 0x5F)
+                    int segment = run;
+                    if (layered)
+                    {
+                        ulong bits = Cell.ColorBits(ref dest[n]);
+                        if (!primed || bits != under)
+                        {
+                            under = bits;
+                            template = new Cell(Cell.Space, Layer(style, dest[n].Style), 1, CellFlags.None);
+                            continuation = Cell.Continuation(template.Style);
+                            primed = true;
+                        }
+
+                        segment = n + 1;
+                        while (segment < run && Cell.ColorBits(ref dest[segment]) == bits)
+                        {
+                            segment++;
+                        }
+                    }
+
+                    int written = WriteAscii(chars[n..segment], dest[n..segment], in template);
+                    n += written;
+                    if (n < segment)
                     {
                         break;
                     }
-
-                    ref Cell cell = ref dest[n];
-                    cell = template;
-                    Unsafe.As<Cell, uint>(ref cell) = a;
                 }
 
                 i += n;
@@ -333,7 +387,7 @@ public sealed class CellBuffer
                 col += width;
                 if (col > 0)
                 {
-                    row[0] = Cell.Blank(style);
+                    row[0] = Cell.Blank(Layer(style, row[0].Style));
                 }
 
                 continue;
@@ -346,6 +400,18 @@ public sealed class CellBuffer
             }
 
             ref Cell lead = ref row[col];
+            if (layered)
+            {
+                ulong bits = Cell.ColorBits(ref lead);
+                if (!primed || bits != under)
+                {
+                    under = bits;
+                    template = new Cell(Cell.Space, Layer(style, lead.Style), 1, CellFlags.None);
+                    continuation = Cell.Continuation(template.Style);
+                    primed = true;
+                }
+            }
+
             lead = template;
             Cell.Patch(ref lead, rune, width);
             if (width == 2)
@@ -363,6 +429,53 @@ public sealed class CellBuffer
 
         return col;
     }
+
+    /// <summary>
+    /// Write printable ASCII until the first other char; returns chars written. Each cell is two
+    /// 8-byte stores: the template's words with the rune (low 32 bits of the first word) replaced.
+    /// </summary>
+    private static int WriteAscii(ReadOnlySpan<char> chars, Span<Cell> dest, in Cell template)
+    {
+        int length = Math.Min(chars.Length, dest.Length);
+        if (!BitConverter.IsLittleEndian)
+        {
+            int i = 0;
+            for (; i < length && (uint)(chars[i] - 0x20) < 0x5F; i++)
+            {
+                dest[i] = template;
+                Cell.Patch(ref dest[i], new Rune(chars[i]), 1);
+            }
+
+            return i;
+        }
+
+        ref ulong source = ref Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in template));
+        ulong low = source & 0xFFFF_FFFF_0000_0000UL;
+        ulong high = Unsafe.Add(ref source, 1);
+        ref ulong target = ref Unsafe.As<Cell, ulong>(ref MemoryMarshal.GetReference(dest));
+        ref char text = ref MemoryMarshal.GetReference(chars);
+        int n = 0;
+        for (; n < length; n++)
+        {
+            uint a = Unsafe.Add(ref text, n);
+            if (a - 0x20 >= 0x5F)
+            {
+                break;
+            }
+
+            Unsafe.Add(ref target, 2 * n) = low | a;
+            Unsafe.Add(ref target, 2 * n + 1) = high;
+        }
+
+        return n;
+    }
+
+    /// <summary>Default colors in <paramref name="style"/> keep the colors of <paramref name="under"/>; attributes are replaced.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static Style Layer(Style style, Style under) => new(
+        style.Fg.IsDefault ? under.Fg : style.Fg,
+        style.Bg.IsDefault ? under.Bg : style.Bg,
+        style.Attrs);
 
     /// <summary>Writing at <paramref name="x"/> splits a wide glyph whose right half is there: blank its left half.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]

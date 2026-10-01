@@ -3,7 +3,7 @@
     <Project Path="src/Tuinet/Tuinet.csproj" />
   </Folder>
   <Folder Name="/samples/">
-    <Project Path="samples/Tuinet.Samples.Branches/Tuinet.Samples.Branches.csproj" />
+    <Project Path="samples/Tuinet.Samples.Showcase/Tuinet.Samples.Showcase.csproj" />
     <Project Path="samples/Tuinet.Samples.Stress/Tuinet.Samples.Stress.csproj" />
   </Folder>
   <Folder Name="/bench/">
@@ -11,6 +11,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tuinet.Tests/Tuinet.Tests.csproj" />
-    <Project Path="tests/Tuinet.Samples.Branches.Tests/Tuinet.Samples.Branches.Tests.csproj" />
+    <Project Path="tests/Tuinet.Samples.Showcase.Tests/Tuinet.Samples.Showcase.Tests.csproj" />
   </Folder>
 </Solution>

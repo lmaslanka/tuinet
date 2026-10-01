@@ -33,6 +33,9 @@ public enum BorderType : byte
 
     /// <summary>┏━┓</summary>
     Thick,
+
+    /// <summary>╭┄╮ rounded corners, dashed edges</summary>
+    Dashed,
 }
 
 /// <summary>A frame with optional title and footer on its top and bottom edges.</summary>
@@ -87,6 +90,7 @@ public readonly ref struct Block : IWidget
             BorderType.Rounded => ('─', '│', '╭', '╮', '╰', '╯'),
             BorderType.Double => ('═', '║', '╔', '╗', '╚', '╝'),
             BorderType.Thick => ('━', '┃', '┏', '┓', '┗', '┛'),
+            BorderType.Dashed => ('┄', '┆', '╭', '╮', '╰', '╯'),
             _ => ('─', '│', '┌', '┐', '└', '┘'),
         };
 

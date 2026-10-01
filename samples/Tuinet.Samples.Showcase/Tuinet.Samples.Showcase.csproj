@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <RootNamespace>Tuinet.Samples.Branches</RootNamespace>
+    <RootNamespace>Tuinet.Samples.Showcase</RootNamespace>
     <IsPackable>false</IsPackable>
     <IsAotCompatible>true</IsAotCompatible>
   </PropertyGroup>
