@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Tuinet.Samples.Stress</RootNamespace>
+    <IsPackable>false</IsPackable>
+    <IsAotCompatible>true</IsAotCompatible>
+    <!-- Fully optimize from the first frame: unoptimized (tier-0) JIT code boxes values when
+         formatting, which would show up as allocations. Native AOT has the same effect. -->
+    <TieredCompilation>false</TieredCompilation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Tuinet\Tuinet.csproj" />
+  </ItemGroup>
+
+</Project>

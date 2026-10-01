@@ -1,11 +1,16 @@
 <Solution>
   <Folder Name="/src/">
-    <Project Path="src/Tuinet.App/Tuinet.App.csproj" />
-    <Project Path="src/Tuinet.Harness/Tuinet.Harness.csproj" />
-    <Project Path="src/Tuinet.Kernel/Tuinet.Kernel.csproj" />
+    <Project Path="src/Tuinet/Tuinet.csproj" />
+  </Folder>
+  <Folder Name="/samples/">
+    <Project Path="samples/Tuinet.Samples.Branches/Tuinet.Samples.Branches.csproj" />
+    <Project Path="samples/Tuinet.Samples.Stress/Tuinet.Samples.Stress.csproj" />
+  </Folder>
+  <Folder Name="/bench/">
+    <Project Path="bench/Tuinet.Benchmarks/Tuinet.Benchmarks.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Tuinet.App.Tests/Tuinet.App.Tests.csproj" />
-    <Project Path="tests/Tuinet.Kernel.Tests/Tuinet.Kernel.Tests.csproj" />
+    <Project Path="tests/Tuinet.Tests/Tuinet.Tests.csproj" />
+    <Project Path="tests/Tuinet.Samples.Branches.Tests/Tuinet.Samples.Branches.Tests.csproj" />
   </Folder>
 </Solution>
