@@ -117,12 +117,19 @@ public sealed class ShowcaseApp
             TitleStyle = Theme.Heading(Theme.Amber),
         };
         buffer.Render(block, box);
-        buffer.Render(new ListView<ItemRows>(new ItemRows(_items))
+        Rect inner = block.Inner(box).Inset(1, 1);
+        int shown = FittingColumns(inner.Width - 1);   // 1 for the highlight symbol
+        buffer.Render(new Table<ItemRows>(new ItemRows(_items), ItemColumns.AsSpan(0, shown))
         {
+            HeaderStyle = Theme.Heading(Theme.Muted),
+            HeaderSeparator = true,
+            SeparatorStyle = Theme.Faded,
+            ColumnSpacing = ColumnSpacing,
+            SortColumn = 0,
             SelectedStyle = Theme.RowSelected,
             HighlightSymbol = "▌",
             HighlightSymbolStyle = Theme.Accent(Theme.Blue),
-        }, block.Inner(box).Inset(1, 1), ref _list);
+        }, inner, ref _list);
     }
 
     private void RenderDetails(CellBuffer buffer, Rect area)
@@ -186,27 +193,61 @@ public sealed class ShowcaseApp
     private static int Separator(CellBuffer buffer, int x, Rect row) =>
         buffer.SetString(x, row.Y, "  ·  ", Theme.Faded, row.Right - x);
 
-    /// <summary>One row: number, name, kind tag, priority; disabled items are dimmed.</summary>
-    private readonly struct ItemRows(Item[] items) : IListSource
+    private const int ColumnSpacing = 2;
+
+    private static readonly TableColumn[] ItemColumns =
+    [
+        new("#", Constraint.Length(4), Alignment.Right),
+        new("name", Constraint.Min(14)),       // the only growing column
+        new("kind", Constraint.Length(7)),
+        new("priority", Constraint.Length(10)),
+        new("owner", Constraint.Length(9)),
+    ];
+
+    /// <summary>How many leading columns fit at their set widths: narrow screens drop whole columns from the end.</summary>
+    private static int FittingColumns(int width)
     {
-        public int Count => items.Length;
-
-        public void RenderItem(int index, Rect area, CellBuffer buffer, bool selected)
+        int used = -ColumnSpacing;
+        for (int i = 0; i < ItemColumns.Length; i++)
         {
-            Item item = items[index];
-            Span<char> number = stackalloc char[4];
-            number.TryWrite($"{index + 1:D2}", out int length);
-
-            int right = area.Right;
-            int x = buffer.SetString(area.X + 1, area.Y, number[..length], Theme.Faded, right - area.X - 1);
-            const int tags = 20;
-            int nameEnd = Math.Max(x + 2, right - tags - 1);
-            buffer.SetString(x + 2, area.Y, item.Name, item.Enabled ? Theme.Body : Theme.Faded, nameEnd - x - 2, Overflow.Ellipsis);
-            if (right - tags > x + 6)
+            used += ColumnSpacing + ItemColumns[i].Width.Value;
+            if (used > width)
             {
-                buffer.SetString(right - tags, area.Y, Item.Kinds[item.Kind], Theme.Accent(Theme.KindColor(item.Kind)), 9);
-                int px = buffer.SetString(right - 10, area.Y, "▲ ", Theme.Accent(Theme.PriorityColor(item.Priority)), 2);
-                buffer.SetString(px, area.Y, Item.Priorities[item.Priority], Theme.Accent(Theme.PriorityColor(item.Priority)), right - px);
+                return Math.Max(1, i);
+            }
+        }
+
+        return ItemColumns.Length;
+    }
+
+    /// <summary>Columns of <see cref="ItemColumns"/>; disabled items are dimmed.</summary>
+    private readonly struct ItemRows(Item[] items) : ITableSource
+    {
+        public int RowCount => items.Length;
+
+        public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
+        {
+            Item item = items[row];
+            int written;
+            switch (column)
+            {
+                case 0:
+                    style = Theme.Faded;
+                    scratch.TryWrite($"{row + 1:D2}", out written);
+                    return scratch[..written];
+                case 1:
+                    style = item.Enabled ? Theme.Body : Theme.Faded;
+                    return item.Name;
+                case 2:
+                    style = Theme.Accent(Theme.KindColor(item.Kind));
+                    return Item.Kinds[item.Kind];
+                case 3:
+                    style = Theme.Accent(Theme.PriorityColor(item.Priority));
+                    scratch.TryWrite($"▲ {Item.Priorities[item.Priority]}", out written);
+                    return scratch[..written];
+                default:
+                    style = Theme.Dim;
+                    return item.Owner;
             }
         }
     }

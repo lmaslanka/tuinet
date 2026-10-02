@@ -291,4 +291,104 @@ public class EraseTests
         Assert.False(buffer[2, 0].IsContinuation);
         Assert.Equal(Color.Blue, buffer[2, 0].Style.Bg);
     }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Vectorized_set_style_matches_style_patch(int seed)
+    {
+        var random = new Random(seed);
+        for (int round = 0; round < 200; round++)
+        {
+            CellBuffer buffer = RandomBuffer(random, 12, 4);
+            CellBuffer before = Copy(buffer);
+            Style style = RandomStyle(random);
+            var area = new Rect(random.Next(-2, 12), random.Next(-1, 4), random.Next(0, 14), random.Next(0, 5));
+
+            buffer.SetStyle(area, style);
+
+            Rect clipped = area.Intersect(buffer.Area);
+            for (int y = 0; y < 4; y++)
+            {
+                for (int x = 0; x < 12; x++)
+                {
+                    Cell old = before[x, y];
+                    Cell expected = clipped.Contains(x, y) ? old.WithStyle(old.Style.Patch(style)) : old;
+                    Assert.Equal(expected, buffer[x, y]);
+                }
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void Area_set_rune_matches_one_glyph_at_a_time(int seed)
+    {
+        var random = new Random(seed);
+        Rune[] runes = [new('─'), new('│'), new('x'), new(0x4F60), new(0x0301)];
+        for (int round = 0; round < 200; round++)
+        {
+            CellBuffer bulk = RandomBuffer(random, 12, 4);
+            CellBuffer single = Copy(bulk);
+            Rune rune = runes[random.Next(runes.Length)];
+            Style style = RandomStyle(random);
+            var area = new Rect(random.Next(-2, 12), random.Next(-1, 4), random.Next(0, 14), random.Next(0, 5));
+
+            bulk.SetRune(area, rune, style);
+
+            Rect clipped = area.Intersect(single.Area);
+            int step = Math.Max(1, TextWidth.Of(rune));
+            for (int y = clipped.Y; y < clipped.Bottom; y++)
+            {
+                for (int x = clipped.X; x + step <= clipped.Right; x += step)
+                {
+                    single.SetRune(x, y, rune, style);
+                }
+            }
+
+            Assert.Equal(single.ToString(), bulk.ToString());
+            for (int y = 0; y < 4; y++)
+            {
+                Assert.True(single.Row(y).SequenceEqual(bulk.Row(y)), $"row {y}, round {round}");
+            }
+        }
+    }
+
+    [Fact]
+    public void Ellipsis_still_applies_to_wide_text_at_the_edge()
+    {
+        var buffer = new CellBuffer(5, 2);
+        buffer.SetString(0, 0, "日本語", default, 5, Overflow.Ellipsis);    // 6 columns into 5
+        buffer.SetString(0, 1, "ab日", default, 4, Overflow.Ellipsis);      // exactly 4: fits
+        Assert.Equal("日本…", buffer.RowText(0));
+        Assert.Equal("ab日 ", buffer.RowText(1));
+    }
+
+    private static CellBuffer RandomBuffer(Random random, int width, int height)
+    {
+        var buffer = new CellBuffer(width, height);
+        string[] texts = ["ab", "日本", "x", "你好吗", "  "];
+        for (int i = 0; i < 12; i++)
+        {
+            buffer.SetString(random.Next(-1, width), random.Next(height), texts[random.Next(texts.Length)], RandomStyle(random));
+        }
+
+        return buffer;
+    }
+
+    private static CellBuffer Copy(CellBuffer from)
+    {
+        var copy = new CellBuffer(from.Width, from.Height);
+        from.Cells.CopyTo(copy.Cells);
+        return copy;
+    }
+
+    private static Style RandomStyle(Random random)
+    {
+        Color[] colors = [Color.Default, Color.Red, Color.Indexed(200), Color.Rgb(1, 2, 3), Color.Hex(0xFFFFFF)];
+        return new Style(colors[random.Next(colors.Length)], colors[random.Next(colors.Length)], (Attr)random.Next(0, 256));
+    }
 }

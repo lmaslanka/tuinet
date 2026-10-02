@@ -48,7 +48,7 @@ public sealed class Terminal : IDisposable
         _tty = tty;
         _ownsTty = ownsTty;
         _options = options;
-        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor);
+        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions);
 
         Size size = Clamp(tty.Size);
         _reportedSize = size;

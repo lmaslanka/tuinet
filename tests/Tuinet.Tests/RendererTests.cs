@@ -174,12 +174,84 @@ public class RendererTests
         Assert.True(bytes < 200 * 60 + 60 * 2 + 64, $"{bytes} bytes");
     }
 
+    [Fact]
+    public void Rows_moving_up_are_scrolled_by_the_terminal()
+    {
+        CellBuffer prev = Lines("a", "b", "c", "d", "e");
+        CellBuffer cur = Lines("b", "c", "d", "e", "f");
+        // Margins over the band, delete one line at its top, clear margins, then paint only the new row.
+        Assert.Equal("\u001b[?2026h\u001b[1;5r\u001b[1H\u001b[M\u001b[r\u001b[5Hf\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Rows_moving_down_are_scrolled_by_the_terminal()
+    {
+        CellBuffer prev = Lines("a", "b", "c", "d", "e");
+        CellBuffer cur = Lines("z", "a", "b", "c", "d");
+        Assert.Equal("\u001b[?2026h\u001b[1;5r\u001b[1H\u001b[L\u001b[r\u001b[Hz\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Scroll_margins_cover_only_the_band_that_moved()
+    {
+        CellBuffer prev = Lines("H", "a", "b", "c", "d", "F");
+        CellBuffer cur = Lines("H", "b", "c", "d", "e", "F");
+        Assert.Equal("\u001b[?2026h\u001b[2;5r\u001b[2H\u001b[M\u001b[r\u001b[5He\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Scroll_resets_a_colored_background_first()
+    {
+        var renderer = new Renderer(ColorMode.TrueColor);
+        renderer.AfterClear();
+        var output = new VtBuffer(64);
+        CellBuffer blank = Lines("", "", "", "", "");
+        CellBuffer first = Lines("a", "b", "c", "d", "e");
+        first.SetString(3, 4, "#", new Style(Color.Default, Color.Blue));   // leaves the pen blue
+        renderer.Render(first, blank, output);
+
+        CellBuffer second = Lines("b", "c", "d", "e", "f");
+        second.SetString(3, 3, "#", new Style(Color.Default, Color.Blue));
+        output.Clear();
+        renderer.Render(second, first, output);
+        string text = Encoding.UTF8.GetString(output.Written);
+        Assert.StartsWith("\u001b[?2026h\u001b[49m\u001b[1;5r", text);
+    }
+
+    [Fact]
+    public void Short_bands_and_partial_width_moves_are_diffed_normally()
+    {
+        Assert.DoesNotContain("\u001b[r", Render(Lines("a", "b", "c", "x"), Lines("b", "c", "d", "x")));     // 3 rows, 2 match
+        CellBuffer prev = Lines("a  |", "b  |", "c  |", "d  |", "e  |");
+        CellBuffer cur = Lines("b  1", "c  2", "d  3", "e  4", "f  5");                                       // right edge differs
+        Assert.DoesNotContain("\u001b[r", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Scroll_regions_can_be_turned_off()
+    {
+        string output = Render(Lines("b", "c", "d", "e", "f"), Lines("a", "b", "c", "d", "e"), scrollRegions: false);
+        Assert.Equal("\u001b[?2026h\u001b[Hb\r\nc\r\nd\r\ne\r\nf\u001b[?2026l", output);
+    }
+
+    /// <summary>A 4-wide buffer with one line of text per row.</summary>
+    private static CellBuffer Lines(params string[] rows)
+    {
+        var buffer = new CellBuffer(4, rows.Length);
+        for (int y = 0; y < rows.Length; y++)
+        {
+            buffer.SetString(0, y, rows[y]);
+        }
+
+        return buffer;
+    }
+
     private static (CellBuffer Previous, CellBuffer Current) Buffers(int width, int height) =>
         (new CellBuffer(width, height), new CellBuffer(width, height));
 
-    private static string Render(CellBuffer current, CellBuffer previous, ColorMode mode = ColorMode.TrueColor)
+    private static string Render(CellBuffer current, CellBuffer previous, ColorMode mode = ColorMode.TrueColor, bool scrollRegions = true)
     {
-        var renderer = new Renderer(mode);
+        var renderer = new Renderer(mode, scrollRegions);
         renderer.AfterClear();
         var output = new VtBuffer(64);
         renderer.Render(current, previous, output);

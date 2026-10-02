@@ -25,11 +25,12 @@ Zero allocations per frame · one `write` per frame · Native AOT
 - **Fast by design.**
   - Unchanged rows are skipped with a vectorized memcmp.
   - Gaps inside a row are jumped with relative cursor moves.
+  - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
   - Style changes are sent as minimal deltas.
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
-  - Widgets: blocks, paragraphs, virtualized lists, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
+  - Widgets: blocks, paragraphs, virtualized lists and tables, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
 - **Full input.**
@@ -222,6 +223,59 @@ if (ev.Key.Is(KeyCode.PageDown)) state.PageDown(files.Length);
 
 For plain strings, use the built-in `TextItems` source: `new ListView<TextItems>(new TextItems(names))`.
 
+### Tables
+
+`Table` is a virtualized list with a header and columns. Column widths are layout constraints.
+Each column aligns its header and cells left, center or right. Your `ITableSource` returns the text
+of each visible cell: either a string you already hold, or text formatted into the `scratch` span
+it is given. The table measures, aligns and clips the text, so formatting numbers stays allocation-free.
+Selection uses the same `ListState` as `ListView`.
+
+```csharp
+static readonly TableColumn[] Columns =
+[
+    new("name", Constraint.Fill()),
+    new("size", Constraint.Length(10), Alignment.Right),
+    new("state", Constraint.Length(7), Alignment.Center),
+];
+
+readonly struct Files(FileInfo[] files) : ITableSource
+{
+    public int RowCount => files.Length;
+
+    public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
+    {
+        style = default;
+        switch (column)
+        {
+            case 0:
+                return files[row].Name;
+            case 1:
+                files[row].Length.TryFormat(scratch, out int n);
+                return scratch[..n];
+            default:
+                style = new Style(files[row].IsReadOnly ? Color.Yellow : Color.Green, default);
+                return files[row].IsReadOnly ? "ro" : "rw";
+        }
+    }
+}
+
+frame.Render(new Table<Files>(new Files(files), Columns)
+{
+    HeaderStyle = new Style(Color.BrightBlack, default, Attr.Bold),
+    HeaderSeparator = true,                 // ─── under the header
+    ColumnSeparator = '│',                  // drawn in the gap, joined with ┼ on the rule
+    AlternateRowStyle = new Style(default, Color.Hex(0x111722)),   // zebra stripes
+    SortColumn = 1, SortDescending = true,  // ▼ on "size"; the sorting itself is yours
+    SelectedStyle = new Style(default, Color.Hex(0x1C2433), Attr.Bold),
+    HighlightSymbol = "▌",
+}, area, ref state);
+```
+
+`Table.Measure(source, column, header)` returns the widest cell in a column. Call it when the data
+changes and cache the result as `Constraint.Length(width)` to size a column to its content. For rows
+of strings, use the built-in `TextRows` source: `new Table<TextRows>(new TextRows(rows), columns)`.
+
 ### Forms
 
 Interactive widgets keep their state in objects you own, so focus is just an `int` in your app.
@@ -328,6 +382,7 @@ switch (ev.Kind)
 | `FocusEvents` | off | `FocusGained` / `FocusLost` |
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
+| `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
 
@@ -403,6 +458,7 @@ public void Key_in_frame_out()
 | `Block` | | Borders (plain, rounded, double, thick, dashed), title and footer with alignment, background, `Inner(area)` |
 | `Paragraph` | | Multi-line text with word/char wrapping, alignment and scroll; `LineCount` for scrollbars |
 | `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol |
+| `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow |
 | `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor |
 | `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
@@ -420,7 +476,9 @@ public void Key_in_frame_out()
 | Frame with no changes | 4.5 µs | 0 |
 | One cell changed | 4.7 µs | 59 |
 | Full repaint, a different truecolor style on every row | 34 µs | 13.3 KB |
-| App frame: layout + block + 5,000-item list + diff + write | 20 µs | 457 |
+| Scroll by one row, every row different | 7.7 µs | 271 |
+| App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 485 |
+| App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 22 µs | 497 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 
@@ -468,7 +526,7 @@ with no trim or AOT warnings.
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Paragraph, ListView, TextInput, Dropdown, Checkbox, Button, ProgressBar
+  Widgets/                       Block, Paragraph, ListView, Table, TextInput, Dropdown, Checkbox, Button, ProgressBar
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty

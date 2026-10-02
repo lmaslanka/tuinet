@@ -162,23 +162,11 @@ public readonly ref struct Block : IWidget
         buffer.SetString(x, y, text, style, end - x);
     }
 
-    private static void HLine(CellBuffer buffer, int x0, int x1, int y, char c, Style style)
-    {
-        var rune = new Rune(c);
-        for (int x = x0; x <= x1; x++)
-        {
-            buffer.SetRune(x, y, rune, style);
-        }
-    }
+    private static void HLine(CellBuffer buffer, int x0, int x1, int y, char c, Style style) =>
+        buffer.SetRune(new Rect(x0, y, x1 - x0 + 1, 1), new Rune(c), style);
 
-    private static void VLine(CellBuffer buffer, int x, int y0, int y1, char c, Style style)
-    {
-        var rune = new Rune(c);
-        for (int y = y0; y <= y1; y++)
-        {
-            buffer.SetRune(x, y, rune, style);
-        }
-    }
+    private static void VLine(CellBuffer buffer, int x, int y0, int y1, char c, Style style) =>
+        buffer.SetRune(new Rect(x, y0, 1, y1 - y0 + 1), new Rune(c), style);
 }
 
 /// <summary>Blanks an area with a style. Render it first to draw a popup over existing content.</summary>

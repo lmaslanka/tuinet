@@ -6,6 +6,12 @@ namespace Tuinet.Tests;
 public class AllocationTests
 {
     private static readonly string[] Items = [.. Enumerable.Range(0, 200).Select(i => $"item {i}")];
+    private static readonly TableColumn[] Columns =
+    [
+        new("name", Constraint.Fill()),
+        new("size", Constraint.Length(8), Alignment.Right),
+        new("state", Constraint.Length(6), Alignment.Center),
+    ];
 
     [Fact]
     public void Frame_with_widgets_allocates_nothing()
@@ -13,17 +19,18 @@ public class AllocationTests
         var tty = new NullTty(120, 40);
         using var terminal = new Terminal(tty);
         var list = new ListState();
+        var table = new ListState();
         var input = new TextInputState("hello");
 
         for (int i = 0; i < 50; i++)
         {
-            Frame(terminal, i, ref list, input);
+            Frame(terminal, i, ref list, ref table, input);
         }
 
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 1000; i++)
         {
-            Frame(terminal, i, ref list, input);
+            Frame(terminal, i, ref list, ref table, input);
         }
 
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
@@ -56,7 +63,7 @@ public class AllocationTests
         Assert.Equal(10_000, keys);
     }
 
-    private static void Frame(Terminal terminal, int tick, ref ListState list, TextInputState input)
+    private static void Frame(Terminal terminal, int tick, ref ListState list, ref ListState table, TextInputState input)
     {
         CellBuffer frame = terminal.BeginFrame();
         Span<Rect> rows = stackalloc Rect[3];
@@ -66,13 +73,48 @@ public class AllocationTests
         frame.Render(header, rows[0]);
         frame.Render(new TextInput { Focused = true }, header.Inner(rows[0]), ref input);
 
+        Span<Rect> panes = stackalloc Rect[2];
+        Layout.Horizontal(rows[1], [Constraint.Fill(), Constraint.Fill()], panes);
         list.Selected = tick % Items.Length;
-        frame.Render(new ListView<TextItems>(new TextItems(Items)) { SelectedStyle = new Style(Color.Black, Color.White) }, rows[1], ref list);
+        frame.Render(new ListView<TextItems>(new TextItems(Items)) { SelectedStyle = new Style(Color.Black, Color.White) }, panes[0], ref list);
+        table.Selected = tick % Items.Length;
+        frame.Render(new Table<Files>(new Files(Items), Columns)
+        {
+            HeaderStyle = new Style(Color.Default, Color.Default, Attr.Bold),
+            HeaderSeparator = true,
+            ColumnSeparator = '│',
+            AlternateRowStyle = new Style(Color.Default, Color.Rgb(20, 20, 20)),
+            SelectedStyle = new Style(Color.Black, Color.White),
+            HighlightSymbol = "> ",
+            SortColumn = 1,
+        }, panes[1], ref table);
 
         Span<char> status = stackalloc char[32];
         tick.TryFormat(status, out int written);
         frame.SetString(0, rows[2].Y, status[..written], new Style(Color.Rgb(200, 210, (byte)tick), Color.Default));
         terminal.Present();
+    }
+
+    /// <summary>A name column straight from the array plus a size formatted into scratch.</summary>
+    private readonly struct Files(string[] names) : ITableSource
+    {
+        public int RowCount => names.Length;
+
+        public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
+        {
+            style = default;
+            switch (column)
+            {
+                case 0:
+                    return names[row];
+                case 1:
+                    (row * 1024).TryFormat(scratch, out int written);
+                    return scratch[..written];
+                default:
+                    style = new Style(row % 3 == 0 ? Color.Red : Color.Green, Color.Default);
+                    return row % 3 == 0 ? "dirty" : "ok";
+            }
+        }
     }
 
     private sealed class NullTty(int width, int height) : ITty

@@ -352,4 +352,158 @@ public class InputWidgetTests
         buffer.Render(new Block { BorderType = BorderType.Dashed }, buffer.Area);
         Assert.Equal("╭┄┄┄╮\n┆   ┆\n╰┄┄┄╯", buffer.ToString());
     }
+
+    [Fact]
+    public void Table_aligns_header_and_cells_per_column()
+    {
+        TableColumn[] columns =
+        [
+            new("name", Constraint.Length(6)),
+            new("qty", Constraint.Length(5), Alignment.Right),
+            new("st", Constraint.Length(4), Alignment.Center),
+        ];
+        string[][] rows = [["apple", "3", "ok"], ["fig", "120", "bad"]];
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(17, 3);
+
+        buffer.Render(new Table<TextRows>(new TextRows(rows), columns), buffer.Area, ref state);
+
+        Assert.Equal("name     qty  st ", buffer.RowText(0));
+        Assert.Equal("apple      3  ok ", buffer.RowText(1));
+        Assert.Equal("fig      120 bad ", buffer.RowText(2));
+    }
+
+    [Fact]
+    public void Table_cells_wider_than_the_column_are_cut()
+    {
+        TableColumn[] columns =
+        [
+            new("n", Constraint.Length(4), Alignment.Right),
+            new("s", Constraint.Length(4), Alignment.Left, Overflow.Clip),
+        ];
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(9, 2);
+
+        buffer.Render(new Table<TextRows>(new TextRows([["123456", "abcdef"]]), columns), buffer.Area, ref state);
+
+        Assert.Equal("   n s   ", buffer.RowText(0));
+        Assert.Equal("123… abcd", buffer.RowText(1));
+    }
+
+    [Fact]
+    public void Table_scrolls_under_a_fixed_header_and_highlights_the_selection()
+    {
+        string[][] rows = [["r0"], ["r1"], ["r2"], ["r3"], ["r4"]];
+        var highlight = new Style(Color.Black, Color.White);
+        var state = new ListState(selected: 3);
+        var buffer = new CellBuffer(6, 3);
+
+        buffer.Render(new Table<TextRows>(new TextRows(rows), [new TableColumn("id", Constraint.Fill())])
+        {
+            SelectedStyle = highlight,
+            HighlightSymbol = "> ",
+        }, buffer.Area, ref state);
+
+        Assert.Equal(2, state.Offset);
+        Assert.Equal(2, state.Viewport);
+        Assert.Equal("  id  \n  r2  \n> r3  ", buffer.ToString());
+        Assert.Equal(highlight, buffer[5, 2].Style);
+        Assert.Equal(Style.Default, buffer[5, 1].Style);
+    }
+
+    [Fact]
+    public void Table_draws_separators_header_rule_and_stripes()
+    {
+        TableColumn[] columns = [new("a", Constraint.Length(2)), new("b", Constraint.Length(2))];
+        var stripe = new Style(Color.Default, Color.Blue);
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(5, 4);
+
+        buffer.Render(new Table<TextRows>(new TextRows([["x", "y"], ["z", "w"]]), columns)
+        {
+            ColumnSeparator = '│',
+            HeaderSeparator = true,
+            AlternateRowStyle = stripe,
+        }, buffer.Area, ref state);
+
+        Assert.Equal("a │b \n──┼──\nx │y \nz │w ", buffer.ToString());
+        Assert.Equal(Color.Default, buffer[0, 2].Style.Bg);
+        Assert.Equal(Color.Blue, buffer[0, 3].Style.Bg);
+        Assert.Equal(Color.Blue, buffer[2, 3].Style.Bg);   // the separator keeps the stripe
+    }
+
+    [Fact]
+    public void Table_sort_arrow_sits_on_the_far_side_of_the_alignment()
+    {
+        TableColumn[] columns = [new("name", Constraint.Length(8)), new("size", Constraint.Length(8), Alignment.Right)];
+        var state = new ListState(-1);
+        var ascending = new CellBuffer(17, 1);
+        var descending = new CellBuffer(17, 1);
+
+        ascending.Render(new Table<TextRows>(new TextRows([]), columns) { SortColumn = 0 }, ascending.Area, ref state);
+        descending.Render(new Table<TextRows>(new TextRows([]), columns) { SortColumn = 1, SortDescending = true }, descending.Area, ref state);
+
+        Assert.Equal("name ▲  " + " " + "    size", ascending.RowText(0));
+        Assert.Equal("name    " + " " + "  ▼ size", descending.RowText(0));
+    }
+
+    [Fact]
+    public void Table_right_aligns_wide_text_by_display_width()
+    {
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(6, 2);
+        buffer.Render(new Table<TextRows>(new TextRows([["日本"]]), [new TableColumn("w", Constraint.Length(6), Alignment.Right)]), buffer.Area, ref state);
+        Assert.Equal("     w", buffer.RowText(0));
+        Assert.Equal("  日本", buffer.RowText(1));
+        Assert.Equal(2, buffer[2, 1].Width);
+    }
+
+    [Fact]
+    public void Table_cells_can_be_formatted_into_scratch_with_their_own_style()
+    {
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(5, 3);
+        buffer.Render(new Table<Numbers>(new Numbers([42, -7]), [new TableColumn("n", Constraint.Fill(), Alignment.Right)]), buffer.Area, ref state);
+        Assert.Equal("   42", buffer.RowText(1));
+        Assert.Equal("   -7", buffer.RowText(2));
+        Assert.Equal(Color.Default, buffer[4, 1].Style.Fg);
+        Assert.Equal(Color.Red, buffer[4, 2].Style.Fg);
+    }
+
+    [Fact]
+    public void Table_measure_returns_the_widest_cell_or_header()
+    {
+        var rows = new TextRows([["a"], ["abcd"], ["ab"]]);
+        Assert.Equal(4, Table.Measure(rows, 0, "id"));
+        Assert.Equal(6, Table.Measure(rows, 0, "header"));
+        Assert.Equal(1, Table.Measure(rows, 0, maxRows: 1));
+        Assert.Equal(3, Table.Measure(new Numbers([5, -12]), 0));
+    }
+
+    [Fact]
+    public void Table_handles_no_rows_no_columns_and_no_space()
+    {
+        var state = new ListState(0);
+        var buffer = new CellBuffer(4, 2);
+        buffer.Render(new Table<TextRows>(new TextRows([]), [new TableColumn("id", Constraint.Fill())]), buffer.Area, ref state);
+        Assert.Equal("id  \n    ", buffer.ToString());
+        Assert.Equal(-1, state.Selected);
+
+        buffer.Render(new Table<TextRows>(new TextRows([["x"]]), []), buffer.Area, ref state);
+        buffer.Render(new Table<TextRows>(new TextRows([["x"]]), [new TableColumn("id", Constraint.Fill())]), new Rect(0, 0, 4, 0), ref state);
+        buffer.Render(new Table<TextRows>(new TextRows([["x"]]), [new TableColumn("id", Constraint.Fill())]) { HighlightSymbol = "> " }, new Rect(0, 0, 1, 2), ref state);
+    }
+
+    private readonly struct Numbers(int[] values) : ITableSource
+    {
+        public int RowCount => values.Length;
+
+        public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
+        {
+            int value = values[row];
+            style = value < 0 ? new Style(Color.Red, Color.Default) : default;
+            value.TryFormat(scratch, out int written);
+            return scratch[..written];
+        }
+    }
 }
