@@ -4,7 +4,7 @@
 
 **Immediate-mode terminal UIs for .NET, built for speed.**
 
-Redraw everything every frame and let tuinet send only what changed.<br>
+Redraw everything every frame and let TUI.NET send only what changed.<br>
 Zero allocations per frame · one `write` per frame · Native AOT
 
 [![CI](https://github.com/lmaslanka/tuinet/actions/workflows/ci.yml/badge.svg)](https://github.com/lmaslanka/tuinet/actions/workflows/ci.yml)
@@ -13,7 +13,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 ![Allocations](https://img.shields.io/badge/allocations-0_B%2Fframe-38BDF8)
 ![License](https://img.shields.io/badge/license-Apache--2.0-F5A623)
 
-<img src="docs/images/showcase-main.png" width="860" alt="tuinet showcase: a themed list with a details panel">
+<img src="docs/images/showcase-main.png" width="860" alt="TUI.NET showcase: a themed list with a details panel">
 
 </div>
 
@@ -21,7 +21,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 
 ## ✨ Highlights
 
-- **Immediate mode.** There is no widget tree to keep in sync. Each frame, your app draws its state into a cell buffer. Tuinet diffs that buffer against the screen and writes the difference.
+- **Immediate mode.** There is no widget tree to keep in sync. Each frame, your app draws its state into a cell buffer. TUI.NET diffs that buffer against the screen and writes the difference.
 - **Fast by design.**
   - Unchanged rows are skipped with a vectorized memcmp.
   - Gaps inside a row are jumped with relative cursor moves.
@@ -57,7 +57,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 
 **Requirements:** the .NET 10 SDK and a terminal with VT support. That covers essentially every modern terminal on Linux and macOS, plus Windows Terminal and conhost on Windows 10+.
 
-Tuinet isn't on NuGet yet. Reference the project directly, or pack it locally:
+TUI.NET isn't on NuGet yet. Reference the project directly, or pack it locally (the package and namespace are `Tuinet`):
 
 ```sh
 git clone https://github.com/lmaslanka/tuinet.git
@@ -178,7 +178,7 @@ frame.SetString(x + 1, area.Y, "· 14/14", new Style(Color.BrightBlack, default,
 `SetString` returns the column after the text it wrote, so styled segments chain naturally. Text is
 clipped to the buffer, or to `maxWidth`, optionally ending in `…` (`Overflow.Ellipsis`).
 
-Tuinet detects the terminal's color depth from `COLORTERM`, `TERM`, `TERM_PROGRAM`, `WT_SESSION` and
+TUI.NET detects the terminal's color depth from `COLORTERM`, `TERM`, `TERM_PROGRAM`, `WT_SESSION` and
 `NO_COLOR`. It maps RGB down to 256 or 16 colors as needed, so a truecolor theme still looks right
 on a basic terminal.
 
@@ -229,7 +229,7 @@ There's no focus manager to fight.
 
 ```csharp
 // state, kept across frames
-var name = new TextInputState("tuinet");
+var name = new TextInputState("TUI.NET");
 var priority = new DropdownState(selected: 1);
 string[] priorities = ["low", "medium", "high"];
 bool notify = true;
