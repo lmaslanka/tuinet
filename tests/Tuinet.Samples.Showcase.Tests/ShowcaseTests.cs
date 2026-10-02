@@ -12,7 +12,8 @@ public class ShowcaseTests
         string screen = Render(app).ToString();
         Assert.Equal(20, app.Items.Count);
         Assert.Contains("ITEMS · 20", screen);
-        Assert.Contains("01  parse & validate intent", screen);
+        Assert.Contains("▲ #  name", screen);
+        Assert.Contains("01  parse & validate inte…  feature  ▲ low", screen);
         Assert.Contains("20  telemetry export", screen);
         Assert.Contains("SELECTED · 01", screen);
     }
@@ -184,6 +185,17 @@ public class ShowcaseTests
         Assert.False(app.IsAnimating(60_000));
         app.Handle(Event.FromChar('r'), 60_000);
         Assert.True(app.IsAnimating(60_001));
+    }
+
+    [Fact]
+    public void Narrow_screen_drops_whole_columns_instead_of_squeezing_them()
+    {
+        var buffer = new CellBuffer(80, 24);
+        new ShowcaseApp().Render(buffer, nowMs: 0);
+        string screen = buffer.ToString();
+        Assert.Contains("01  parse & valida…  feature", screen);
+        Assert.DoesNotContain("priority", screen);
+        Assert.DoesNotContain("fea…", screen);
     }
 
     [Fact]

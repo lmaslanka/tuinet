@@ -13,6 +13,8 @@ if (args is ["bytes"])
     frame.Setup();
     frame.ListScroll();
     Console.WriteLine($"list scroll frame    {frame.ListScroll(),7} bytes");
+    frame.TableScroll();
+    Console.WriteLine($"table scroll frame   {frame.TableScroll(),7} bytes");
     frame.Cleanup();
     return;
 }

@@ -152,6 +152,11 @@ public sealed class CellBuffer
     /// <summary>Layer <paramref name="style"/> over every cell in <paramref name="area"/>, keeping glyphs.</summary>
     public void SetStyle(Rect area, Style style)
     {
+        if (style == default)
+        {
+            return;   // patching with the default style changes nothing
+        }
+
         Rect r = area.Intersect(Area);
         for (int y = r.Y; y < r.Bottom; y++)
         {
