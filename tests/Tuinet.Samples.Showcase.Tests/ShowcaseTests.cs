@@ -18,6 +18,15 @@ public class ShowcaseTests
     }
 
     [Fact]
+    public void Shows_the_title()   // the README's testing example, kept honest
+    {
+        var buffer = new CellBuffer(80, 24);
+        new ShowcaseApp().Render(buffer, nowMs: 0);
+        Assert.Contains("ITEMS · 20", buffer.ToString());
+        Assert.Equal(Color.Hex(0xF5A623), buffer[2, 4].Style.Fg);   // the list's amber border
+    }
+
+    [Fact]
     public void J_and_k_move_the_selection()
     {
         var app = new ShowcaseApp();
