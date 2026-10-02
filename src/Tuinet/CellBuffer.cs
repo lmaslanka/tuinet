@@ -1,5 +1,6 @@
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Runtime.Intrinsics;
 using System.Text;
 
 namespace Tuinet;
@@ -17,7 +18,7 @@ public enum Overflow
 /// A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
 /// consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.
 /// <para>
-/// Text writes (<see cref="SetString"/>, <see cref="SetRune"/>) layer: a default foreground or
+/// Text writes (<see cref="SetString"/>, <see cref="SetRune(int, int, Rune, Style)"/>) layer: a default foreground or
 /// background in the style keeps the color already in the cell, so text drawn on a filled panel
 /// keeps the panel's background. Attributes are replaced. <see cref="Fill(Rect, Style)"/> and
 /// <see cref="SetCell"/> replace whole cells.
@@ -157,16 +158,90 @@ public sealed class CellBuffer
             return;   // patching with the default style changes nothing
         }
 
+        // Style.Patch on a 16-byte cell is (cell & keep) | set: one 128-bit op per cell. Non-default
+        // colors replace their bytes; attributes are OR-ed in; glyph, width and flags are kept.
+        Vector128<byte> keep = Vector128<byte>.AllBitsSet;
+        if (!style.Fg.IsDefault)
+        {
+            keep &= ~FgBytes;
+        }
+
+        if (!style.Bg.IsDefault)
+        {
+            keep &= ~BgBytes;
+        }
+
+        var set = Unsafe.BitCast<Cell, Vector128<byte>>(new Cell(default, style, 0, CellFlags.None));
         Rect r = area.Intersect(Area);
         for (int y = r.Y; y < r.Bottom; y++)
         {
-            Span<Cell> row = RowSpan(y).Slice(r.X, r.Width);
+            Span<Vector128<byte>> row = MemoryMarshal.Cast<Cell, Vector128<byte>>(RowSpan(y).Slice(r.X, r.Width));
             for (int i = 0; i < row.Length; i++)
             {
-                row[i] = row[i].WithStyle(row[i].Style.Patch(style));
+                row[i] = (row[i] & keep) | set;
             }
         }
     }
+
+    /// <summary>
+    /// Fill <paramref name="area"/> with <paramref name="rune"/> (borders, rules, separators). Layers like
+    /// <see cref="SetRune(int, int, Rune, Style)"/>: default colors keep the colors already there,
+    /// attributes are replaced. Zero-width runes draw nothing; wide runes fill pairs of columns.
+    /// </summary>
+    public void SetRune(Rect area, Rune rune, Style style = default)
+    {
+        int width = UnicodeWidth.Of(rune.Value);
+        Rect r = area.Intersect(Area);
+        if (width == 0 || r.IsEmpty)
+        {
+            return;
+        }
+
+        if (width == 2)
+        {
+            for (int y = r.Y; y < r.Bottom; y++)
+            {
+                for (int x = r.X; x + 2 <= r.Right; x += 2)
+                {
+                    SetRune(x, y, rune, style);
+                }
+            }
+
+            return;
+        }
+
+        // The new cell is (under & keep) | set: default colors keep the bytes underneath.
+        Vector128<byte> keep = Vector128<byte>.Zero;
+        if (style.Fg.IsDefault)
+        {
+            keep |= FgBytes;
+        }
+
+        if (style.Bg.IsDefault)
+        {
+            keep |= BgBytes;
+        }
+
+        var set = Unsafe.BitCast<Cell, Vector128<byte>>(new Cell(rune, style, 1, CellFlags.None));
+        for (int y = r.Y; y < r.Bottom; y++)
+        {
+            Span<Cell> row = RowSpan(y);
+            FixLeft(row, r.X);
+            Span<Vector128<byte>> cells = MemoryMarshal.Cast<Cell, Vector128<byte>>(row.Slice(r.X, r.Width));
+            for (int i = 0; i < cells.Length; i++)
+            {
+                cells[i] = (cells[i] & keep) | set;
+            }
+
+            FixRight(row, r.Right);
+        }
+    }
+
+    /// <summary>Bytes 4-7 of a cell: the foreground color.</summary>
+    private static readonly Vector128<byte> FgBytes = Vector128.Create(0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, (byte)0);
+
+    /// <summary>Bytes 8-11 of a cell: the background color.</summary>
+    private static readonly Vector128<byte> BgBytes = Vector128.Create(0, 0, 0, 0, 0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, (byte)0);
 
     /// <summary>Place one glyph. Returns the columns written: 0 if it does not fit or is zero-width.</summary>
     public int SetRune(int x, int y, Rune rune, Style style = default)
@@ -212,7 +287,8 @@ public sealed class CellBuffer
         }
 
         Span<Cell> row = RowSpan(y);
-        if (overflow == Overflow.Ellipsis && TextWidth.Of(text) > limit - x)
+        // A UTF-16 char is at most two columns, so short text can skip measuring.
+        if (overflow == Overflow.Ellipsis && 2 * text.Length > limit - x && TextWidth.Of(text) > limit - x)
         {
             int end = Write(row, x, limit - 1, text, style);
             return Write(row, end, limit, "…", style);

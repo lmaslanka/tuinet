@@ -140,15 +140,12 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
         // Scoped to match the stack scratch, so the source may return a slice of it.
         scoped TSource source = _source;
         Span<char> scratch = stackalloc char[Table.ScratchLength];
-        for (int line = headerRows; line < area.Height; line++)
+        int top = area.Y + headerRows;
+        int rows = Math.Clamp(count - state.Offset, 0, Math.Max(0, area.Height - headerRows));
+        for (int line = 0; line < rows; line++)
         {
-            int index = state.Offset + line - headerRows;
-            if (index >= count)
-            {
-                break;
-            }
-
-            int y = area.Y + line;
+            int index = state.Offset + line;
+            int y = top + line;
             var row = new Rect(area.X, y, area.Width, 1);
             buffer.SetStyle(row, Style);
             if ((index & 1) == 1)
@@ -161,15 +158,18 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
                 ReadOnlySpan<char> text = source.Cell(index, i, scratch, out Style style);
                 DrawAligned(buffer, cells[i].X, y, cells[i].Width, text, style, _columns[i].Alignment, _columns[i].Overflow);
             }
+        }
 
-            RenderSeparators(buffer, area, y, cells, ColumnSeparator);
-            if (index == state.Selected)
+        // Separators run down the whole body at once, then the selection is layered over its row.
+        RenderSeparators(buffer, area, new Rect(area.X, top, area.Width, rows), cells, ColumnSeparator);
+        int selected = state.Selected - state.Offset;
+        if (selected >= 0 && selected < rows)
+        {
+            var row = new Rect(area.X, top + selected, area.Width, 1);
+            buffer.SetStyle(row, SelectedStyle);
+            if (indent > 0)
             {
-                buffer.SetStyle(row, SelectedStyle);
-                if (indent > 0)
-                {
-                    buffer.SetString(row.X, y, HighlightSymbol, SelectedStyle.Patch(HighlightSymbolStyle), row.Width);
-                }
+                buffer.SetString(row.X, row.Y, HighlightSymbol, SelectedStyle.Patch(HighlightSymbolStyle), row.Width);
             }
         }
     }
@@ -199,24 +199,20 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
             buffer.SetRune(arrowX, y, new Rune(SortDescending ? '▼' : '▲'), HeaderStyle);
         }
 
-        RenderSeparators(buffer, area, y, cells, ColumnSeparator);
+        RenderSeparators(buffer, area, new Rect(area.X, y, area.Width, 1), cells, ColumnSeparator);
     }
 
     private void RenderRule(CellBuffer buffer, Rect area, ReadOnlySpan<Rect> cells)
     {
-        int y = area.Y + 1;
-        var rule = new Rune('─');
-        for (int x = area.X; x < area.Right; x++)
-        {
-            buffer.SetRune(x, y, rule, SeparatorStyle);
-        }
-
-        RenderSeparators(buffer, area, y, cells, ColumnSeparator == '\0' ? '\0' : '┼');
+        var rule = new Rect(area.X, area.Y + 1, area.Width, 1);
+        buffer.SetRune(rule, new Rune('─'), SeparatorStyle);
+        RenderSeparators(buffer, area, rule, cells, ColumnSeparator == '\0' ? '\0' : '┼');
     }
 
-    private void RenderSeparators(CellBuffer buffer, Rect area, int y, ReadOnlySpan<Rect> cells, char separator)
+    /// <summary>Draw <paramref name="separator"/> in each column gap over the rows of <paramref name="band"/>.</summary>
+    private void RenderSeparators(CellBuffer buffer, Rect area, Rect band, ReadOnlySpan<Rect> cells, char separator)
     {
-        if (separator == '\0' || ColumnSpacing < 1)
+        if (separator == '\0' || ColumnSpacing < 1 || band.Height <= 0)
         {
             return;
         }
@@ -230,7 +226,7 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
                 break;
             }
 
-            buffer.SetRune(x, y, rune, SeparatorStyle);
+            buffer.SetRune(new Rect(x, band.Y, 1, band.Height), rune, SeparatorStyle);
         }
     }
 
@@ -242,8 +238,16 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
             return;
         }
 
-        int offset = alignment == Alignment.Left ? 0 : Offset(width, TextWidth.Of(text), alignment);
-        buffer.SetString(x + offset, y, text, style, width - offset, overflow);
+        if (alignment == Alignment.Left)
+        {
+            buffer.SetString(x, y, text, style, width, overflow);
+            return;
+        }
+
+        // Measured already: text that fits needs no second measurement for the ellipsis check.
+        int textWidth = TextWidth.Of(text);
+        int offset = Offset(width, textWidth, alignment);
+        buffer.SetString(x + offset, y, text, style, width - offset, textWidth <= width ? Overflow.Clip : overflow);
     }
 
     /// <summary>Columns to skip so <paramref name="used"/> sits at <paramref name="alignment"/> in <paramref name="width"/>.</summary>

@@ -25,16 +25,21 @@ public class RendererFuzzTests
     private static readonly string[] Words = ["a", "bc", "the quick", "你好", "x你y", "🚀!", "──", "é", "z"];
 
     [Theory]
-    [InlineData(1)]
-    [InlineData(2)]
-    [InlineData(3)]
-    [InlineData(4)]
-    [InlineData(5)]
-    public void Screen_matches_every_frame(int seed)
+    [InlineData(1, true)]
+    [InlineData(2, true)]
+    [InlineData(3, true)]
+    [InlineData(4, true)]
+    [InlineData(5, true)]
+    [InlineData(6, true)]
+    [InlineData(7, true)]
+    [InlineData(8, true)]
+    [InlineData(1, false)]
+    [InlineData(2, false)]
+    public void Screen_matches_every_frame(int seed, bool scrollRegions)
     {
         var random = new Random(seed);
         var tty = new TestTty(23, 7);
-        using var terminal = new Terminal(tty);
+        using var terminal = new Terminal(tty, new TerminalOptions { ScrollRegions = scrollRegions });
         var screen = new Emulator(23, 7);
         screen.Feed(tty.Written);
         var model = new CellBuffer(23, 7);
@@ -43,6 +48,12 @@ public class RendererFuzzTests
         {
             // Mutate a persistent model a little (sparse changes), sometimes a lot.
             int edits = random.Next(10) == 0 ? 40 : random.Next(1, 6);
+            if (random.Next(3) == 0)
+            {
+                Shift(model, random);
+                edits = random.Next(3);   // a scrolled band, plus a few unrelated changes
+            }
+
             for (int i = 0; i < edits; i++)
             {
                 Mutate(model, random);
@@ -64,6 +75,52 @@ public class RendererFuzzTests
             screen.Feed(tty.Written);
             screen.AssertMatches(buffer, $"seed {seed} frame {frame}");
         }
+
+        // The band shifts above must have gone through the scroll path (and never without it).
+        Assert.True(scrollRegions ? screen.LineMoves > 0 : screen.LineMoves == 0, $"{screen.LineMoves} IL/DL");
+    }
+
+    [Theory]
+    [InlineData(11)]
+    [InlineData(12)]
+    [InlineData(13)]
+    [InlineData(14)]
+    public void Screen_matches_while_bands_scroll(int seed)
+    {
+        var random = new Random(seed);
+        var tty = new TestTty(30, 16);
+        using var terminal = new Terminal(tty);
+        var screen = new Emulator(30, 16);
+        screen.Feed(tty.Written);
+        var model = new CellBuffer(30, 16);
+        for (int i = 0; i < 200; i++)
+        {
+            Mutate(model, random);
+        }
+
+        for (int frame = 0; frame < 300; frame++)
+        {
+            Shift(model, random);
+            for (int i = random.Next(3); i > 0; i--)
+            {
+                Mutate(model, random);
+            }
+
+            // Paint the pen into a non-default background now and then, so a scroll must reset it first.
+            if (random.Next(4) == 0)
+            {
+                model.SetString(random.Next(30), random.Next(16), "#", new Style(Color.Red, Color.Blue));
+            }
+
+            CellBuffer buffer = terminal.BeginFrame();
+            Copy(model, buffer);
+            tty.ClearWritten();
+            terminal.Present();
+            screen.Feed(tty.Written);
+            screen.AssertMatches(buffer, $"seed {seed} frame {frame}");
+        }
+
+        Assert.True(screen.LineMoves > 50, $"{screen.LineMoves} IL/DL");
     }
 
     [Fact]
@@ -111,6 +168,38 @@ public class RendererFuzzTests
         }
     }
 
+    /// <summary>Scroll a band of rows by ±k (whole width, or sometimes not), filling the vacated rows.</summary>
+    private static void Shift(CellBuffer buffer, Random random)
+    {
+        int top = random.Next(buffer.Height - 1);
+        int bottom = random.Next(top + 1, buffer.Height);
+        int k = random.Next(1, bottom - top + 1) * (random.Next(2) == 0 ? 1 : -1);
+        bool partial = random.Next(5) == 0;
+        int width = partial ? random.Next(1, buffer.Width) : buffer.Width;
+        Span<Cell> cells = buffer.Cells;
+        var copy = cells.ToArray();
+        for (int y = top; y <= bottom; y++)
+        {
+            int from = y + k;
+            Span<Cell> row = cells.Slice(y * buffer.Width, width);
+            if (from >= top && from <= bottom)
+            {
+                copy.AsSpan(from * buffer.Width, width).CopyTo(row);
+            }
+            else
+            {
+                row.Fill(Cell.Blank(Styles[random.Next(Styles.Length)]));
+                buffer.SetString(random.Next(buffer.Width), y, Words[random.Next(Words.Length)], Styles[random.Next(Styles.Length)]);
+            }
+
+            // A partial-width copy can cut a wide glyph in half: repair the edge like a real write would.
+            if (partial && cells[y * buffer.Width + width - 1].Width == 2 || partial && width < buffer.Width && cells[y * buffer.Width + width].IsContinuation)
+            {
+                buffer.Fill(new Rect(width - 1, y, 2, 1), Style.Default);
+            }
+        }
+    }
+
     private static void Copy(CellBuffer from, CellBuffer to)
     {
         for (int y = 0; y < from.Height; y++)
@@ -139,14 +228,21 @@ public class RendererFuzzTests
         private int _h = height;
         private int _x;
         private int _y;
+        private int _top;
+        private int _bottom = height - 1;
         private Style _pen;
         private bool _cursorVisible;
+
+        /// <summary>IL/DL sequences replayed so far.</summary>
+        public int LineMoves { get; private set; }
 
         public void Resize(int w, int h)
         {
             _w = w;
             _h = h;
             _grid = Blank(w, h);
+            _top = 0;
+            _bottom = h - 1;
         }
 
         public void Feed(byte[] bytes)
@@ -179,6 +275,7 @@ public class RendererFuzzTests
 
                 if (c == '\n')
                 {
+                    Assert.True(_y != _bottom, "LF at the bottom margin scrolled the screen");
                     _y++;
                     Assert.True(_y < _h, "LF scrolled the screen");
                     i++;
@@ -286,6 +383,37 @@ public class RendererFuzzTests
                 case 'm':
                     Sgr(param);
                     break;
+                case 'r':
+                    // DECSTBM: set the scroll margins (none: the whole screen) and home the cursor.
+                    string[] margins = param.Split(';');
+                    _top = param.Length > 0 ? int.Parse(margins[0]) - 1 : 0;
+                    _bottom = param.Length > 0 ? int.Parse(margins[1]) - 1 : _h - 1;
+                    Assert.True(_top < _bottom && _bottom < _h, $"bad margins {param}");
+                    _x = 0;
+                    _y = 0;
+                    break;
+                case 'L' or 'M':
+                    // IL / DL: insert or delete lines at the cursor row, inside the margins; new lines
+                    // take the current background (BCE). The cursor goes to the left column.
+                    Assert.True(_y >= _top && _y <= _bottom, $"IL/DL outside the margins at row {_y}");
+                    int n = param.Length > 0 ? int.Parse(param) : 1;
+                    LineMoves++;
+                    for (int i = 0; i < n; i++)
+                    {
+                        if (final == 'M')
+                        {
+                            MoveRows(_y + 1, _bottom, -1);
+                            BlankRow(_bottom);
+                        }
+                        else
+                        {
+                            MoveRows(_y, _bottom - 1, +1);
+                            BlankRow(_y);
+                        }
+                    }
+
+                    _x = 0;
+                    break;
                 case 'h' or 'l':
                     if (param == "?25")
                     {
@@ -345,6 +473,39 @@ public class RendererFuzzTests
             }
 
             _pen = new Style(fg, bg, attrs);
+        }
+
+        /// <summary>Move rows [from, to] by <paramref name="delta"/> (-1 up, +1 down).</summary>
+        private void MoveRows(int from, int to, int delta)
+        {
+            if (delta < 0)
+            {
+                for (int y = from; y <= to; y++)
+                {
+                    for (int x = 0; x < _w; x++)
+                    {
+                        _grid[x, y - 1] = _grid[x, y];
+                    }
+                }
+            }
+            else
+            {
+                for (int y = to; y >= from; y--)
+                {
+                    for (int x = 0; x < _w; x++)
+                    {
+                        _grid[x, y + 1] = _grid[x, y];
+                    }
+                }
+            }
+        }
+
+        private void BlankRow(int y)
+        {
+            for (int x = 0; x < _w; x++)
+            {
+                _grid[x, y] = (new Rune(' '), new Style(default, _pen.Bg), false);
+            }
         }
 
         private static (Rune, Style, bool)[,] Blank(int w, int h, Color bg = default)

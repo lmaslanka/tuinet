@@ -8,6 +8,8 @@ namespace Tuinet;
 /// Diffs two cell buffers into VT bytes. Tracks the terminal's cursor and SGR state so it emits
 /// only what changed: clean rows are skipped with a vectorized memcmp, gaps inside a row are
 /// jumped (CUF) or re-emitted (whichever is fewer bytes), and style changes are SGR deltas.
+/// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
+/// (scroll margins + delete/insert line) and only the rows that are really new get painted.
 /// </summary>
 internal sealed class Renderer
 {
@@ -19,8 +21,14 @@ internal sealed class Renderer
     private static ReadOnlySpan<byte> ShowCursor => "\u001b[?25h"u8;
     private static ReadOnlySpan<byte> HideCursor => "\u001b[?25l"u8;
 
+    /// <summary>A dirty band must be at least this tall, and this many rows must match after a shift.</summary>
+    private const int MinScrollRows = 3;
+
     private readonly ColorMode _mode;
+    private readonly bool _scrollRegions;
     private VtBuffer _out = null!;
+    private Cell[] _blank = [];
+    private bool _started;
     private int _width;
     private int _cx = -1;
     private int _cy = -1;
@@ -29,7 +37,11 @@ internal sealed class Renderer
     private bool _penKnown;
     private bool _cursorShown;
 
-    public Renderer(ColorMode mode) => _mode = mode;
+    public Renderer(ColorMode mode, bool scrollRegions = true)
+    {
+        _mode = mode;
+        _scrollRegions = scrollRegions;
+    }
 
     public ColorMode Mode => _mode;
 
@@ -55,47 +67,229 @@ internal sealed class Renderer
     {
         _out = output;
         _width = current.Width;
-        bool started = false;
+        _started = false;
+        int height = current.Height;
 
-        for (int y = 0; y < current.Height; y++)
+        // source[y]: the previous row the terminal shows at y (-1: a blank row left by a scroll).
+        // prefix[y]: cells row y has in common with that row; the width when clean, -1 when unknown.
+        Span<int> source = height <= 256 ? stackalloc int[height] : new int[height];
+        Span<int> prefix = height <= 256 ? stackalloc int[height] : new int[height];
+        for (int y = 0; y < height; y++)
         {
+            source[y] = y;
+            prefix[y] = CommonPrefix(current.Row(y), previous.Row(y));
+        }
+
+        if (_scrollRegions)
+        {
+            Scroll(current, previous, source, prefix);
+        }
+
+        for (int y = 0; y < height; y++)
+        {
+            if (prefix[y] == _width)
+            {
+                continue;   // clean (the common case): don't touch the rows again
+            }
+
             ReadOnlySpan<Cell> cur = current.Row(y);
-            ReadOnlySpan<Cell> prev = previous.Row(y);
-            int first = MemoryMarshal.AsBytes(cur).CommonPrefixLength(MemoryMarshal.AsBytes(prev));
-            if (first == cur.Length * Unsafe.SizeOf<Cell>())
+            ReadOnlySpan<Cell> prev = source[y] >= 0 ? previous.Row(source[y]) : BlankRow();
+            int first = prefix[y] >= 0 ? prefix[y] : CommonPrefix(cur, prev);
+            if (first == cur.Length)
             {
                 continue;
             }
 
-            first /= Unsafe.SizeOf<Cell>();
             int last = cur.Length - 1;
             while (last > first && cur[last].Equals(prev[last]))
             {
                 last--;
             }
 
-            if (!started)
-            {
-                _out.Reserve(32);
-                _out.Bytes(SyncStart);
-                if (_cursorShown)
-                {
-                    _out.Bytes(HideCursor);
-                    _cursorShown = false;
-                }
-
-                started = true;
-            }
-
+            Begin();
             _out.Reserve((last - first + 2) * MaxCellBytes + 64);
             RenderRow(cur, prev, y, first, last);
         }
 
         _out.Reserve(64);
         PlaceCursor(current);
-        if (started)
+        if (_started)
         {
             _out.Bytes(SyncEnd);
+        }
+    }
+
+    private void Begin()
+    {
+        if (_started)
+        {
+            return;
+        }
+
+        _out.Reserve(32);
+        _out.Bytes(SyncStart);
+        if (_cursorShown)
+        {
+            _out.Bytes(HideCursor);
+            _cursorShown = false;
+        }
+
+        _started = true;
+    }
+
+    private static int CommonPrefix(ReadOnlySpan<Cell> a, ReadOnlySpan<Cell> b) =>
+        MemoryMarshal.AsBytes(a).CommonPrefixLength(MemoryMarshal.AsBytes(b)) / Unsafe.SizeOf<Cell>();
+
+    private static bool Same(ReadOnlySpan<Cell> a, ReadOnlySpan<Cell> b) =>
+        MemoryMarshal.AsBytes(a).SequenceEqual(MemoryMarshal.AsBytes(b));
+
+    /// <summary>What delete/insert line leaves behind when the pen is reset: default-styled spaces.</summary>
+    private ReadOnlySpan<Cell> BlankRow()
+    {
+        if (_blank.Length != _width)
+        {
+            _blank = new Cell[_width];
+            _blank.AsSpan().Fill(Cell.Empty);
+        }
+
+        return _blank;
+    }
+
+    /// <summary>For each band of dirty rows, find a vertical shift that lines most rows up with the old screen.</summary>
+    private void Scroll(CellBuffer current, CellBuffer previous, Span<int> source, Span<int> prefix)
+    {
+        int y = 0;
+        while (y < source.Length)
+        {
+            if (prefix[y] == _width)
+            {
+                y++;
+                continue;
+            }
+
+            int top = y;
+            while (y < source.Length && prefix[y] != _width)
+            {
+                y++;
+            }
+
+            int bottom = y - 1;
+            if (bottom - top + 1 >= MinScrollRows)
+            {
+                int shift = FindShift(current, previous, top, bottom);
+                if (shift != 0)
+                {
+                    ApplyShift(top, bottom, shift, source, prefix);
+                }
+            }
+        }
+    }
+
+    /// <summary>
+    /// The shift k (current row y shows previous row y + k) that matches the most rows in the band, or 0.
+    /// Candidates come from probe rows: the nearest previous row equal to the probe gives a k to score.
+    /// </summary>
+    private static int FindShift(CellBuffer current, CellBuffer previous, int top, int bottom)
+    {
+        int length = bottom - top + 1;
+        int best = 0;
+        int bestMatches = 0;
+        Span<int> probes = [top + length / 2, top + length / 4, top + 3 * length / 4];
+        foreach (int probe in probes)
+        {
+            ReadOnlySpan<Cell> row = current.Row(probe);
+            for (int distance = 1; distance <= length - MinScrollRows; distance++)
+            {
+                int found = 0;
+                if (probe + distance <= bottom && Same(row, previous.Row(probe + distance)))
+                {
+                    found = distance;
+                }
+                else if (probe - distance >= top && Same(row, previous.Row(probe - distance)))
+                {
+                    found = -distance;
+                }
+
+                if (found == 0)
+                {
+                    continue;
+                }
+
+                if (found != best)
+                {
+                    int matches = CountMatches(current, previous, top, bottom, found);
+                    if (matches > bestMatches)
+                    {
+                        best = found;
+                        bestMatches = matches;
+                    }
+                }
+
+                break;
+            }
+
+            if (bestMatches == length - Math.Abs(best))
+            {
+                break;   // every row that can line up does
+            }
+        }
+
+        // Worth it only if a good share of the band lines up: the other rows are diffed against shifted content.
+        return bestMatches >= MinScrollRows && 2 * bestMatches >= length - Math.Abs(best) ? best : 0;
+    }
+
+    private static int CountMatches(CellBuffer current, CellBuffer previous, int top, int bottom, int shift)
+    {
+        int matches = 0;
+        for (int y = Math.Max(top, top - shift); y <= Math.Min(bottom, bottom - shift); y++)
+        {
+            if (Same(current.Row(y), previous.Row(y + shift)))
+            {
+                matches++;
+            }
+        }
+
+        return matches;
+    }
+
+    /// <summary>
+    /// Move rows [top, bottom] by <paramref name="shift"/> on the terminal: set scroll margins, then delete
+    /// lines at the top (content moves up) or insert them (content moves down), then clear the margins.
+    /// IL/DL are VT102, so this works more widely than SU/SD (the Linux console has no SU).
+    /// </summary>
+    private void ApplyShift(int top, int bottom, int shift, Span<int> source, Span<int> prefix)
+    {
+        Begin();
+        _out.Reserve(96);
+
+        // New lines are filled with the current background (BCE): reset the pen so they are plain blanks.
+        SetPen(default);
+        _out.Bytes("\u001b["u8);
+        _out.Int(top + 1);
+        _out.Byte((byte)';');
+        _out.Int(bottom + 1);
+        _out.Bytes("r\u001b["u8);
+        _out.Int(top + 1);
+        _out.Byte((byte)'H');
+        _out.Bytes("\u001b["u8);
+        int count = Math.Abs(shift);
+        if (count > 1)
+        {
+            _out.Int(count);
+        }
+
+        _out.Byte(shift > 0 ? (byte)'M' : (byte)'L');
+
+        // Clear the margins before painting: a line feed at a bottom margin would scroll the band again.
+        _out.Bytes("\u001b[r"u8);
+        _cx = -1;
+        _cy = -1;
+
+        for (int y = top; y <= bottom; y++)
+        {
+            int from = y + shift;
+            source[y] = from >= top && from <= bottom ? from : -1;
+            prefix[y] = -1;
         }
     }
 

@@ -55,7 +55,7 @@ public class FrameBenchmarks
         Layout.Vertical(frame.Area, [Constraint.Fill(), Constraint.Length(1)], rows);
         var block = new Block { Title = "branches", BorderType = BorderType.Rounded };
         frame.Render(block, rows[0]);
-        frame.Render(new Table<Branches>(new Branches(Items), Columns)
+        frame.Render(new Table<TableBenchmarks.Branches>(new TableBenchmarks.Branches(Items), Columns)
         {
             HeaderStyle = new Style(Color.Default, Color.Default, Attr.Bold),
             HeaderSeparator = true,
@@ -65,29 +65,5 @@ public class FrameBenchmarks
         frame.SetString(0, rows[1].Y, "j/k move  q quit");
         _terminal.Present();
         return _terminal.LastFrameBytes;
-    }
-
-    private readonly struct Branches(string[] names) : ITableSource
-    {
-        public int RowCount => names.Length;
-
-        public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
-        {
-            style = default;
-            int written;
-            switch (column)
-            {
-                case 0:
-                    return names[row];
-                case 1:
-                    (row * 7 % 1000).TryFormat(scratch, out written);
-                    return scratch[..written];
-                case 2:
-                    (row % 13).TryFormat(scratch, out written);
-                    return scratch[..written];
-                default:
-                    return row % 5 == 0 ? "stale" : "active";
-            }
-        }
     }
 }

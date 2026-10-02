@@ -35,6 +35,12 @@ public sealed record TerminalOptions
     /// <summary>How long a lone ESC waits for the rest of an escape sequence before it is the Escape key.</summary>
     public int EscapeTimeoutMs { get; init; } = 20;
 
+    /// <summary>
+    /// When a band of full-width rows scrolls, let the terminal move them (scroll margins plus
+    /// insert/delete line) instead of repainting every row. Turn off for a terminal that mishandles them.
+    /// </summary>
+    public bool ScrollRegions { get; init; } = true;
+
     /// <summary>Best guess at the terminal's color depth from NO_COLOR, COLORTERM, TERM_PROGRAM, WT_SESSION and TERM.</summary>
     public static ColorMode DetectColorMode()
     {

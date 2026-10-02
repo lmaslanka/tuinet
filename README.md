@@ -25,6 +25,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 - **Fast by design.**
   - Unchanged rows are skipped with a vectorized memcmp.
   - Gaps inside a row are jumped with relative cursor moves.
+  - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
   - Style changes are sent as minimal deltas.
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
@@ -381,6 +382,7 @@ switch (ev.Kind)
 | `FocusEvents` | off | `FocusGained` / `FocusLost` |
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
+| `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
 
@@ -474,8 +476,9 @@ public void Key_in_frame_out()
 | Frame with no changes | 4.5 µs | 0 |
 | One cell changed | 4.7 µs | 59 |
 | Full repaint, a different truecolor style on every row | 34 µs | 13.3 KB |
-| App frame: layout + block + 5,000-item list + diff + write | 20 µs | 457 |
-| App frame: layout + block + 5,000-row, 4-column table + diff + write | 33 µs | 469 |
+| Scroll by one row, every row different | 7.7 µs | 271 |
+| App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 485 |
+| App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 22 µs | 497 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 

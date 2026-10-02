@@ -15,6 +15,7 @@ public class RenderBenchmarks
     private CellBuffer _b = null!;
     private CellBuffer _same = null!;
     private CellBuffer _oneCell = null!;
+    private CellBuffer _scrolled = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -24,6 +25,7 @@ public class RenderBenchmarks
         _same = Screen(0);
         _oneCell = Screen(0);
         _oneCell.SetRune(100, 30, new System.Text.Rune('#'));
+        _scrolled = Screen(0, shift: 1);
     }
 
     [Benchmark(Description = "no change")]
@@ -31,6 +33,10 @@ public class RenderBenchmarks
 
     [Benchmark(Description = "one cell")]
     public int OneCell() => Render(_oneCell, _a);
+
+    /// <summary>Every row moved up by one, as when a full-width list scrolls.</summary>
+    [Benchmark(Description = "scroll by one row")]
+    public int ScrollOne() => Render(_scrolled, _a);
 
     [Benchmark(Description = "full repaint, styled")]
     public int FullRepaint() => Render(_b, _a);
@@ -44,12 +50,13 @@ public class RenderBenchmarks
     }
 
     /// <summary>Text on every row; colors vary per row (a gradient) so every row needs its own SGR.</summary>
-    internal static CellBuffer Screen(int seed)
+    internal static CellBuffer Screen(int seed, int shift = 0)
     {
         var buffer = new CellBuffer(W, H);
         for (int y = 0; y < H; y++)
         {
-            var style = new Style(Color.Rgb((byte)(y * 4 + seed), 200, 215), Color.Rgb(20, 24, (byte)(28 + seed)));
+            int r = y + shift;
+            var style = new Style(Color.Rgb((byte)(r * 4 + seed), 200, 215), Color.Rgb(20, 24, (byte)(28 + seed)));
             buffer.Fill(buffer.Area.Row(y), style);
             for (int x = 0; x < W; x += 44)
             {
