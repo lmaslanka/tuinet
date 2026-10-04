@@ -97,12 +97,13 @@ public sealed class ShowcaseApp
 
     private static void RenderSubtitle(CellBuffer buffer, Rect row)
     {
-        int x = row.X;
-        x = buffer.SetString(x, row.Y, "immediate mode", Theme.Dim, row.Right - x);
-        x = buffer.SetString(x, row.Y, " → ", Theme.Faded, row.Right - x);
-        x = buffer.SetString(x, row.Y, "zero allocations per frame", Theme.Dim, row.Right - x);
-        x = buffer.SetString(x, row.Y, " → ", Theme.Faded, row.Right - x);
-        buffer.SetString(x, row.Y, "one write per frame", Theme.Dim, row.Right - x);
+        var subtitle = new StyledTextBuilder(stackalloc char[80], stackalloc StyledRun[5]);
+        subtitle.Append("immediate mode", Theme.Dim);
+        subtitle.Append(" → ", Theme.Faded);
+        subtitle.Append("zero allocations per frame", Theme.Dim);
+        subtitle.Append(" → ", Theme.Faded);
+        subtitle.Append("one write per frame", Theme.Dim);
+        buffer.SetText(row.X, row.Y, subtitle.Build(), row.Width);
     }
 
     private void RenderList(CellBuffer buffer, Rect box)
@@ -174,24 +175,26 @@ public sealed class ShowcaseApp
         return buffer.SetString(x, y, label, on ? Theme.Body : Theme.Dim, right - x);
     }
 
+    private static readonly (string Key, string Action)[] KeyHints =
+        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("p", "progress"), ("q", "quit")];
+
     private static void RenderKeys(CellBuffer buffer, Rect row)
     {
-        int x = row.X;
-        x = Key(buffer, x, row, "j/k", "move");
-        x = Key(buffer, Separator(buffer, x, row), row, "enter", "edit");
-        x = Key(buffer, Separator(buffer, x, row), row, "space", "toggle");
-        x = Key(buffer, Separator(buffer, x, row), row, "p", "progress");
-        Key(buffer, Separator(buffer, x, row), row, "q", "quit");
-    }
+        var keys = new StyledTextBuilder(stackalloc char[96], stackalloc StyledRun[24]);
+        foreach ((string key, string action) in KeyHints)
+        {
+            if (keys.Length > 0)
+            {
+                keys.Append("  ·  ", Theme.Faded);
+            }
 
-    private static int Key(CellBuffer buffer, int x, Rect row, ReadOnlySpan<char> key, ReadOnlySpan<char> action)
-    {
-        x = buffer.SetString(x, row.Y, key, Theme.Heading(Theme.Blue), row.Right - x);
-        return buffer.SetString(x + 1, row.Y, action, Theme.Dim, row.Right - x - 1);
-    }
+            keys.Append(key, Theme.Heading(Theme.Blue));
+            keys.Append(" ");
+            keys.Append(action, Theme.Dim);
+        }
 
-    private static int Separator(CellBuffer buffer, int x, Rect row) =>
-        buffer.SetString(x, row.Y, "  ·  ", Theme.Faded, row.Right - x);
+        buffer.SetText(row.X, row.Y, keys.Build(), row.Width);
+    }
 
     private const int ColumnSpacing = 2;
 

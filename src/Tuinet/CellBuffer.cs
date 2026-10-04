@@ -321,11 +321,101 @@ public sealed class CellBuffer
         // A UTF-16 char is at most two columns, so short text can skip measuring.
         if (overflow == Overflow.Ellipsis && 2 * text.Length > limit - x && TextWidth.Of(text) > limit - x)
         {
-            int end = Write(row, x, limit - 1, text, style, ref _mayJoin[y]);
-            return Write(row, end, limit, "…", style, ref _mayJoin[y]);
+            int end = Write(row, x, limit - 1, text, style, ref _mayJoin[y], out _);
+            return Write(row, end, limit, "…", style, ref _mayJoin[y], out _);
         }
 
-        return Write(row, x, limit, text, style, ref _mayJoin[y]);
+        return Write(row, x, limit, text, style, ref _mayJoin[y], out _);
+    }
+
+    /// <summary>
+    /// Write styled text, like <see cref="SetString"/> but with a style per run (layered over the text's base
+    /// style, and over the cells underneath like any text write). Stops at the first glyph that doesn't fit.
+    /// A run boundary inside a grapheme cluster moves to the cluster's end. With
+    /// <see cref="Overflow.Ellipsis"/>, the '…' takes the style of the text it replaces.
+    /// </summary>
+    public int SetText(int x, int y, StyledText text, int maxWidth = int.MaxValue, Overflow overflow = Overflow.Clip)
+    {
+        if ((uint)y >= (uint)Height || maxWidth <= 0)
+        {
+            return x;
+        }
+
+        int limit = x + Math.Min(maxWidth, Width - x);
+        if (x >= limit)
+        {
+            return x;
+        }
+
+        Span<Cell> row = RowSpan(y);
+        ref bool mayJoin = ref _mayJoin[y];
+        ReadOnlySpan<char> chars = text.Text;
+        ReadOnlySpan<StyledRun> runs = text.Runs;
+        bool layer = text.Style != default;
+        bool ellipsis = overflow == Overflow.Ellipsis && 2 * chars.Length > limit - x && TextWidth.Of(chars) > limit - x;
+        int end = ellipsis ? limit - 1 : limit;
+        int skip = text.RunOffset;   // chars of runs[r] already written
+        int pos = 0;
+        int col = x;
+        Style style = text.Style;
+        for (int r = 0; pos < chars.Length; r++)
+        {
+            int length;
+            if (r < runs.Length)
+            {
+                length = runs[r].Length - skip;
+                if (length <= 0)
+                {
+                    skip = -length;   // this run was used up by a cluster from the run before
+                    continue;
+                }
+
+                style = layer ? text.Style.Patch(runs[r].Style) : runs[r].Style;
+                skip = 0;
+            }
+            else
+            {
+                length = chars.Length - pos;
+                style = text.Style;
+            }
+
+            int stop = Math.Min(pos + length, chars.Length);
+            if (stop < chars.Length && chars[stop] >= 0x300)
+            {
+                // The boundary may fall inside a cluster: the cluster goes with the run it starts in.
+                int boundary = pos;
+                while (boundary < stop)
+                {
+                    boundary += Graphemes.Length(chars[boundary..]);
+                }
+
+                skip = boundary - stop;
+                stop = boundary;
+            }
+
+            col = Write(row, col, end, chars[pos..stop], style, ref mayJoin, out bool complete);
+            pos = stop;
+            if (!complete)
+            {
+                break;
+            }
+        }
+
+        return ellipsis ? Write(row, col, limit, "…", style, ref mayJoin, out _) : col;
+    }
+
+    /// <summary>
+    /// Parse <see cref="Markup"/> (e.g. <c>"[b fg=#F5A623]q[/] quit"</c>) and write it with <see cref="SetText"/>.
+    /// Parses on every call, without allocating for markup up to 1024 chars.
+    /// </summary>
+    public int SetMarkup(int x, int y, ReadOnlySpan<char> markup, Style style = default,
+        int maxWidth = int.MaxValue, Overflow overflow = Overflow.Clip)
+    {
+        const int StackLimit = 1024;
+        int maxRuns = markup.Length / 3 + 2;   // a run per text piece; pieces are separated by tags of 3+ chars
+        Span<char> chars = markup.Length <= StackLimit ? stackalloc char[markup.Length] : new char[markup.Length];
+        Span<StyledRun> runs = markup.Length <= StackLimit ? stackalloc StyledRun[maxRuns] : new StyledRun[maxRuns];
+        return SetText(x, y, Markup.Parse(markup, chars, runs, style), maxWidth, overflow);
     }
 
     public void Resize(int width, int height)
@@ -409,8 +499,11 @@ public sealed class CellBuffer
         return width;
     }
 
-    /// <summary>Write text into a row; sets <paramref name="mayJoin"/> when a joinable glyph is written.</summary>
-    private static int Write(Span<Cell> row, int x, int limit, ReadOnlySpan<char> text, Style style, ref bool mayJoin)
+    /// <summary>
+    /// Write text into a row; sets <paramref name="mayJoin"/> when a joinable glyph is written.
+    /// <paramref name="complete"/> is false when a glyph didn't fit before <paramref name="limit"/>.
+    /// </summary>
+    private static int Write(Span<Cell> row, int x, int limit, ReadOnlySpan<char> text, Style style, ref bool mayJoin, out bool complete)
     {
         int col = x;
         bool wrote = false;
@@ -440,7 +533,7 @@ public sealed class CellBuffer
                 int run = Math.Min(text.Length - i, limit - col);
                 if (run <= 0)
                 {
-                    break;
+                    return Finish(row, col, wrote, out complete, done: false);
                 }
 
                 // A combining mark (or other extender) after the last letter belongs to that letter's
@@ -529,7 +622,7 @@ public sealed class CellBuffer
 
             if (col + width > limit)
             {
-                break;
+                return Finish(row, col, wrote, out complete, done: false);
             }
 
             if (col < 0)
@@ -584,11 +677,18 @@ public sealed class CellBuffer
             col += width;
         }
 
+        return Finish(row, col, wrote, out complete, done: true);
+    }
+
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private static int Finish(Span<Cell> row, int col, bool wrote, out bool complete, bool done)
+    {
         if (wrote)
         {
             FixRight(row, col);
         }
 
+        complete = done;
         return col;
     }
 

@@ -93,4 +93,83 @@ public class TextBenchmarks
 
         return x;
     }
+
+    private static readonly Style Key = new(Color.Rgb(56, 189, 248), Color.Default, Attr.Bold);
+    private static readonly Style Dim = new(Color.Rgb(125, 134, 150), Color.Default);
+
+    /// <summary>A key-hint bar (10 styled pieces) per row, written piece by piece: the baseline.</summary>
+    [Benchmark(Description = "key bar 60 rows, chained SetString")]
+    public int KeyBarChained()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x = 0;
+            x = _buffer.SetString(x, y, "j/k", Key);
+            x = _buffer.SetString(x, y, " move  ", Dim);
+            x = _buffer.SetString(x, y, "enter", Key);
+            x = _buffer.SetString(x, y, " edit  ", Dim);
+            x = _buffer.SetString(x, y, "space", Key);
+            x = _buffer.SetString(x, y, " toggle  ", Dim);
+            x = _buffer.SetString(x, y, "p", Key);
+            x = _buffer.SetString(x, y, " progress  ", Dim);
+            x = _buffer.SetString(x, y, "q", Key);
+            x = _buffer.SetString(x, y, " quit", Dim);
+        }
+
+        return x;
+    }
+
+    [Benchmark(Description = "key bar 60 rows, StyledTextBuilder + SetText")]
+    public int KeyBarBuilder()
+    {
+        int x = 0;
+        Span<char> chars = stackalloc char[64];
+        Span<StyledRun> runs = stackalloc StyledRun[10];
+        for (int y = 0; y < 60; y++)
+        {
+            var keys = new StyledTextBuilder(chars, runs);
+            keys.Append("j/k", Key);
+            keys.Append(" move  ", Dim);
+            keys.Append("enter", Key);
+            keys.Append(" edit  ", Dim);
+            keys.Append("space", Key);
+            keys.Append(" toggle  ", Dim);
+            keys.Append("p", Key);
+            keys.Append(" progress  ", Dim);
+            keys.Append("q", Key);
+            keys.Append(" quit", Dim);
+            x = _buffer.SetText(0, y, keys.Build());
+        }
+
+        return x;
+    }
+
+    [Benchmark(Description = "key bar 60 rows, SetMarkup")]
+    public int KeyBarMarkup()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x = _buffer.SetMarkup(0, y, "[b fg=#38BDF8]j/k[/] move  [b fg=#38BDF8]enter[/] edit  [b fg=#38BDF8]space[/] toggle  [b fg=#38BDF8]p[/] progress  [b fg=#38BDF8]q[/] quit", Dim);
+        }
+
+        return x;
+    }
+
+    private static readonly StyledRun[] KeyBarRuns =
+        [new(3, Key), new(7, Dim), new(5, Key), new(7, Dim), new(5, Key), new(9, Dim), new(1, Key), new(11, Dim), new(1, Key), new(5, Dim)];
+
+    [Benchmark(Description = "key bar 60 rows, prebuilt StyledText + SetText")]
+    public int KeyBarPrebuilt()
+    {
+        var text = new StyledText("j/k move  enter edit  space toggle  p progress  q quit", KeyBarRuns);
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x = _buffer.SetText(0, y, text);
+        }
+
+        return x;
+    }
 }

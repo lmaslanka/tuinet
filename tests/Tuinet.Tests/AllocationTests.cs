@@ -89,12 +89,20 @@ public class AllocationTests
             SortColumn = 1,
         }, panes[1], ref table);
 
+        // Styled text: a builder with a formatted number, markup, and a styled paragraph.
+        var status = new StyledTextBuilder(stackalloc char[48], stackalloc StyledRun[6]);
+        status.Append("frame ", new Style(Color.BrightBlack, Color.Default));
+        status.Append(tick, new Style(Color.Green, Color.Default, Attr.Bold));
+        frame.SetText(60, rows[2].Y, status.Build(), 20);
+        frame.SetMarkup(80, rows[2].Y, "[b fg=#F5A623]q[/] quit  [u]?[/] help", default, 20);
+        frame.Render(new Paragraph(status.Build()) { Wrap = TextWrap.Word }, new Rect(100, rows[2].Y, 10, 1));
+
         // Grapheme clusters are interned on first sight; after warm-up they cost nothing.
         frame.SetString(40, rows[2].Y, "👨‍👩‍👧 e\u0301 🇵🇱 ❤️ 👍🏽", default, 20);
 
-        Span<char> status = stackalloc char[32];
-        tick.TryFormat(status, out int written);
-        frame.SetString(0, rows[2].Y, status[..written], new Style(Color.Rgb(200, 210, (byte)tick), Color.Default));
+        Span<char> counter = stackalloc char[32];
+        tick.TryFormat(counter, out int written);
+        frame.SetString(0, rows[2].Y, counter[..written], new Style(Color.Rgb(200, 210, (byte)tick), Color.Default));
         terminal.Present();
     }
 

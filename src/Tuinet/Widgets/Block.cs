@@ -58,7 +58,13 @@ public readonly ref struct Block : IWidget
     /// <summary>Title style, layered over <see cref="BorderStyle"/>.</summary>
     public Style TitleStyle { get; init; }
 
+    /// <summary>A title with several styles, used instead of <see cref="Title"/> (layered over <see cref="TitleStyle"/>).</summary>
+    public StyledText StyledTitle { get; init; }
+
     public ReadOnlySpan<char> Footer { get; init; }
+
+    /// <summary>A footer with several styles, used instead of <see cref="Footer"/>.</summary>
+    public StyledText StyledFooter { get; init; }
     public Alignment FooterAlignment { get; init; }
 
     /// <summary>The area inside the borders.</summary>
@@ -131,18 +137,18 @@ public readonly ref struct Block : IWidget
         Style titleStyle = style.Patch(TitleStyle);
         int start = x0 + (left ? 1 : 0);
         int end = x1 - (right ? 1 : 0) + 1;
-        if (!Title.IsEmpty)
+        if (!StyledTitle.IsEmpty || !Title.IsEmpty)
         {
-            Label(buffer, Title, TitleAlignment, start, end, y0, titleStyle);
+            Label(buffer, StyledTitle.IsEmpty ? new StyledText(Title) : StyledTitle, TitleAlignment, start, end, y0, titleStyle);
         }
 
-        if (!Footer.IsEmpty && area.Height > 1)
+        if ((!StyledFooter.IsEmpty || !Footer.IsEmpty) && area.Height > 1)
         {
-            Label(buffer, Footer, FooterAlignment, start, end, y1, titleStyle);
+            Label(buffer, StyledFooter.IsEmpty ? new StyledText(Footer) : StyledFooter, FooterAlignment, start, end, y1, titleStyle);
         }
     }
 
-    private static void Label(CellBuffer buffer, ReadOnlySpan<char> text, Alignment alignment, int start, int end, int y, Style style)
+    private static void Label(CellBuffer buffer, StyledText text, Alignment alignment, int start, int end, int y, Style style)
     {
         int available = end - start;
         if (available <= 0)
@@ -159,7 +165,7 @@ public readonly ref struct Block : IWidget
             _ => start + Math.Min(1, slack),
         };
 
-        buffer.SetString(x, y, text, style, end - x);
+        buffer.SetText(x, y, text.Over(style), end - x);
     }
 
     private static void HLine(CellBuffer buffer, int x0, int x1, int y, char c, Style style) =>

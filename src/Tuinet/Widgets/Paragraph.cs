@@ -14,13 +14,23 @@ public enum TextWrap : byte
     Char,
 }
 
-/// <summary>Multi-line text ('\n'-separated) with wrapping, alignment and vertical scroll.</summary>
+/// <summary>Multi-line text ('\n'-separated) with wrapping, alignment and vertical scroll, in one style or styled runs.</summary>
 public readonly ref struct Paragraph : IWidget
 {
+    private readonly ReadOnlySpan<StyledRun> _runs;
+
     public Paragraph(ReadOnlySpan<char> text, Style style = default)
     {
         Text = text;
         Style = style;
+    }
+
+    /// <summary>Styled text: runs keep their styles across wrapped lines.</summary>
+    public Paragraph(StyledText text)
+    {
+        Text = text.Text;
+        Style = text.Style;
+        _runs = text.Runs;
     }
 
     public ReadOnlySpan<char> Text { get; init; }
@@ -66,7 +76,15 @@ public readonly ref struct Paragraph : IWidget
                     x += Alignment == Alignment.Center ? slack / 2 : slack;
                 }
 
-                buffer.SetString(x, area.Y + row, line, Style, area.Right - x);
+                if (_runs.IsEmpty)
+                {
+                    buffer.SetString(x, area.Y + row, line, Style, area.Right - x);
+                }
+                else
+                {
+                    var styled = new StyledText(Text, _runs, Style);
+                    buffer.SetText(x, area.Y + row, styled.Slice(lines.CurrentStart, line.Length), area.Right - x);
+                }
             }
 
             row++;
@@ -91,6 +109,9 @@ public readonly ref struct Paragraph : IWidget
 
         public ReadOnlySpan<char> Current { get; private set; }
 
+        /// <summary>Offset of <see cref="Current"/> in the text.</summary>
+        public int CurrentStart { get; private set; }
+
         public bool MoveNext()
         {
             if (_done)
@@ -102,6 +123,7 @@ public readonly ref struct Paragraph : IWidget
             int newline = rest.IndexOf('\n');
             ReadOnlySpan<char> logical = newline < 0 ? rest : rest[..newline];
 
+            CurrentStart = _pos;
             int take = _wrap == TextWrap.None ? logical.Length : Fit(logical);
             Current = logical[..take].TrimEnd('\r');
             if (_wrap == TextWrap.Word && take < logical.Length)

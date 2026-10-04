@@ -8,6 +8,9 @@ public static class TextWidth
     /// <summary>0 for controls and combining marks (never drawn), 2 for wide CJK and emoji, otherwise 1.</summary>
     public static int Of(Rune rune) => UnicodeWidth.Of(rune.Value);
 
+    /// <summary>Columns the styled text takes (styles don't change widths).</summary>
+    public static int Of(StyledText text) => Of(text.Text);
+
     /// <summary>
     /// Columns <paramref name="text"/> takes when written with <see cref="CellBuffer.SetString"/>: grapheme
     /// clusters count once (e + combining accent is 1, 👨‍👩‍👧 is 2), controls and stray marks count 0.
