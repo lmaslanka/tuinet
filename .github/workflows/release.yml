@@ -97,10 +97,12 @@ jobs:
     needs: pack
     runs-on: ubuntu-latest
     timeout-minutes: 10
-    # Add required reviewers to this environment to gate releases; NUGET_API_KEY can live here.
+    # Add required reviewers to this environment to gate releases. The nuget.org Trusted Publishing policy
+    # is restricted to this workflow file and environment.
     environment: release
     permissions:
       contents: write
+      id-token: write   # GitHub OIDC token, exchanged for a one-hour nuget.org API key
 
     steps:
       - uses: actions/download-artifact@v7
@@ -112,11 +114,18 @@ jobs:
         with:
           dotnet-version: 10.0.x
 
+      # Trusted Publishing: no stored API key. NUGET_USER is the nuget.org profile name (not the email).
+      - name: NuGet login
+        id: nuget-login
+        uses: NuGet/login@v1
+        with:
+          user: ${{ secrets.NUGET_USER }}
+
       # The .snupkg next to the .nupkg is pushed to the symbol server automatically.
       - name: Push to NuGet
         run: >
           dotnet nuget push "artifacts/packages/*.nupkg"
-          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 

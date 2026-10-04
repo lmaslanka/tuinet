@@ -577,8 +577,12 @@ Every app must also exit with code 0, restore the terminal modes, and write noth
 
 Pushing a `v*` tag runs [`release.yml`](https://github.com/lmaslanka/tuinet/blob/main/.github/workflows/release.yml):
 build, test, pack, verify, push to NuGet (with symbols), and a GitHub release with notes from
-[`CHANGELOG.md`](https://github.com/lmaslanka/tuinet/blob/main/CHANGELOG.md). It needs a `NUGET_API_KEY`
-secret (in the repo or in the `release` environment).
+[`CHANGELOG.md`](https://github.com/lmaslanka/tuinet/blob/main/CHANGELOG.md). It publishes with nuget.org
+Trusted Publishing, so no API key is stored. One-time setup:
+
+- On nuget.org, under your name → *Trusted Publishing*, add a policy: owner `lmaslanka`, repository
+  `tuinet`, workflow file `release.yml`, environment `release`.
+- In GitHub, add a `NUGET_USER` secret holding your nuget.org profile name (not your email).
 
 1. Set `<VersionPrefix>` in `Directory.Build.props` to the new version. The tag must match it.
 2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh, empty
