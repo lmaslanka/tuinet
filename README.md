@@ -547,13 +547,25 @@ All platforms share the same VT encoder and input parser.
 dotnet build                     # warnings are errors
 dotnet test                      # library + sample tests
 ./run                            # showcase sample
+./run e2e                        # end-to-end checks in tmux (needs tmux, python3)
 dotnet publish samples/Tuinet.Samples.Showcase -c Release -p:PublishAot=true
 tools/gen-width/gen.py [17.0.0]  # regenerate the Unicode width table from the UCD
 ```
 
 CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) builds with warnings as errors and runs
 the tests on Linux, macOS and Windows. It also checks that both samples still publish as Native AOT
-with no trim or AOT warnings.
+with no trim or AOT warnings, then runs the end-to-end checks.
+
+The end-to-end checks ([`tools/e2e`](tools/e2e)) run the AOT binaries in tmux, a real terminal
+implementation, and read the screen back:
+
+- **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog.
+- **stress**: bursts of scrolling; every visible row must have the right content in the right order, and
+  the terminal must have received scroll-region sequences.
+- **clusters**: the grapheme cluster cases in [`clusters.txt`](tools/e2e/clusters.txt) must produce the
+  same screen as a reference that places every cell with an explicit cursor move.
+
+Every app must also exit with code 0, restore the terminal modes, and write nothing under `$HOME`.
 
 ```
 src/Tuinet/                      the library
@@ -565,6 +577,7 @@ samples/Tuinet.Samples.Showcase  list, edit form and progress dialog (the screen
 samples/Tuinet.Samples.Stress    latency and throughput harness
 bench/Tuinet.Benchmarks          BenchmarkDotNet suite
 tests/                           unit, widget, allocation, renderer fuzz and sample tests
+tools/e2e/                       end-to-end checks in tmux
 tools/gen-width/                 Unicode width table generator
 docs/images/                     README screenshots
 ```

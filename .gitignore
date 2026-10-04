@@ -6,3 +6,4 @@ obj/
 BenchmarkDotNet.Artifacts/
 TestResults/
 publish/
+artifacts/

@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Draws the cases in ../clusters.txt for the end-to-end grapheme check (tools/e2e/e2e.py). Not a sample. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../../../src/Tuinet/Tuinet.csproj" />
+  </ItemGroup>
+
+</Project>

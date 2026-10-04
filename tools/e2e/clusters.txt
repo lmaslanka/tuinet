@@ -1,0 +1,15 @@
+# Grapheme cluster cases for the e2e cluster check. One row per line; pieces separated by tabs,
+# each "<text> <columns>": the columns TUI.NET gives the piece. Pieces on one line are separate cells.
+é 1
+कि 2
+กิ 1
+👨‍👩‍👧 2
+❤️ 2
+1️⃣ 2
+🇵🇱 2
+👍🏽 2
+각 2
+日本 4
+🇵 2	🇱 2
+👍 2	🏽 2
+ᄀ 2	가 2
