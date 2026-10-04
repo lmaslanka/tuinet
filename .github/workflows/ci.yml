@@ -89,3 +89,10 @@ jobs:
             dotnet publish "samples/Tuinet.Samples.$sample" -c Release -p:PublishAot=true -o "publish/$sample"
           done
           ls -la publish/*/Tuinet.Samples.*
+
+      # The samples in a real terminal implementation (tmux): navigation, editing, scrolling, grapheme
+      # clusters, clean exit. Reuses the binaries published above.
+      - name: End-to-end checks in tmux
+        run: |
+          command -v tmux || { sudo apt-get update -q && sudo apt-get install -y -q tmux; }
+          tools/e2e/run.sh publish

@@ -22,3 +22,22 @@ They are the only coverage against a real VT implementation (tmux) and will be l
 
 ## Verification
 CI green on a PR; deliberately break the renderer (e.g. disable the forced CUP after a shift) and see it fail.
+
+## Status: implemented (branch `e2e-tests`)
+
+- `tools/e2e/e2e.py` (Python 3, stdlib only) drives everything through tmux instead of a home-made VT
+  model: a private tmux server per run, apps in a shell wrapper that records the exit code and `stty -g`
+  before/after, an empty `HOME`, and waits that poll the screen instead of fixed sleeps. 45 checks, ~11 s.
+- Three suites: **showcase** (110×34 and 80×24), **stress** (scroll bursts, row content/order, IL/DL seen),
+  **clusters** (`tools/e2e/ClusterScreen` vs a reference that places every cell absolutely; the cases live
+  in `tools/e2e/clusters.txt`, read by both sides).
+- `tools/e2e/run.sh [publish-dir]` publishes what's missing with Native AOT and runs it; `./run e2e`;
+  CI runs it in the `native-aot` job on the binaries that job already publishes.
+
+**Verified by breaking the renderer:** rows mapped the wrong way after a scroll → 6 stress failures; no
+reposition after a lone emoji-plane glyph → both cluster comparisons fail. Two other breaks (cursor not
+marked unknown after a shift, margins never reset) are harmless on these screens and are caught by the
+renderer fuzz tests instead (19 failures for the margins one); the two layers complement each other.
+
+**Not covered:** colors and attributes (`capture-pane` is compared as text). `capture-pane -e` could add
+style checks later.
