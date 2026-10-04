@@ -1,0 +1,690 @@
+#nullable enable
+const Tuinet.Widgets.Table.ScratchLength = 128 -> int
+override Tuinet.Cell.Equals(object? obj) -> bool
+override Tuinet.Cell.GetHashCode() -> int
+override Tuinet.Cell.ToString() -> string!
+override Tuinet.CellBuffer.ToString() -> string!
+override Tuinet.Color.Equals(object? obj) -> bool
+override Tuinet.Color.GetHashCode() -> int
+override Tuinet.Color.ToString() -> string!
+override Tuinet.Constraint.GetHashCode() -> int
+override Tuinet.Event.ToString() -> string!
+override Tuinet.KeyEvent.Equals(object? obj) -> bool
+override Tuinet.KeyEvent.GetHashCode() -> int
+override Tuinet.KeyEvent.ToString() -> string!
+override Tuinet.MouseEvent.GetHashCode() -> int
+override Tuinet.Rect.Equals(object? obj) -> bool
+override Tuinet.Rect.GetHashCode() -> int
+override Tuinet.Rect.ToString() -> string!
+override Tuinet.Size.GetHashCode() -> int
+override Tuinet.Style.Equals(object? obj) -> bool
+override Tuinet.Style.GetHashCode() -> int
+override Tuinet.Style.ToString() -> string!
+override Tuinet.StyledRun.GetHashCode() -> int
+override Tuinet.StyledText.ToString() -> string!
+override Tuinet.TerminalOptions.Equals(object? obj) -> bool
+override Tuinet.TerminalOptions.GetHashCode() -> int
+override Tuinet.TerminalOptions.ToString() -> string!
+override Tuinet.Widgets.TableColumn.GetHashCode() -> int
+static Tuinet.Cell.Blank(Tuinet.Style style) -> Tuinet.Cell
+static Tuinet.Cell.Empty.get -> Tuinet.Cell
+static Tuinet.Cell.operator !=(Tuinet.Cell left, Tuinet.Cell right) -> bool
+static Tuinet.Cell.operator ==(Tuinet.Cell left, Tuinet.Cell right) -> bool
+static Tuinet.Color.Black.get -> Tuinet.Color
+static Tuinet.Color.Blue.get -> Tuinet.Color
+static Tuinet.Color.BrightBlack.get -> Tuinet.Color
+static Tuinet.Color.BrightBlue.get -> Tuinet.Color
+static Tuinet.Color.BrightCyan.get -> Tuinet.Color
+static Tuinet.Color.BrightGreen.get -> Tuinet.Color
+static Tuinet.Color.BrightMagenta.get -> Tuinet.Color
+static Tuinet.Color.BrightRed.get -> Tuinet.Color
+static Tuinet.Color.BrightWhite.get -> Tuinet.Color
+static Tuinet.Color.BrightYellow.get -> Tuinet.Color
+static Tuinet.Color.Cyan.get -> Tuinet.Color
+static Tuinet.Color.Default.get -> Tuinet.Color
+static Tuinet.Color.Green.get -> Tuinet.Color
+static Tuinet.Color.Hex(uint rgb) -> Tuinet.Color
+static Tuinet.Color.Indexed(byte index) -> Tuinet.Color
+static Tuinet.Color.Magenta.get -> Tuinet.Color
+static Tuinet.Color.operator !=(Tuinet.Color left, Tuinet.Color right) -> bool
+static Tuinet.Color.operator ==(Tuinet.Color left, Tuinet.Color right) -> bool
+static Tuinet.Color.Red.get -> Tuinet.Color
+static Tuinet.Color.Rgb(byte r, byte g, byte b) -> Tuinet.Color
+static Tuinet.Color.White.get -> Tuinet.Color
+static Tuinet.Color.Yellow.get -> Tuinet.Color
+static Tuinet.Constraint.Fill(int weight = 1) -> Tuinet.Constraint
+static Tuinet.Constraint.Length(int cells) -> Tuinet.Constraint
+static Tuinet.Constraint.Max(int cells) -> Tuinet.Constraint
+static Tuinet.Constraint.Min(int cells) -> Tuinet.Constraint
+static Tuinet.Constraint.operator !=(Tuinet.Constraint left, Tuinet.Constraint right) -> bool
+static Tuinet.Constraint.operator ==(Tuinet.Constraint left, Tuinet.Constraint right) -> bool
+static Tuinet.Constraint.Percent(int percent) -> Tuinet.Constraint
+static Tuinet.Event.Focus(bool gained) -> Tuinet.Event
+static Tuinet.Event.FromChar(char c, Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> Tuinet.Event
+static Tuinet.Event.FromKey(Tuinet.KeyCode code, Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> Tuinet.Event
+static Tuinet.Event.FromKey(Tuinet.KeyEvent key) -> Tuinet.Event
+static Tuinet.Event.FromMessage(object! message) -> Tuinet.Event
+static Tuinet.Event.FromMouse(Tuinet.MouseEvent mouse) -> Tuinet.Event
+static Tuinet.Event.FromPaste(string! text) -> Tuinet.Event
+static Tuinet.Event.FromResize(Tuinet.Size size) -> Tuinet.Event
+static Tuinet.KeyEvent.Char(char c, Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> Tuinet.KeyEvent
+static Tuinet.KeyEvent.operator !=(Tuinet.KeyEvent left, Tuinet.KeyEvent right) -> bool
+static Tuinet.KeyEvent.operator ==(Tuinet.KeyEvent left, Tuinet.KeyEvent right) -> bool
+static Tuinet.Layout.Horizontal(Tuinet.Rect area, System.ReadOnlySpan<Tuinet.Constraint> constraints, System.Span<Tuinet.Rect> result, int spacing = 0) -> void
+static Tuinet.Layout.Split(Tuinet.Rect area, Tuinet.Direction direction, System.ReadOnlySpan<Tuinet.Constraint> constraints, System.Span<Tuinet.Rect> result, int spacing = 0) -> void
+static Tuinet.Layout.Vertical(Tuinet.Rect area, System.ReadOnlySpan<Tuinet.Constraint> constraints, System.Span<Tuinet.Rect> result, int spacing = 0) -> void
+static Tuinet.Markup.Parse(System.ReadOnlySpan<char> markup, System.Span<char> chars, System.Span<Tuinet.StyledRun> runs, Tuinet.Style style = default(Tuinet.Style)) -> Tuinet.StyledText
+static Tuinet.Markup.TryParseColor(System.ReadOnlySpan<char> text, out Tuinet.Color color) -> bool
+static Tuinet.Markup.TryParseTag(System.ReadOnlySpan<char> tag, Tuinet.Style style, out Tuinet.Style result) -> bool
+static Tuinet.MouseEvent.operator !=(Tuinet.MouseEvent left, Tuinet.MouseEvent right) -> bool
+static Tuinet.MouseEvent.operator ==(Tuinet.MouseEvent left, Tuinet.MouseEvent right) -> bool
+static Tuinet.Rect.operator !=(Tuinet.Rect left, Tuinet.Rect right) -> bool
+static Tuinet.Rect.operator ==(Tuinet.Rect left, Tuinet.Rect right) -> bool
+static Tuinet.Size.operator !=(Tuinet.Size left, Tuinet.Size right) -> bool
+static Tuinet.Size.operator ==(Tuinet.Size left, Tuinet.Size right) -> bool
+static Tuinet.Style.Default.get -> Tuinet.Style
+static Tuinet.Style.operator !=(Tuinet.Style left, Tuinet.Style right) -> bool
+static Tuinet.Style.operator ==(Tuinet.Style left, Tuinet.Style right) -> bool
+static Tuinet.StyledRun.operator !=(Tuinet.StyledRun left, Tuinet.StyledRun right) -> bool
+static Tuinet.StyledRun.operator ==(Tuinet.StyledRun left, Tuinet.StyledRun right) -> bool
+static Tuinet.StyledText.implicit operator Tuinet.StyledText(string? text) -> Tuinet.StyledText
+static Tuinet.Terminal.Open(Tuinet.TerminalOptions? options = null) -> Tuinet.Terminal!
+static Tuinet.TerminalOptions.DetectColorMode() -> Tuinet.ColorMode
+static Tuinet.TerminalOptions.operator !=(Tuinet.TerminalOptions? left, Tuinet.TerminalOptions? right) -> bool
+static Tuinet.TerminalOptions.operator ==(Tuinet.TerminalOptions? left, Tuinet.TerminalOptions? right) -> bool
+static Tuinet.TextWidth.Of(System.ReadOnlySpan<char> text) -> int
+static Tuinet.TextWidth.Of(System.Text.Rune rune) -> int
+static Tuinet.TextWidth.Of(Tuinet.StyledText text) -> int
+static Tuinet.WidgetExtensions.Render<TWidget, TState>(this Tuinet.CellBuffer! buffer, TWidget widget, Tuinet.Rect area, ref TState state) -> void
+static Tuinet.WidgetExtensions.Render<TWidget>(this Tuinet.CellBuffer! buffer, TWidget widget, Tuinet.Rect area) -> void
+static Tuinet.Widgets.Button.WidthOf(System.ReadOnlySpan<char> label) -> int
+static Tuinet.Widgets.Paragraph.LineCount(System.ReadOnlySpan<char> text, int width, Tuinet.Widgets.TextWrap wrap) -> int
+static Tuinet.Widgets.Spinner.Arc.get -> System.ReadOnlySpan<char>
+static Tuinet.Widgets.Spinner.Dots.get -> System.ReadOnlySpan<char>
+static Tuinet.Widgets.Spinner.Frame(System.ReadOnlySpan<char> frames, long elapsedMs, int intervalMs = 100) -> char
+static Tuinet.Widgets.Spinner.Line.get -> System.ReadOnlySpan<char>
+static Tuinet.Widgets.Table.Measure<TSource>(TSource source, int column, System.ReadOnlySpan<char> header = default(System.ReadOnlySpan<char>), int maxRows = 2147483647) -> int
+static Tuinet.Widgets.TableColumn.operator !=(Tuinet.Widgets.TableColumn left, Tuinet.Widgets.TableColumn right) -> bool
+static Tuinet.Widgets.TableColumn.operator ==(Tuinet.Widgets.TableColumn left, Tuinet.Widgets.TableColumn right) -> bool
+Tuinet.Attr
+Tuinet.Attr.Blink = 16 -> Tuinet.Attr
+Tuinet.Attr.Bold = 1 -> Tuinet.Attr
+Tuinet.Attr.Dim = 2 -> Tuinet.Attr
+Tuinet.Attr.Hidden = 64 -> Tuinet.Attr
+Tuinet.Attr.Italic = 4 -> Tuinet.Attr
+Tuinet.Attr.None = 0 -> Tuinet.Attr
+Tuinet.Attr.Reverse = 32 -> Tuinet.Attr
+Tuinet.Attr.Strike = 128 -> Tuinet.Attr
+Tuinet.Attr.Underline = 8 -> Tuinet.Attr
+Tuinet.Cell
+Tuinet.Cell.Cell() -> void
+Tuinet.Cell.Cell(System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.Cell.Equals(Tuinet.Cell other) -> bool
+Tuinet.Cell.IsContinuation.get -> bool
+Tuinet.Cell.IsGrapheme.get -> bool
+Tuinet.Cell.Rune.get -> System.Text.Rune
+Tuinet.Cell.Style.get -> Tuinet.Style
+Tuinet.Cell.Text.get -> string!
+Tuinet.Cell.Width.get -> int
+Tuinet.Cell.WithStyle(Tuinet.Style style) -> Tuinet.Cell
+Tuinet.CellBuffer
+Tuinet.CellBuffer.Area.get -> Tuinet.Rect
+Tuinet.CellBuffer.CellBuffer(int width, int height) -> void
+Tuinet.CellBuffer.Clear() -> void
+Tuinet.CellBuffer.CursorVisible.get -> bool
+Tuinet.CellBuffer.CursorX.get -> int
+Tuinet.CellBuffer.CursorY.get -> int
+Tuinet.CellBuffer.Erase(Tuinet.Rect area, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.CellBuffer.Fill(Tuinet.Rect area, Tuinet.Cell cell) -> void
+Tuinet.CellBuffer.Fill(Tuinet.Rect area, Tuinet.Style style) -> void
+Tuinet.CellBuffer.Height.get -> int
+Tuinet.CellBuffer.HideCursor() -> void
+Tuinet.CellBuffer.Resize(int width, int height) -> void
+Tuinet.CellBuffer.Row(int y) -> System.ReadOnlySpan<Tuinet.Cell>
+Tuinet.CellBuffer.RowText(int y) -> string!
+Tuinet.CellBuffer.SetCell(int x, int y, Tuinet.Cell cell) -> int
+Tuinet.CellBuffer.SetCursor(int x, int y) -> void
+Tuinet.CellBuffer.SetMarkup(int x, int y, System.ReadOnlySpan<char> markup, Tuinet.Style style = default(Tuinet.Style), int maxWidth = 2147483647, Tuinet.Overflow overflow = Tuinet.Overflow.Clip) -> int
+Tuinet.CellBuffer.SetRune(int x, int y, System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Style)) -> int
+Tuinet.CellBuffer.SetRune(Tuinet.Rect area, System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.CellBuffer.SetString(int x, int y, System.ReadOnlySpan<char> text, Tuinet.Style style = default(Tuinet.Style), int maxWidth = 2147483647, Tuinet.Overflow overflow = Tuinet.Overflow.Clip) -> int
+Tuinet.CellBuffer.SetStyle(Tuinet.Rect area, Tuinet.Style style) -> void
+Tuinet.CellBuffer.SetText(int x, int y, Tuinet.StyledText text, int maxWidth = 2147483647, Tuinet.Overflow overflow = Tuinet.Overflow.Clip) -> int
+Tuinet.CellBuffer.Size.get -> Tuinet.Size
+Tuinet.CellBuffer.this[int x, int y].get -> Tuinet.Cell
+Tuinet.CellBuffer.Width.get -> int
+Tuinet.Color
+Tuinet.Color.B.get -> byte
+Tuinet.Color.Color() -> void
+Tuinet.Color.Equals(Tuinet.Color other) -> bool
+Tuinet.Color.G.get -> byte
+Tuinet.Color.Index.get -> byte
+Tuinet.Color.IsDefault.get -> bool
+Tuinet.Color.Kind.get -> Tuinet.ColorKind
+Tuinet.Color.R.get -> byte
+Tuinet.ColorKind
+Tuinet.ColorKind.Default = 0 -> Tuinet.ColorKind
+Tuinet.ColorKind.Indexed = 1 -> Tuinet.ColorKind
+Tuinet.ColorKind.Rgb = 2 -> Tuinet.ColorKind
+Tuinet.ColorMode
+Tuinet.ColorMode.Basic16 = 2 -> Tuinet.ColorMode
+Tuinet.ColorMode.Indexed256 = 1 -> Tuinet.ColorMode
+Tuinet.ColorMode.None = 3 -> Tuinet.ColorMode
+Tuinet.ColorMode.TrueColor = 0 -> Tuinet.ColorMode
+Tuinet.Constraint
+Tuinet.Constraint.Constraint() -> void
+Tuinet.Constraint.Constraint(Tuinet.ConstraintKind Kind, int Value) -> void
+Tuinet.Constraint.Deconstruct(out Tuinet.ConstraintKind Kind, out int Value) -> void
+Tuinet.Constraint.Equals(Tuinet.Constraint other) -> bool
+Tuinet.Constraint.Kind.get -> Tuinet.ConstraintKind
+Tuinet.Constraint.Kind.init -> void
+Tuinet.Constraint.Value.get -> int
+Tuinet.Constraint.Value.init -> void
+Tuinet.ConstraintKind
+Tuinet.ConstraintKind.Fill = 4 -> Tuinet.ConstraintKind
+Tuinet.ConstraintKind.Length = 0 -> Tuinet.ConstraintKind
+Tuinet.ConstraintKind.Max = 3 -> Tuinet.ConstraintKind
+Tuinet.ConstraintKind.Min = 2 -> Tuinet.ConstraintKind
+Tuinet.ConstraintKind.Percent = 1 -> Tuinet.ConstraintKind
+Tuinet.Direction
+Tuinet.Direction.Horizontal = 1 -> Tuinet.Direction
+Tuinet.Direction.Vertical = 0 -> Tuinet.Direction
+Tuinet.Event
+Tuinet.Event.Event() -> void
+Tuinet.Event.Key.get -> Tuinet.KeyEvent
+Tuinet.Event.Kind.get -> Tuinet.EventKind
+Tuinet.Event.Message.get -> object?
+Tuinet.Event.Mouse.get -> Tuinet.MouseEvent
+Tuinet.Event.Paste.get -> string?
+Tuinet.Event.Size.get -> Tuinet.Size
+Tuinet.EventKind
+Tuinet.EventKind.FocusGained = 6 -> Tuinet.EventKind
+Tuinet.EventKind.FocusLost = 7 -> Tuinet.EventKind
+Tuinet.EventKind.Key = 1 -> Tuinet.EventKind
+Tuinet.EventKind.Message = 3 -> Tuinet.EventKind
+Tuinet.EventKind.Mouse = 4 -> Tuinet.EventKind
+Tuinet.EventKind.None = 0 -> Tuinet.EventKind
+Tuinet.EventKind.Paste = 5 -> Tuinet.EventKind
+Tuinet.EventKind.Resize = 2 -> Tuinet.EventKind
+Tuinet.IStatefulWidget<TState>
+Tuinet.IStatefulWidget<TState>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref TState state) -> void
+Tuinet.ITty
+Tuinet.ITty.Read(System.Span<byte> buffer, int timeoutMs) -> int
+Tuinet.ITty.Restore() -> void
+Tuinet.ITty.Size.get -> Tuinet.Size
+Tuinet.ITty.Wake() -> void
+Tuinet.ITty.Write(System.ReadOnlySpan<byte> bytes) -> void
+Tuinet.IWidget
+Tuinet.IWidget.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.KeyCode
+Tuinet.KeyCode.Backspace = 7 -> Tuinet.KeyCode
+Tuinet.KeyCode.Char = 0 -> Tuinet.KeyCode
+Tuinet.KeyCode.Delete = 9 -> Tuinet.KeyCode
+Tuinet.KeyCode.Down = 2 -> Tuinet.KeyCode
+Tuinet.KeyCode.End = 12 -> Tuinet.KeyCode
+Tuinet.KeyCode.Enter = 5 -> Tuinet.KeyCode
+Tuinet.KeyCode.Escape = 6 -> Tuinet.KeyCode
+Tuinet.KeyCode.F1 = 15 -> Tuinet.KeyCode
+Tuinet.KeyCode.F10 = 24 -> Tuinet.KeyCode
+Tuinet.KeyCode.F11 = 25 -> Tuinet.KeyCode
+Tuinet.KeyCode.F12 = 26 -> Tuinet.KeyCode
+Tuinet.KeyCode.F2 = 16 -> Tuinet.KeyCode
+Tuinet.KeyCode.F3 = 17 -> Tuinet.KeyCode
+Tuinet.KeyCode.F4 = 18 -> Tuinet.KeyCode
+Tuinet.KeyCode.F5 = 19 -> Tuinet.KeyCode
+Tuinet.KeyCode.F6 = 20 -> Tuinet.KeyCode
+Tuinet.KeyCode.F7 = 21 -> Tuinet.KeyCode
+Tuinet.KeyCode.F8 = 22 -> Tuinet.KeyCode
+Tuinet.KeyCode.F9 = 23 -> Tuinet.KeyCode
+Tuinet.KeyCode.Home = 11 -> Tuinet.KeyCode
+Tuinet.KeyCode.Insert = 10 -> Tuinet.KeyCode
+Tuinet.KeyCode.Left = 3 -> Tuinet.KeyCode
+Tuinet.KeyCode.PageDown = 14 -> Tuinet.KeyCode
+Tuinet.KeyCode.PageUp = 13 -> Tuinet.KeyCode
+Tuinet.KeyCode.Right = 4 -> Tuinet.KeyCode
+Tuinet.KeyCode.Tab = 8 -> Tuinet.KeyCode
+Tuinet.KeyCode.Up = 1 -> Tuinet.KeyCode
+Tuinet.KeyEvent
+Tuinet.KeyEvent.Code.get -> Tuinet.KeyCode
+Tuinet.KeyEvent.Equals(Tuinet.KeyEvent other) -> bool
+Tuinet.KeyEvent.Is(Tuinet.KeyCode code, Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> bool
+Tuinet.KeyEvent.IsChar(char c) -> bool
+Tuinet.KeyEvent.IsCtrl(char c) -> bool
+Tuinet.KeyEvent.KeyEvent() -> void
+Tuinet.KeyEvent.KeyEvent(Tuinet.KeyCode code, System.Text.Rune rune = default(System.Text.Rune), Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> void
+Tuinet.KeyEvent.Modifiers.get -> Tuinet.Modifiers
+Tuinet.KeyEvent.Rune.get -> System.Text.Rune
+Tuinet.Layout
+Tuinet.Markup
+Tuinet.Modifiers
+Tuinet.Modifiers.Alt = 2 -> Tuinet.Modifiers
+Tuinet.Modifiers.Ctrl = 1 -> Tuinet.Modifiers
+Tuinet.Modifiers.None = 0 -> Tuinet.Modifiers
+Tuinet.Modifiers.Shift = 4 -> Tuinet.Modifiers
+Tuinet.MouseButton
+Tuinet.MouseButton.Left = 1 -> Tuinet.MouseButton
+Tuinet.MouseButton.Middle = 2 -> Tuinet.MouseButton
+Tuinet.MouseButton.None = 0 -> Tuinet.MouseButton
+Tuinet.MouseButton.Right = 3 -> Tuinet.MouseButton
+Tuinet.MouseEvent
+Tuinet.MouseEvent.Button.get -> Tuinet.MouseButton
+Tuinet.MouseEvent.Button.init -> void
+Tuinet.MouseEvent.Deconstruct(out Tuinet.MouseKind Kind, out Tuinet.MouseButton Button, out int X, out int Y, out Tuinet.Modifiers Modifiers) -> void
+Tuinet.MouseEvent.Equals(Tuinet.MouseEvent other) -> bool
+Tuinet.MouseEvent.Kind.get -> Tuinet.MouseKind
+Tuinet.MouseEvent.Kind.init -> void
+Tuinet.MouseEvent.Modifiers.get -> Tuinet.Modifiers
+Tuinet.MouseEvent.Modifiers.init -> void
+Tuinet.MouseEvent.MouseEvent() -> void
+Tuinet.MouseEvent.MouseEvent(Tuinet.MouseKind Kind, Tuinet.MouseButton Button, int X, int Y, Tuinet.Modifiers Modifiers) -> void
+Tuinet.MouseEvent.X.get -> int
+Tuinet.MouseEvent.X.init -> void
+Tuinet.MouseEvent.Y.get -> int
+Tuinet.MouseEvent.Y.init -> void
+Tuinet.MouseKind
+Tuinet.MouseKind.Down = 0 -> Tuinet.MouseKind
+Tuinet.MouseKind.Drag = 2 -> Tuinet.MouseKind
+Tuinet.MouseKind.Move = 3 -> Tuinet.MouseKind
+Tuinet.MouseKind.ScrollDown = 5 -> Tuinet.MouseKind
+Tuinet.MouseKind.ScrollLeft = 6 -> Tuinet.MouseKind
+Tuinet.MouseKind.ScrollRight = 7 -> Tuinet.MouseKind
+Tuinet.MouseKind.ScrollUp = 4 -> Tuinet.MouseKind
+Tuinet.MouseKind.Up = 1 -> Tuinet.MouseKind
+Tuinet.Overflow
+Tuinet.Overflow.Clip = 0 -> Tuinet.Overflow
+Tuinet.Overflow.Ellipsis = 1 -> Tuinet.Overflow
+Tuinet.Rect
+Tuinet.Rect.Bottom.get -> int
+Tuinet.Rect.Centered(int width, int height) -> Tuinet.Rect
+Tuinet.Rect.Contains(int x, int y) -> bool
+Tuinet.Rect.Equals(Tuinet.Rect other) -> bool
+Tuinet.Rect.Height.get -> int
+Tuinet.Rect.Inset(int all) -> Tuinet.Rect
+Tuinet.Rect.Inset(int horizontal, int vertical) -> Tuinet.Rect
+Tuinet.Rect.Intersect(Tuinet.Rect other) -> Tuinet.Rect
+Tuinet.Rect.IsEmpty.get -> bool
+Tuinet.Rect.Offset(int dx, int dy) -> Tuinet.Rect
+Tuinet.Rect.Rect() -> void
+Tuinet.Rect.Rect(int x, int y, int width, int height) -> void
+Tuinet.Rect.Right.get -> int
+Tuinet.Rect.Row(int index) -> Tuinet.Rect
+Tuinet.Rect.Size.get -> Tuinet.Size
+Tuinet.Rect.Width.get -> int
+Tuinet.Rect.X.get -> int
+Tuinet.Rect.Y.get -> int
+Tuinet.Size
+Tuinet.Size.Deconstruct(out int Width, out int Height) -> void
+Tuinet.Size.Equals(Tuinet.Size other) -> bool
+Tuinet.Size.Height.get -> int
+Tuinet.Size.Height.init -> void
+Tuinet.Size.Size() -> void
+Tuinet.Size.Size(int Width, int Height) -> void
+Tuinet.Size.Width.get -> int
+Tuinet.Size.Width.init -> void
+Tuinet.Style
+Tuinet.Style.Attrs.get -> Tuinet.Attr
+Tuinet.Style.Bg.get -> Tuinet.Color
+Tuinet.Style.Equals(Tuinet.Style other) -> bool
+Tuinet.Style.Fg.get -> Tuinet.Color
+Tuinet.Style.Patch(Tuinet.Style top) -> Tuinet.Style
+Tuinet.Style.Style() -> void
+Tuinet.Style.Style(Tuinet.Color fg, Tuinet.Color bg, Tuinet.Attr attrs = Tuinet.Attr.None) -> void
+Tuinet.Style.With(Tuinet.Attr attrs) -> Tuinet.Style
+Tuinet.Style.WithBg(Tuinet.Color bg) -> Tuinet.Style
+Tuinet.Style.WithFg(Tuinet.Color fg) -> Tuinet.Style
+Tuinet.Style.Without(Tuinet.Attr attrs) -> Tuinet.Style
+Tuinet.StyledRun
+Tuinet.StyledRun.Deconstruct(out int Length, out Tuinet.Style Style) -> void
+Tuinet.StyledRun.Equals(Tuinet.StyledRun other) -> bool
+Tuinet.StyledRun.Length.get -> int
+Tuinet.StyledRun.Length.init -> void
+Tuinet.StyledRun.Style.get -> Tuinet.Style
+Tuinet.StyledRun.Style.init -> void
+Tuinet.StyledRun.StyledRun() -> void
+Tuinet.StyledRun.StyledRun(int Length, Tuinet.Style Style) -> void
+Tuinet.StyledText
+Tuinet.StyledText.IsEmpty.get -> bool
+Tuinet.StyledText.Runs.get -> System.ReadOnlySpan<Tuinet.StyledRun>
+Tuinet.StyledText.Slice(int start, int length) -> Tuinet.StyledText
+Tuinet.StyledText.Style.get -> Tuinet.Style
+Tuinet.StyledText.StyledText() -> void
+Tuinet.StyledText.StyledText(System.ReadOnlySpan<char> text, System.ReadOnlySpan<Tuinet.StyledRun> runs, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.StyledText.StyledText(System.ReadOnlySpan<char> text, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.StyledText.Text.get -> System.ReadOnlySpan<char>
+Tuinet.StyledTextBuilder
+Tuinet.StyledTextBuilder.Append(scoped System.ReadOnlySpan<char> text, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.StyledTextBuilder.Append<T>(T value, Tuinet.Style style = default(Tuinet.Style), System.ReadOnlySpan<char> format = default(System.ReadOnlySpan<char>)) -> void
+Tuinet.StyledTextBuilder.Build(Tuinet.Style style = default(Tuinet.Style)) -> Tuinet.StyledText
+Tuinet.StyledTextBuilder.Length.get -> int
+Tuinet.StyledTextBuilder.Overflowed.get -> bool
+Tuinet.StyledTextBuilder.StyledTextBuilder() -> void
+Tuinet.StyledTextBuilder.StyledTextBuilder(System.Span<char> chars, System.Span<Tuinet.StyledRun> runs) -> void
+Tuinet.Terminal
+Tuinet.Terminal.BeginFrame() -> Tuinet.CellBuffer!
+Tuinet.Terminal.BytesWritten.get -> long
+Tuinet.Terminal.ColorMode.get -> Tuinet.ColorMode
+Tuinet.Terminal.Dispose() -> void
+Tuinet.Terminal.Frames.get -> long
+Tuinet.Terminal.Height.get -> int
+Tuinet.Terminal.Invalidate() -> void
+Tuinet.Terminal.LastFrameBytes.get -> int
+Tuinet.Terminal.Options.get -> Tuinet.TerminalOptions!
+Tuinet.Terminal.Poll(out Tuinet.Event ev, int timeoutMs) -> bool
+Tuinet.Terminal.Post(object! message) -> void
+Tuinet.Terminal.Present() -> void
+Tuinet.Terminal.Size.get -> Tuinet.Size
+Tuinet.Terminal.Terminal(Tuinet.ITty! tty, Tuinet.TerminalOptions? options = null) -> void
+Tuinet.Terminal.Width.get -> int
+Tuinet.TerminalOptions
+Tuinet.TerminalOptions.<Clone>$() -> Tuinet.TerminalOptions!
+Tuinet.TerminalOptions.BracketedPaste.get -> bool
+Tuinet.TerminalOptions.BracketedPaste.init -> void
+Tuinet.TerminalOptions.ColorMode.get -> Tuinet.ColorMode?
+Tuinet.TerminalOptions.ColorMode.init -> void
+Tuinet.TerminalOptions.Equals(Tuinet.TerminalOptions? other) -> bool
+Tuinet.TerminalOptions.EscapeTimeoutMs.get -> int
+Tuinet.TerminalOptions.EscapeTimeoutMs.init -> void
+Tuinet.TerminalOptions.FocusEvents.get -> bool
+Tuinet.TerminalOptions.FocusEvents.init -> void
+Tuinet.TerminalOptions.Mouse.get -> bool
+Tuinet.TerminalOptions.Mouse.init -> void
+Tuinet.TerminalOptions.MouseMotion.get -> bool
+Tuinet.TerminalOptions.MouseMotion.init -> void
+Tuinet.TerminalOptions.ScrollRegions.get -> bool
+Tuinet.TerminalOptions.ScrollRegions.init -> void
+Tuinet.TerminalOptions.TerminalOptions() -> void
+Tuinet.Testing.TestTty
+Tuinet.Testing.TestTty.Blocked.get -> System.Threading.ManualResetEventSlim!
+Tuinet.Testing.TestTty.ClearWritten() -> void
+Tuinet.Testing.TestTty.Dispose() -> void
+Tuinet.Testing.TestTty.Enqueue(string! input) -> void
+Tuinet.Testing.TestTty.Enqueue(System.ReadOnlySpan<byte> input) -> void
+Tuinet.Testing.TestTty.Read(System.Span<byte> buffer, int timeoutMs) -> int
+Tuinet.Testing.TestTty.ReadTimeouts.get -> System.Collections.Generic.List<int>!
+Tuinet.Testing.TestTty.Resize(int width, int height) -> void
+Tuinet.Testing.TestTty.Restore() -> void
+Tuinet.Testing.TestTty.Restored.get -> bool
+Tuinet.Testing.TestTty.Size.get -> Tuinet.Size
+Tuinet.Testing.TestTty.TestTty(int width = 80, int height = 24) -> void
+Tuinet.Testing.TestTty.Wake() -> void
+Tuinet.Testing.TestTty.Write(System.ReadOnlySpan<byte> bytes) -> void
+Tuinet.Testing.TestTty.WriteCount.get -> int
+Tuinet.Testing.TestTty.Written.get -> byte[]!
+Tuinet.Testing.TestTty.WrittenText.get -> string!
+Tuinet.TextWidth
+Tuinet.WidgetExtensions
+Tuinet.Widgets.Alignment
+Tuinet.Widgets.Alignment.Center = 1 -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Alignment.Left = 0 -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Alignment.Right = 2 -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Block
+Tuinet.Widgets.Block.Block() -> void
+Tuinet.Widgets.Block.Borders.get -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Block.Borders.init -> void
+Tuinet.Widgets.Block.BorderStyle.get -> Tuinet.Style
+Tuinet.Widgets.Block.BorderStyle.init -> void
+Tuinet.Widgets.Block.BorderType.get -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.Block.BorderType.init -> void
+Tuinet.Widgets.Block.Footer.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Block.Footer.init -> void
+Tuinet.Widgets.Block.FooterAlignment.get -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Block.FooterAlignment.init -> void
+Tuinet.Widgets.Block.Inner(Tuinet.Rect area) -> Tuinet.Rect
+Tuinet.Widgets.Block.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Block.Style.get -> Tuinet.Style
+Tuinet.Widgets.Block.Style.init -> void
+Tuinet.Widgets.Block.StyledFooter.get -> Tuinet.StyledText
+Tuinet.Widgets.Block.StyledFooter.init -> void
+Tuinet.Widgets.Block.StyledTitle.get -> Tuinet.StyledText
+Tuinet.Widgets.Block.StyledTitle.init -> void
+Tuinet.Widgets.Block.Title.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Block.Title.init -> void
+Tuinet.Widgets.Block.TitleAlignment.get -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Block.TitleAlignment.init -> void
+Tuinet.Widgets.Block.TitleStyle.get -> Tuinet.Style
+Tuinet.Widgets.Block.TitleStyle.init -> void
+Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.All = Tuinet.Widgets.Borders.Top | Tuinet.Widgets.Borders.Right | Tuinet.Widgets.Borders.Bottom | Tuinet.Widgets.Borders.Left -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.Bottom = 4 -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.Left = 8 -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.None = 0 -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.Right = 2 -> Tuinet.Widgets.Borders
+Tuinet.Widgets.Borders.Top = 1 -> Tuinet.Widgets.Borders
+Tuinet.Widgets.BorderType
+Tuinet.Widgets.BorderType.Dashed = 4 -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.BorderType.Double = 2 -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.BorderType.Plain = 0 -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.BorderType.Rounded = 1 -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.BorderType.Thick = 3 -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.Button
+Tuinet.Widgets.Button.Button() -> void
+Tuinet.Widgets.Button.Button(System.ReadOnlySpan<char> label) -> void
+Tuinet.Widgets.Button.Focused.get -> bool
+Tuinet.Widgets.Button.Focused.init -> void
+Tuinet.Widgets.Button.FocusedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Button.FocusedStyle.init -> void
+Tuinet.Widgets.Button.Label.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Button.Label.init -> void
+Tuinet.Widgets.Button.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Button.Style.get -> Tuinet.Style
+Tuinet.Widgets.Button.Style.init -> void
+Tuinet.Widgets.Checkbox
+Tuinet.Widgets.Checkbox.BorderStyle.get -> Tuinet.Style
+Tuinet.Widgets.Checkbox.BorderStyle.init -> void
+Tuinet.Widgets.Checkbox.Boxed.get -> bool
+Tuinet.Widgets.Checkbox.Boxed.init -> void
+Tuinet.Widgets.Checkbox.BoxedSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Checkbox.BoxedSymbol.init -> void
+Tuinet.Widgets.Checkbox.Checkbox() -> void
+Tuinet.Widgets.Checkbox.Checkbox(System.ReadOnlySpan<char> label, bool isChecked) -> void
+Tuinet.Widgets.Checkbox.Checked.get -> bool
+Tuinet.Widgets.Checkbox.Checked.init -> void
+Tuinet.Widgets.Checkbox.CheckedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Checkbox.CheckedStyle.init -> void
+Tuinet.Widgets.Checkbox.CheckedSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Checkbox.CheckedSymbol.init -> void
+Tuinet.Widgets.Checkbox.Focused.get -> bool
+Tuinet.Widgets.Checkbox.Focused.init -> void
+Tuinet.Widgets.Checkbox.FocusedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Checkbox.FocusedStyle.init -> void
+Tuinet.Widgets.Checkbox.Label.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Checkbox.Label.init -> void
+Tuinet.Widgets.Checkbox.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Checkbox.Style.get -> Tuinet.Style
+Tuinet.Widgets.Checkbox.Style.init -> void
+Tuinet.Widgets.Checkbox.UncheckedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Checkbox.UncheckedStyle.init -> void
+Tuinet.Widgets.Checkbox.UncheckedSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Checkbox.UncheckedSymbol.init -> void
+Tuinet.Widgets.Clear
+Tuinet.Widgets.Clear.Clear() -> void
+Tuinet.Widgets.Clear.Clear(Tuinet.Style style) -> void
+Tuinet.Widgets.Clear.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Dropdown<TSource>
+Tuinet.Widgets.Dropdown<TSource>.Dropdown() -> void
+Tuinet.Widgets.Dropdown<TSource>.Dropdown(TSource source) -> void
+Tuinet.Widgets.Dropdown<TSource>.MaxVisible.get -> int
+Tuinet.Widgets.Dropdown<TSource>.MaxVisible.init -> void
+Tuinet.Widgets.Dropdown<TSource>.Placeholder.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Dropdown<TSource>.Placeholder.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PlaceholderStyle.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.PlaceholderStyle.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PopupBorder.get -> Tuinet.Widgets.BorderType
+Tuinet.Widgets.Dropdown<TSource>.PopupBorder.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PopupBordered.get -> bool
+Tuinet.Widgets.Dropdown<TSource>.PopupBordered.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PopupBorderStyle.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.PopupBorderStyle.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PopupStyle.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.PopupStyle.init -> void
+Tuinet.Widgets.Dropdown<TSource>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.DropdownState state) -> void
+Tuinet.Widgets.Dropdown<TSource>.RenderPopup(Tuinet.Rect anchor, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.DropdownState state) -> void
+Tuinet.Widgets.Dropdown<TSource>.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.SelectedStyle.init -> void
+Tuinet.Widgets.Dropdown<TSource>.Style.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.Style.init -> void
+Tuinet.Widgets.DropdownState
+Tuinet.Widgets.DropdownState.Close() -> void
+Tuinet.Widgets.DropdownState.DropdownState() -> void
+Tuinet.Widgets.DropdownState.DropdownState(int selected) -> void
+Tuinet.Widgets.DropdownState.Handle(Tuinet.KeyEvent key, int count) -> bool
+Tuinet.Widgets.DropdownState.IsOpen.get -> bool
+Tuinet.Widgets.DropdownState.List -> Tuinet.Widgets.ListState
+Tuinet.Widgets.DropdownState.Open() -> void
+Tuinet.Widgets.DropdownState.Selected.get -> int
+Tuinet.Widgets.DropdownState.Selected.set -> void
+Tuinet.Widgets.IListSource
+Tuinet.Widgets.IListSource.Count.get -> int
+Tuinet.Widgets.IListSource.RenderItem(int index, Tuinet.Rect area, Tuinet.CellBuffer! buffer, bool selected) -> void
+Tuinet.Widgets.ITableSource
+Tuinet.Widgets.ITableSource.Cell(int row, int column, System.Span<char> scratch, out Tuinet.Style style) -> System.ReadOnlySpan<char>
+Tuinet.Widgets.ITableSource.RowCount.get -> int
+Tuinet.Widgets.ListState
+Tuinet.Widgets.ListState.First(int count) -> void
+Tuinet.Widgets.ListState.Last(int count) -> void
+Tuinet.Widgets.ListState.ListState() -> void
+Tuinet.Widgets.ListState.ListState(int selected = 0) -> void
+Tuinet.Widgets.ListState.Next(int count) -> void
+Tuinet.Widgets.ListState.Offset.get -> int
+Tuinet.Widgets.ListState.Offset.set -> void
+Tuinet.Widgets.ListState.PageDown(int count) -> void
+Tuinet.Widgets.ListState.PageUp(int count) -> void
+Tuinet.Widgets.ListState.Previous(int count) -> void
+Tuinet.Widgets.ListState.Selected.get -> int
+Tuinet.Widgets.ListState.Selected.set -> void
+Tuinet.Widgets.ListState.Viewport.get -> int
+Tuinet.Widgets.ListView<TSource>
+Tuinet.Widgets.ListView<TSource>.HighlightSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.ListView<TSource>.HighlightSymbol.init -> void
+Tuinet.Widgets.ListView<TSource>.HighlightSymbolStyle.get -> Tuinet.Style
+Tuinet.Widgets.ListView<TSource>.HighlightSymbolStyle.init -> void
+Tuinet.Widgets.ListView<TSource>.ListView() -> void
+Tuinet.Widgets.ListView<TSource>.ListView(TSource source) -> void
+Tuinet.Widgets.ListView<TSource>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.ListState state) -> void
+Tuinet.Widgets.ListView<TSource>.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.ListView<TSource>.SelectedStyle.init -> void
+Tuinet.Widgets.Paragraph
+Tuinet.Widgets.Paragraph.Alignment.get -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.Paragraph.Alignment.init -> void
+Tuinet.Widgets.Paragraph.Paragraph() -> void
+Tuinet.Widgets.Paragraph.Paragraph(System.ReadOnlySpan<char> text, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.Widgets.Paragraph.Paragraph(Tuinet.StyledText text) -> void
+Tuinet.Widgets.Paragraph.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Paragraph.Scroll.get -> int
+Tuinet.Widgets.Paragraph.Scroll.init -> void
+Tuinet.Widgets.Paragraph.Style.get -> Tuinet.Style
+Tuinet.Widgets.Paragraph.Style.init -> void
+Tuinet.Widgets.Paragraph.Text.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Paragraph.Text.init -> void
+Tuinet.Widgets.Paragraph.Wrap.get -> Tuinet.Widgets.TextWrap
+Tuinet.Widgets.Paragraph.Wrap.init -> void
+Tuinet.Widgets.ProgressBar
+Tuinet.Widgets.ProgressBar.EmptyChar.get -> char
+Tuinet.Widgets.ProgressBar.EmptyChar.init -> void
+Tuinet.Widgets.ProgressBar.EmptyStyle.get -> Tuinet.Style
+Tuinet.Widgets.ProgressBar.EmptyStyle.init -> void
+Tuinet.Widgets.ProgressBar.FilledChar.get -> char
+Tuinet.Widgets.ProgressBar.FilledChar.init -> void
+Tuinet.Widgets.ProgressBar.FilledStyle.get -> Tuinet.Style
+Tuinet.Widgets.ProgressBar.FilledStyle.init -> void
+Tuinet.Widgets.ProgressBar.ProgressBar() -> void
+Tuinet.Widgets.ProgressBar.ProgressBar(double ratio) -> void
+Tuinet.Widgets.ProgressBar.Ratio.get -> double
+Tuinet.Widgets.ProgressBar.Ratio.init -> void
+Tuinet.Widgets.ProgressBar.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.ProgressBar.Smooth.get -> bool
+Tuinet.Widgets.ProgressBar.Smooth.init -> void
+Tuinet.Widgets.Spinner
+Tuinet.Widgets.Table
+Tuinet.Widgets.Table<TSource>
+Tuinet.Widgets.Table<TSource>.AlternateRowStyle.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.AlternateRowStyle.init -> void
+Tuinet.Widgets.Table<TSource>.ColumnSeparator.get -> char
+Tuinet.Widgets.Table<TSource>.ColumnSeparator.init -> void
+Tuinet.Widgets.Table<TSource>.ColumnSpacing.get -> int
+Tuinet.Widgets.Table<TSource>.ColumnSpacing.init -> void
+Tuinet.Widgets.Table<TSource>.HeaderSeparator.get -> bool
+Tuinet.Widgets.Table<TSource>.HeaderSeparator.init -> void
+Tuinet.Widgets.Table<TSource>.HeaderStyle.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.HeaderStyle.init -> void
+Tuinet.Widgets.Table<TSource>.HighlightSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Table<TSource>.HighlightSymbol.init -> void
+Tuinet.Widgets.Table<TSource>.HighlightSymbolStyle.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.HighlightSymbolStyle.init -> void
+Tuinet.Widgets.Table<TSource>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.ListState state) -> void
+Tuinet.Widgets.Table<TSource>.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.SelectedStyle.init -> void
+Tuinet.Widgets.Table<TSource>.SeparatorStyle.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.SeparatorStyle.init -> void
+Tuinet.Widgets.Table<TSource>.SortColumn.get -> int
+Tuinet.Widgets.Table<TSource>.SortColumn.init -> void
+Tuinet.Widgets.Table<TSource>.SortDescending.get -> bool
+Tuinet.Widgets.Table<TSource>.SortDescending.init -> void
+Tuinet.Widgets.Table<TSource>.Style.get -> Tuinet.Style
+Tuinet.Widgets.Table<TSource>.Style.init -> void
+Tuinet.Widgets.Table<TSource>.Table() -> void
+Tuinet.Widgets.Table<TSource>.Table(TSource source, System.ReadOnlySpan<Tuinet.Widgets.TableColumn> columns) -> void
+Tuinet.Widgets.TableColumn
+Tuinet.Widgets.TableColumn.Alignment.get -> Tuinet.Widgets.Alignment
+Tuinet.Widgets.TableColumn.Alignment.init -> void
+Tuinet.Widgets.TableColumn.Deconstruct(out string! Header, out Tuinet.Constraint Width, out Tuinet.Widgets.Alignment Alignment, out Tuinet.Overflow Overflow) -> void
+Tuinet.Widgets.TableColumn.Equals(Tuinet.Widgets.TableColumn other) -> bool
+Tuinet.Widgets.TableColumn.Header.get -> string!
+Tuinet.Widgets.TableColumn.Header.init -> void
+Tuinet.Widgets.TableColumn.Overflow.get -> Tuinet.Overflow
+Tuinet.Widgets.TableColumn.Overflow.init -> void
+Tuinet.Widgets.TableColumn.TableColumn() -> void
+Tuinet.Widgets.TableColumn.TableColumn(string! Header, Tuinet.Constraint Width, Tuinet.Widgets.Alignment Alignment = Tuinet.Widgets.Alignment.Left, Tuinet.Overflow Overflow = Tuinet.Overflow.Ellipsis) -> void
+Tuinet.Widgets.TableColumn.Width.get -> Tuinet.Constraint
+Tuinet.Widgets.TableColumn.Width.init -> void
+Tuinet.Widgets.TextInput
+Tuinet.Widgets.TextInput.Focused.get -> bool
+Tuinet.Widgets.TextInput.Focused.init -> void
+Tuinet.Widgets.TextInput.Placeholder.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TextInput.Placeholder.init -> void
+Tuinet.Widgets.TextInput.PlaceholderStyle.get -> Tuinet.Style
+Tuinet.Widgets.TextInput.PlaceholderStyle.init -> void
+Tuinet.Widgets.TextInput.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.TextInputState! state) -> void
+Tuinet.Widgets.TextInput.Style.get -> Tuinet.Style
+Tuinet.Widgets.TextInput.Style.init -> void
+Tuinet.Widgets.TextInput.TextInput() -> void
+Tuinet.Widgets.TextInputState
+Tuinet.Widgets.TextInputState.Caret.get -> int
+Tuinet.Widgets.TextInputState.Clear() -> void
+Tuinet.Widgets.TextInputState.DisplayRune(int index) -> System.Text.Rune
+Tuinet.Widgets.TextInputState.Handle(Tuinet.KeyEvent key) -> bool
+Tuinet.Widgets.TextInputState.Insert(System.ReadOnlySpan<char> text) -> void
+Tuinet.Widgets.TextInputState.Insert(System.Text.Rune rune) -> void
+Tuinet.Widgets.TextInputState.IsEmpty.get -> bool
+Tuinet.Widgets.TextInputState.Length.get -> int
+Tuinet.Widgets.TextInputState.Mask.get -> char?
+Tuinet.Widgets.TextInputState.Mask.set -> void
+Tuinet.Widgets.TextInputState.Runes.get -> System.ReadOnlySpan<System.Text.Rune>
+Tuinet.Widgets.TextInputState.Scroll.get -> int
+Tuinet.Widgets.TextInputState.Set(System.ReadOnlySpan<char> text) -> void
+Tuinet.Widgets.TextInputState.Text.get -> string!
+Tuinet.Widgets.TextInputState.TextInputState(string? text = null, char? mask = null) -> void
+Tuinet.Widgets.TextItems
+Tuinet.Widgets.TextItems.Count.get -> int
+Tuinet.Widgets.TextItems.RenderItem(int index, Tuinet.Rect area, Tuinet.CellBuffer! buffer, bool selected) -> void
+Tuinet.Widgets.TextItems.TextItems() -> void
+Tuinet.Widgets.TextItems.TextItems(System.ReadOnlySpan<string!> items, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.Widgets.TextRows
+Tuinet.Widgets.TextRows.Cell(int row, int column, System.Span<char> scratch, out Tuinet.Style style) -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TextRows.RowCount.get -> int
+Tuinet.Widgets.TextRows.TextRows() -> void
+Tuinet.Widgets.TextRows.TextRows(System.ReadOnlySpan<string![]!> rows, Tuinet.Style style = default(Tuinet.Style)) -> void
+Tuinet.Widgets.TextWrap
+Tuinet.Widgets.TextWrap.Char = 2 -> Tuinet.Widgets.TextWrap
+Tuinet.Widgets.TextWrap.None = 0 -> Tuinet.Widgets.TextWrap
+Tuinet.Widgets.TextWrap.Word = 1 -> Tuinet.Widgets.TextWrap
+~override Tuinet.Constraint.Equals(object obj) -> bool
+~override Tuinet.Constraint.ToString() -> string
+~override Tuinet.MouseEvent.Equals(object obj) -> bool
+~override Tuinet.MouseEvent.ToString() -> string
+~override Tuinet.Size.Equals(object obj) -> bool
+~override Tuinet.Size.ToString() -> string
+~override Tuinet.StyledRun.Equals(object obj) -> bool
+~override Tuinet.StyledRun.ToString() -> string
+~override Tuinet.Widgets.TableColumn.Equals(object obj) -> bool
+~override Tuinet.Widgets.TableColumn.ToString() -> string

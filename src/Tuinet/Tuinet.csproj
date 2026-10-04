@@ -6,7 +6,8 @@
     <IsAotCompatible>true</IsAotCompatible>
     <IsTrimmable>true</IsTrimmable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
-    <NoWarn>$(NoWarn);CS1591</NoWarn>
+    <!-- RS0026/RS0027 (optional-parameter overload rules) are API-design opinions, not baseline tracking. -->
+    <NoWarn>$(NoWarn);CS1591;RS0026;RS0027</NoWarn>
 
     <PackageId>Tuinet</PackageId>
     <Description>Performance-first immediate-mode terminal UI library: zero-allocation frames, minimal tty bytes, stateless widgets.</Description>
@@ -14,10 +15,28 @@
     <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
     <PackageReadmeFile>README.md</PackageReadmeFile>
     <PackageTags>tui;terminal;console;cli;immediate-mode</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/lmaslanka/tuinet</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/lmaslanka/tuinet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/lmaslanka/tuinet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
-    <None Include="..\..\README.md" Pack="true" PackagePath="\" Condition="Exists('..\..\README.md')" />
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\images\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Public API baseline: any public change must be recorded in PublicAPI.Unshipped.txt (RS0016/RS0017
+       are errors via TreatWarningsAsErrors), so API changes show up in review. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
   <ItemGroup>

@@ -13,7 +13,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 ![Allocations](https://img.shields.io/badge/allocations-0_B%2Fframe-38BDF8)
 ![License](https://img.shields.io/badge/license-Apache--2.0-F5A623)
 
-<img src="docs/images/showcase-main.png" width="860" alt="TUI.NET showcase: a themed list with a details panel">
+<img src="https://raw.githubusercontent.com/lmaslanka/tuinet/main/docs/images/showcase-main.png" width="860" alt="TUI.NET showcase: a themed list with a details panel">
 
 </div>
 
@@ -48,8 +48,8 @@ Zero allocations per frame · one `write` per frame · Native AOT
 
 <table>
   <tr>
-    <td><img src="docs/images/showcase-edit.png" alt="Edit dialog with text inputs, dropdown and checkboxes"></td>
-    <td><img src="docs/images/showcase-progress.png" alt="Progress dialog with animated bars and spinners"></td>
+    <td><img src="https://raw.githubusercontent.com/lmaslanka/tuinet/main/docs/images/showcase-edit.png" alt="Edit dialog with text inputs, dropdown and checkboxes"></td>
+    <td><img src="https://raw.githubusercontent.com/lmaslanka/tuinet/main/docs/images/showcase-progress.png" alt="Progress dialog with animated bars and spinners"></td>
   </tr>
   <tr>
     <td align="center"><sub>Text inputs, dropdowns, checkboxes and buttons</sub></td>
@@ -345,7 +345,7 @@ switch (focus)
 
 `TextInputState` supports the usual editing keys: Home/End, Ctrl+A/E, Ctrl+U/K, Ctrl+W, Ctrl/Alt+←/→,
 Alt+B/F/D and Delete. It also does masking (`mask: '•'` for passwords) and paste (`Insert(string)`).
-For a complete form with validation, see [`EditDialog.cs`](samples/Tuinet.Samples.Showcase/EditDialog.cs).
+For a complete form with validation, see [`EditDialog.cs`](https://github.com/lmaslanka/tuinet/blob/main/samples/Tuinet.Samples.Showcase/EditDialog.cs).
 
 ### Progress and animation
 
@@ -552,20 +552,41 @@ dotnet publish samples/Tuinet.Samples.Showcase -c Release -p:PublishAot=true
 tools/gen-width/gen.py [17.0.0]  # regenerate the Unicode width table from the UCD
 ```
 
-CI ([`.github/workflows/ci.yml`](.github/workflows/ci.yml)) builds with warnings as errors and runs
+CI ([`.github/workflows/ci.yml`](https://github.com/lmaslanka/tuinet/blob/main/.github/workflows/ci.yml)) builds with warnings as errors and runs
 the tests on Linux, macOS and Windows. It also checks that both samples still publish as Native AOT
-with no trim or AOT warnings, then runs the end-to-end checks.
+with no trim or AOT warnings, then runs the end-to-end checks, and packs the library and inspects the
+package ([`tools/pack/verify.sh`](https://github.com/lmaslanka/tuinet/blob/main/tools/pack/verify.sh)).
 
-The end-to-end checks ([`tools/e2e`](tools/e2e)) run the AOT binaries in tmux, a real terminal
+Every public API is listed in `src/Tuinet/PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`. Adding,
+changing or removing a public member fails the build (RS0016/RS0017) until the change is recorded in
+`PublicAPI.Unshipped.txt`, so API changes show up in review. The IDE code fix adds the entries for you,
+or run `dotnet format analyzers src/Tuinet --diagnostics RS0016 RS0017 --severity warn`.
+
+The end-to-end checks ([`tools/e2e`](https://github.com/lmaslanka/tuinet/tree/main/tools/e2e)) run the AOT binaries in tmux, a real terminal
 implementation, and read the screen back:
 
 - **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog.
 - **stress**: bursts of scrolling; every visible row must have the right content in the right order, and
   the terminal must have received scroll-region sequences.
-- **clusters**: the grapheme cluster cases in [`clusters.txt`](tools/e2e/clusters.txt) must produce the
+- **clusters**: the grapheme cluster cases in [`clusters.txt`](https://github.com/lmaslanka/tuinet/blob/main/tools/e2e/clusters.txt) must produce the
   same screen as a reference that places every cell with an explicit cursor move.
 
 Every app must also exit with code 0, restore the terminal modes, and write nothing under `$HOME`.
+
+### Releasing
+
+Pushing a `v*` tag runs [`release.yml`](https://github.com/lmaslanka/tuinet/blob/main/.github/workflows/release.yml):
+build, test, pack, verify, push to NuGet (with symbols), and a GitHub release with notes from
+[`CHANGELOG.md`](https://github.com/lmaslanka/tuinet/blob/main/CHANGELOG.md). It needs a `NUGET_API_KEY`
+secret (in the repo or in the `release` environment).
+
+1. Set `<VersionPrefix>` in `Directory.Build.props` to the new version. The tag must match it.
+2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh, empty
+   `## [Unreleased]` above it.
+3. Move the entries from `src/Tuinet/PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
+4. Commit, then `git tag vx.y.z && git push origin vx.y.z`.
+
+For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from `## [Unreleased]`.
 
 ```
 src/Tuinet/                      the library
@@ -579,9 +600,10 @@ bench/Tuinet.Benchmarks          BenchmarkDotNet suite
 tests/                           unit, widget, allocation, renderer fuzz and sample tests
 tools/e2e/                       end-to-end checks in tmux
 tools/gen-width/                 Unicode width table generator
+tools/pack/                      package check (CI and release)
 docs/images/                     README screenshots
 ```
 
 ## 📄 License
 
-[Apache 2.0](LICENSE)
+[Apache 2.0](https://github.com/lmaslanka/tuinet/blob/main/LICENSE)

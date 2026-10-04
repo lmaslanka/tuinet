@@ -10,4 +10,15 @@
     <InvariantGlobalization>true</InvariantGlobalization>
   </PropertyGroup>
 
+  <!-- Release version. A v* tag must match it (release.yml checks); pre-releases add a suffix with
+       -p:VersionSuffix=rc.1. -->
+  <PropertyGroup>
+    <VersionPrefix>0.1.0</VersionPrefix>
+  </PropertyGroup>
+
+  <!-- Reproducible CI builds: normalized source paths in PDBs. SourceLink itself ships in the SDK. -->
+  <PropertyGroup Condition="'$(GITHUB_ACTIONS)' == 'true'">
+    <ContinuousIntegrationBuild>true</ContinuousIntegrationBuild>
+  </PropertyGroup>
+
 </Project>

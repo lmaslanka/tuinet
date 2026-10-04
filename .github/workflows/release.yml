@@ -1,0 +1,131 @@
+name: Release
+
+# Pushing a v* tag releases that version: v0.1.0 is a stable release, v0.1.0-rc.1 a pre-release. The tag
+# must match <VersionPrefix> in Directory.Build.props. Steps before tagging are in README › Releasing.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+env:
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+
+jobs:
+  pack:
+    name: Build, test & pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Version from tag
+        id: version
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          prefix="${version%%-*}"
+          expected="$(sed -n 's:.*<VersionPrefix>\(.*\)</VersionPrefix>.*:\1:p' Directory.Build.props)"
+          if [ "$prefix" != "$expected" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match VersionPrefix $expected in Directory.Build.props"
+            exit 1
+          fi
+          prerelease=false
+          [ "$version" != "$prefix" ] && prerelease=true
+          echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$prerelease" >> "$GITHUB_OUTPUT"
+
+      # Stable releases need a "## [x.y.z]" section; pre-releases fall back to "## [Unreleased]".
+      - name: Release notes from CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          section() { awk -v h="## [$1]" 'index($0, h) == 1 { on = 1; next } /^## / { on = 0 } /^\[[^]]+\]: / { next } on' CHANGELOG.md; }
+          notes="$(section "$VERSION")"
+          if [ -z "$notes" ] && [ "$PRERELEASE" = true ]; then notes="$(section Unreleased)"; fi
+          if [ -z "$(tr -d '[:space:]' <<<"$notes")" ]; then
+            echo "::error::CHANGELOG.md has no notes for $VERSION"
+            exit 1
+          fi
+          mkdir -p artifacts
+          printf '%s\n' "$notes" > artifacts/release-notes.md
+          cat artifacts/release-notes.md
+
+      - name: Restore
+        run: dotnet restore tuinet.slnx
+
+      - name: Build
+        run: dotnet build tuinet.slnx -c Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+
+      - name: Test
+        run: dotnet test tuinet.slnx -c Release --no-build
+
+      - name: Pack
+        run: >
+          dotnet pack src/Tuinet -c Release --no-build
+          -p:Version=${{ steps.version.outputs.version }}
+          -o artifacts/packages
+
+      - name: Verify package
+        run: tools/pack/verify.sh artifacts/packages
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: release
+          path: |
+            artifacts/packages/*
+            artifacts/release-notes.md
+          if-no-files-found: error
+
+  publish:
+    name: Publish to NuGet & GitHub
+    needs: pack
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    # Add required reviewers to this environment to gate releases; NUGET_API_KEY can live here.
+    environment: release
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          name: release
+          path: artifacts
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      # The .snupkg next to the .nupkg is pushed to the symbol server automatically.
+      - name: Push to NuGet
+        run: >
+          dotnet nuget push "artifacts/packages/*.nupkg"
+          --api-key "${{ secrets.NUGET_API_KEY }}"
+          --source https://api.nuget.org/v3/index.json
+          --skip-duplicate
+
+      - name: GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: >
+          gh release create "$GITHUB_REF_NAME" artifacts/packages/*
+          --title "v${{ needs.pack.outputs.version }}"
+          --notes-file artifacts/release-notes.md
+          ${{ needs.pack.outputs.prerelease == 'true' && '--prerelease' || '' }}

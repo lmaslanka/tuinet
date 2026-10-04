@@ -63,6 +63,39 @@ jobs:
           path: TestResults/*.trx
           if-no-files-found: ignore
 
+  # Packs the library the way release.yml does and inspects the result, so packaging breaks show up in
+  # review rather than at release time.
+  pack:
+    name: Pack check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Cache NuGet packages
+        uses: actions/cache@v6
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj', 'Directory.Build.props') }}
+          restore-keys: nuget-${{ runner.os }}-
+
+      - name: Pack
+        run: dotnet pack src/Tuinet -c Release -p:VersionSuffix=ci.${{ github.run_number }} -o artifacts/packages
+
+      - name: Verify package
+        run: tools/pack/verify.sh artifacts/packages
+
+      - uses: actions/upload-artifact@v7
+        with:
+          name: packages
+          path: artifacts/packages/*
+          if-no-files-found: error
+
   native-aot:
     name: Native AOT publish
     runs-on: ubuntu-latest
