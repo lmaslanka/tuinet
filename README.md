@@ -182,6 +182,34 @@ frame.SetString(x + 1, area.Y, "· 14/14", new Style(Color.BrightBlack, default,
 `SetString` returns the column after the text it wrote, so styled segments chain naturally. Text is
 clipped to the buffer, or to `maxWidth`, optionally ending in `…` (`Overflow.Ellipsis`).
 
+#### Mixed-style text
+
+`StyledText` is text plus style runs, as one value: `SetText` writes it, and `Paragraph` and block
+titles (`StyledTitle`, `StyledFooter`) accept it. It points at your memory, so it never allocates. Build
+one from runs, with `StyledTextBuilder`, or from markup:
+
+```csharp
+// Runs: lengths in chars, each style layered over the base style (and over the cells underneath).
+frame.SetText(x, y, new StyledText("j/k move", [new(3, key), new(5, dim)]));
+
+// A builder over stack memory: merges equal styles, formats numbers in place, never throws when full.
+var status = new StyledTextBuilder(stackalloc char[64], stackalloc StyledRun[8]);
+status.Append("build ", accent);
+status.Append(passed, ok);
+status.Append("/", dim);
+status.Append(total, dim);
+frame.SetText(area.X, area.Y, status.Build(), area.Width, Overflow.Ellipsis);
+
+// Markup: [b] [dim] [i] [u] [s] [reverse], fg=/bg= with a name, #RRGGBB or 0-255; [/] closes the latest tag.
+frame.SetMarkup(x, y, "[b fg=#38BDF8]q[/] quit  [u]?[/] help");
+frame.Render(new Paragraph(Markup.Parse(help, chars, runs)) { Wrap = TextWrap.Word }, area);
+```
+
+A run boundary never splits a character, clipping stops at the first glyph that doesn't fit, and an
+ellipsis takes the style of the text it replaces. Unknown tags stay as text, so `[1/3]` needs no
+escaping (`[[` is a literal `[`). `SetMarkup` parses on every call: for text drawn every frame in a
+hot path, parse once with `Markup.Parse` into arrays you keep, or use the builder.
+
 TUI.NET detects the terminal's color depth from `COLORTERM`, `TERM`, `TERM_PROGRAM`, `WT_SESSION` and
 `NO_COLOR`. It maps RGB down to 256 or 16 colors as needed, so a truecolor theme still looks right
 on a basic terminal.
@@ -458,8 +486,8 @@ public void Key_in_frame_out()
 
 | Widget | State | What it does |
 |---|---|---|
-| `Block` | | Borders (plain, rounded, double, thick, dashed), title and footer with alignment, background, `Inner(area)` |
-| `Paragraph` | | Multi-line text with word/char wrapping, alignment and scroll; `LineCount` for scrollbars |
+| `Block` | | Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, `Inner(area)` |
+| `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; `LineCount` for scrollbars |
 | `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol |
 | `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow |
 | `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor |
