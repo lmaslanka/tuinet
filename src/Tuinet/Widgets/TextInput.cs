@@ -4,7 +4,9 @@ namespace Tuinet.Widgets;
 
 /// <summary>
 /// Editable single-line text: a rune buffer with a caret, emacs-style editing keys, and optional
-/// masking. Owned by the app; allocates only when it grows or when <see cref="Text"/> is read after an edit.
+/// masking. The caret moves and deletes by grapheme cluster (an emoji sequence or a letter with its
+/// accents is one step). Owned by the app; allocates only when it grows or when <see cref="Text"/> is
+/// read after an edit.
 /// </summary>
 public sealed class TextInputState
 {
@@ -21,10 +23,10 @@ public sealed class TextInputState
         }
     }
 
-    /// <summary>Character drawn instead of each rune (e.g. '•' for passwords), or null.</summary>
+    /// <summary>Character drawn instead of each grapheme cluster (e.g. '•' for passwords), or null.</summary>
     public char? Mask { get; set; }
 
-    /// <summary>Caret position, in runes.</summary>
+    /// <summary>Caret position, in runes (always at a grapheme cluster boundary).</summary>
     public int Caret { get; private set; }
 
     public int Length => _length;
@@ -51,7 +53,7 @@ public sealed class TextInputState
         _text = string.Empty;
     }
 
-    /// <summary>Insert text at the caret (e.g. a paste). Control characters are dropped.</summary>
+    /// <summary>Insert text at the caret (e.g. a paste). Control characters are dropped; marks and joiners are kept.</summary>
     public void Insert(ReadOnlySpan<char> text)
     {
         foreach (Rune rune in text.EnumerateRunes())
@@ -62,7 +64,7 @@ public sealed class TextInputState
 
     public void Insert(Rune rune)
     {
-        if (TextWidth.Of(rune) == 0)
+        if (Rune.IsControl(rune))
         {
             return;
         }
@@ -93,12 +95,12 @@ public sealed class TextInputState
                 {
                     case 'a': Caret = 0; return true;
                     case 'e': Caret = _length; return true;
-                    case 'b': MoveTo(Caret - 1); return true;
-                    case 'f': MoveTo(Caret + 1); return true;
+                    case 'b': MoveTo(ClusterStart(Caret)); return true;
+                    case 'f': MoveTo(ClusterEnd(Caret)); return true;
                     case 'u': Remove(0, Caret); return true;
                     case 'k': Remove(Caret, _length); return true;
                     case 'w': Remove(WordStart(Caret), Caret); return true;
-                    case 'd': Remove(Caret, Math.Min(Caret + 1, _length)); return true;
+                    case 'd': Remove(Caret, ClusterEnd(Caret)); return true;
                     default: return false;
                 }
 
@@ -112,16 +114,16 @@ public sealed class TextInputState
                 }
 
             case KeyCode.Backspace:
-                Remove(word ? WordStart(Caret) : Math.Max(0, Caret - 1), Caret);
+                Remove(word ? WordStart(Caret) : ClusterStart(Caret), Caret);
                 return true;
             case KeyCode.Delete:
-                Remove(Caret, word ? WordEnd(Caret) : Math.Min(Caret + 1, _length));
+                Remove(Caret, word ? WordEnd(Caret) : ClusterEnd(Caret));
                 return true;
             case KeyCode.Left:
-                MoveTo(word ? WordStart(Caret) : Caret - 1);
+                MoveTo(word ? WordStart(Caret) : ClusterStart(Caret));
                 return true;
             case KeyCode.Right:
-                MoveTo(word ? WordEnd(Caret) : Caret + 1);
+                MoveTo(word ? WordEnd(Caret) : ClusterEnd(Caret));
                 return true;
             case KeyCode.Home:
                 Caret = 0;
@@ -136,6 +138,62 @@ public sealed class TextInputState
 
     /// <summary>The rune drawn at <paramref name="index"/> (the mask when masked).</summary>
     public Rune DisplayRune(int index) => Mask is char mask ? new Rune(mask) : _runes[index];
+
+    /// <summary>
+    /// Encode the grapheme cluster starting at rune <paramref name="start"/> into <paramref name="chars"/>
+    /// (at most <see cref="Graphemes.MaxChars"/> + 2 chars are used). Returns its length in chars;
+    /// <paramref name="end"/> is the rune index after it.
+    /// </summary>
+    internal int Cluster(int start, Span<char> chars, out int end)
+    {
+        int n = 0;
+        end = start;
+        while (end < _length && n + 2 <= chars.Length)
+        {
+            int before = n;
+            n += _runes[end].EncodeToUtf16(chars[n..]);
+            end++;
+            if (end - start >= 2 && Graphemes.Length(chars[..n]) <= before)
+            {
+                // The rune just added starts the next cluster.
+                end--;
+                return before;
+            }
+        }
+
+        return n;
+    }
+
+    /// <summary>Rune index after the grapheme cluster that starts at <paramref name="start"/>.</summary>
+    internal int ClusterEnd(int start)
+    {
+        if (start >= _length)
+        {
+            return _length;
+        }
+
+        Span<char> chars = stackalloc char[Graphemes.MaxChars + 2];
+        Cluster(start, chars, out int end);
+        return end;
+    }
+
+    /// <summary>Rune index where the grapheme cluster before <paramref name="index"/> starts.</summary>
+    internal int ClusterStart(int index)
+    {
+        int start = 0;
+        while (start < index)
+        {
+            int end = ClusterEnd(start);
+            if (end >= index)
+            {
+                return start;
+            }
+
+            start = end;
+        }
+
+        return start;
+    }
 
     private void MoveTo(int caret) => Caret = Math.Clamp(caret, 0, _length);
 
@@ -186,6 +244,13 @@ public sealed class TextInputState
 /// </summary>
 public readonly ref struct TextInput : IStatefulWidget<TextInputState>
 {
+    /// <summary>Columns of the cluster starting at rune <paramref name="start"/> (1 per cluster when masked).</summary>
+    private static int ClusterWidth(TextInputState state, int start, Span<char> chars, out int end)
+    {
+        int n = state.Cluster(start, chars, out end);
+        return state.Mask is char mask ? TextWidth.Of(new Rune(mask)) : TextWidth.Of(chars[..n]);
+    }
+
     public TextInput()
     {
     }
@@ -221,18 +286,18 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
         // Unfocused inputs show their beginning; focused ones scroll to keep the caret visible.
         int caret = Focused ? state.Caret : 0;
         int scroll = Focused ? Math.Min(state.Scroll, caret) : 0;
+        Span<char> chars = stackalloc char[Graphemes.MaxChars + 2];
 
         // Keep the caret cell on screen: columns from scroll to caret, plus one for the caret itself.
         int columns = 1;
-        for (int i = scroll; i < caret; i++)
+        for (int i = scroll; i < caret;)
         {
-            columns += TextWidth.Of(state.DisplayRune(i));
+            columns += ClusterWidth(state, i, chars, out i);
         }
 
         while (columns > width && scroll < caret)
         {
-            columns -= TextWidth.Of(state.DisplayRune(scroll));
-            scroll++;
+            columns -= ClusterWidth(state, scroll, chars, out scroll);
         }
 
         if (Focused)
@@ -242,20 +307,22 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
 
         int x = row.X;
         int caretX = row.X;
-        for (int i = scroll; i < state.Length; i++)
+        for (int i = scroll; i < state.Length;)
         {
             if (i == caret)
             {
                 caretX = x;
             }
 
-            Rune rune = state.DisplayRune(i);
-            if (x + TextWidth.Of(rune) > row.Right)
+            int start = i;
+            int n = state.Cluster(start, chars, out i);
+            ReadOnlySpan<char> cluster = state.Mask is char mask ? [mask] : chars[..n];
+            if (x + TextWidth.Of(cluster) > row.Right)
             {
                 break;
             }
 
-            x += buffer.SetRune(x, row.Y, rune, Style);
+            x = buffer.SetString(x, row.Y, cluster, Style, row.Right - x);
         }
 
         if (caret >= state.Length)

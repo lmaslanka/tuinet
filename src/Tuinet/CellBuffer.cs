@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -28,6 +29,13 @@ public sealed class CellBuffer
 {
     private Cell[] _cells;
 
+    /// <summary>
+    /// Per row: holds a glyph that could join a neighbouring cell into one cluster on the terminal (an emoji,
+    /// a mark, a regional indicator, a cluster…). Rows of plain Latin, CJK and box drawing never do, and the
+    /// renderer skips its join checks for them. Set on write, reset by <see cref="Clear"/>.
+    /// </summary>
+    private bool[] _mayJoin;
+
     public CellBuffer(int width, int height)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(width, 1);
@@ -35,6 +43,7 @@ public sealed class CellBuffer
         Width = width;
         Height = height;
         _cells = new Cell[width * height];
+        _mayJoin = new bool[height];
         Clear();
     }
 
@@ -76,7 +85,20 @@ public sealed class CellBuffer
         return _cells.AsSpan(y * Width, Width);
     }
 
-    internal Span<Cell> Cells => _cells.AsSpan(0, Width * Height);
+    /// <summary>All cells, for direct writes (tests). Every row is then assumed to hold joinable glyphs.</summary>
+    internal Span<Cell> Cells
+    {
+        get
+        {
+            _mayJoin.AsSpan(0, Height).Fill(true);
+            return _cells.AsSpan(0, Width * Height);
+        }
+    }
+
+    internal bool RowMayJoin(int y) => _mayJoin[y];
+
+    /// <summary>Could this glyph join a neighbouring cell on the terminal? (See <see cref="_mayJoin"/>.)</summary>
+    private static bool Joinable(Rune rune) => !Graphemes.Simple(rune.Value);
 
     /// <summary>Show the terminal cursor at (x, y) after this frame. Out-of-range positions hide it.</summary>
     public void SetCursor(int x, int y)
@@ -100,7 +122,8 @@ public sealed class CellBuffer
     /// <summary>Reset every cell to <see cref="Cell.Empty"/> and hide the cursor.</summary>
     public void Clear()
     {
-        Cells.Fill(Cell.Empty);
+        _cells.AsSpan(0, Width * Height).Fill(Cell.Empty);
+        _mayJoin.AsSpan(0, Height).Clear();
         HideCursor();
     }
 
@@ -120,12 +143,14 @@ public sealed class CellBuffer
             return;
         }
 
+        bool joinable = cell.IsGrapheme || Joinable(cell.RawRune);
         for (int y = r.Y; y < r.Bottom; y++)
         {
             Span<Cell> row = RowSpan(y);
             FixLeft(row, r.X);
             row.Slice(r.X, r.Width).Fill(cell);
             FixRight(row, r.Right);
+            _mayJoin[y] |= joinable;
         }
     }
 
@@ -223,9 +248,11 @@ public sealed class CellBuffer
         }
 
         var set = Unsafe.BitCast<Cell, Vector128<byte>>(new Cell(rune, style, 1, CellFlags.None));
+        bool joinable = Joinable(rune);
         for (int y = r.Y; y < r.Bottom; y++)
         {
             Span<Cell> row = RowSpan(y);
+            _mayJoin[y] |= joinable;
             FixLeft(row, r.X);
             Span<Vector128<byte>> cells = MemoryMarshal.Cast<Cell, Vector128<byte>>(row.Slice(r.X, r.Width));
             for (int i = 0; i < cells.Length; i++)
@@ -236,6 +263,10 @@ public sealed class CellBuffer
             FixRight(row, r.Right);
         }
     }
+
+    /// <summary>' ' to '~'. (IndexOfAnyExceptInRange allocates on this path; SearchValues doesn't.)</summary>
+    private static readonly SearchValues<char> PrintableAscii =
+        SearchValues.Create(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 
     /// <summary>Bytes 4-7 of a cell: the foreground color.</summary>
     private static readonly Vector128<byte> FgBytes = Vector128.Create(0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, (byte)0);
@@ -290,11 +321,11 @@ public sealed class CellBuffer
         // A UTF-16 char is at most two columns, so short text can skip measuring.
         if (overflow == Overflow.Ellipsis && 2 * text.Length > limit - x && TextWidth.Of(text) > limit - x)
         {
-            int end = Write(row, x, limit - 1, text, style);
-            return Write(row, end, limit, "…", style);
+            int end = Write(row, x, limit - 1, text, style, ref _mayJoin[y]);
+            return Write(row, end, limit, "…", style, ref _mayJoin[y]);
         }
 
-        return Write(row, x, limit, text, style);
+        return Write(row, x, limit, text, style, ref _mayJoin[y]);
     }
 
     public void Resize(int width, int height)
@@ -313,6 +344,11 @@ public sealed class CellBuffer
             _cells = new Cell[width * height];
         }
 
+        if (_mayJoin.Length < height)
+        {
+            _mayJoin = new bool[height];
+        }
+
         Clear();
     }
 
@@ -322,7 +358,11 @@ public sealed class CellBuffer
         var builder = new StringBuilder(Width);
         foreach (Cell cell in Row(y))
         {
-            if (!cell.IsContinuation)
+            if (cell.IsGrapheme)
+            {
+                builder.Append(cell.Text);
+            }
+            else if (!cell.IsContinuation)
             {
                 builder.Append(cell.Rune);
             }
@@ -365,10 +405,12 @@ public sealed class CellBuffer
         }
 
         FixRight(row, x + width);
+        _mayJoin[y] |= cell.IsGrapheme || Joinable(cell.RawRune);
         return width;
     }
 
-    private static int Write(Span<Cell> row, int x, int limit, ReadOnlySpan<char> text, Style style)
+    /// <summary>Write text into a row; sets <paramref name="mayJoin"/> when a joinable glyph is written.</summary>
+    private static int Write(Span<Cell> row, int x, int limit, ReadOnlySpan<char> text, Style style, ref bool mayJoin)
     {
         int col = x;
         bool wrote = false;
@@ -399,6 +441,19 @@ public sealed class CellBuffer
                 if (run <= 0)
                 {
                     break;
+                }
+
+                // A combining mark (or other extender) after the last letter belongs to that letter's
+                // cluster: leave the letter to the cluster path below.
+                int stop = text.Slice(i, Math.Min(text.Length - i, run + 1)).IndexOfAnyExcept(PrintableAscii);
+                if (stop > 0 && stop <= run && text[i + stop] >= 0x300)
+                {
+                    run = stop - 1;
+                }
+
+                if (run == 0)
+                {
+                    goto Cluster;
                 }
 
                 Span<Cell> dest = row.Slice(col, run);
@@ -438,21 +493,35 @@ public sealed class CellBuffer
                 continue;
             }
 
+            Cluster:
+            int length;
             Rune rune;
             int width;
-            if (c < 0x80)
+            int id = -1;
+            bool joinable = false;
+            if (Graphemes.Simple(c) && (i + 1 == text.Length || Graphemes.Simple(text[i + 1])))
             {
-                rune = new Rune(c);
-                width = (uint)(c - 0x20) < 0x5F ? 1 : 0;
-                i++;
+                // One code point that can't join its neighbour (most CJK and symbol text). Simple chars
+                // are never surrogates, so the rune needs no validation.
+                length = 1;
+                rune = Unsafe.BitCast<int, Rune>(c);
+                width = UnicodeWidth.Of(c);
             }
             else
             {
-                Rune.DecodeFromUtf16(text[i..], out rune, out int consumed);
-                width = UnicodeWidth.Of(rune.Value);
-                i += consumed;
+                length = Graphemes.Next(text[i..], out rune, out width, out bool multi);
+                joinable = multi || Joinable(rune);
+                if (multi && width > 0)
+                {
+                    id = Graphemes.Intern(text.Slice(i, length));
+                    if (id < 0)
+                    {
+                        width = UnicodeWidth.Of(rune.Value);   // store full: keep just the first code point
+                    }
+                }
             }
 
+            i += length;
             if (width == 0)
             {
                 continue;
@@ -494,7 +563,19 @@ public sealed class CellBuffer
             }
 
             lead = template;
-            Cell.Patch(ref lead, rune, width);
+            if (joinable)
+            {
+                mayJoin = true;
+            }
+
+            if (id >= 0)
+            {
+                Cell.PatchGrapheme(ref lead, id, width);
+            }
+            else
+            {
+                Cell.Patch(ref lead, rune, width);
+            }
             if (width == 2)
             {
                 row[col + 1] = continuation;

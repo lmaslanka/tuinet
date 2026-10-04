@@ -346,6 +346,78 @@ public class InputWidgetTests
     }
 
     [Fact]
+    public void Text_input_moves_and_deletes_by_grapheme_cluster()
+    {
+        var state = new TextInputState("a👨‍👩‍👧e\u0301");
+        Assert.Equal(1 + 5 + 2, state.Length);                       // runes
+        state.Handle(new KeyEvent(KeyCode.Left));
+        Assert.Equal(6, state.Caret);                                 // before "é", not between e and the accent
+        state.Handle(new KeyEvent(KeyCode.Left));
+        Assert.Equal(1, state.Caret);                                 // the whole family is one step
+        state.Handle(new KeyEvent(KeyCode.Delete));
+        Assert.Equal("ae\u0301", state.Text);
+        state.Handle(new KeyEvent(KeyCode.End));
+        state.Handle(new KeyEvent(KeyCode.Backspace));
+        Assert.Equal("a", state.Text);
+    }
+
+    [Fact]
+    public void Text_input_keeps_marks_and_joiners_that_are_typed()
+    {
+        var state = new TextInputState();
+        foreach (char c in "e\u0301❤\uFE0F")
+        {
+            state.Insert(new Rune(c));
+        }
+
+        state.Insert(new Rune(0x07));                                 // controls are still dropped
+        Assert.Equal("e\u0301❤️", state.Text);
+
+        var buffer = new CellBuffer(6, 1);
+        buffer.Render(new TextInput { Focused = true }, buffer.Area, ref state);
+        Assert.Equal("e\u0301❤️   ", buffer.RowText(0));
+        Assert.Equal(3, buffer.CursorX);                              // 1 + 2 columns
+    }
+
+    [Fact]
+    public void Masked_text_input_shows_one_mask_per_cluster()
+    {
+        var state = new TextInputState("👨‍👩‍👧é", mask: '•');
+        var buffer = new CellBuffer(4, 1);
+        buffer.Render(new TextInput(), buffer.Area, ref state);
+        Assert.Equal("••  ", buffer.RowText(0));
+    }
+
+    [Fact]
+    public void Text_input_scrolls_by_cluster_to_keep_the_caret_visible()
+    {
+        var state = new TextInputState("🇵🇱🇵🇱🇵🇱🇵🇱");                       // 8 columns
+        var buffer = new CellBuffer(5, 1);
+        buffer.Render(new TextInput { Focused = true }, buffer.Area, ref state);
+        Assert.Equal("🇵🇱🇵🇱 ", buffer.RowText(0));
+        Assert.Equal(4, buffer.CursorX);
+        Assert.Equal(4, state.Scroll);                                // two flags (4 runes) scrolled off
+    }
+
+    [Fact]
+    public void Paragraph_wraps_between_clusters_only()
+    {
+        var buffer = new CellBuffer(3, 3);
+        buffer.Render(new Paragraph("ae\u0301👨‍👩‍👧b") { Wrap = TextWrap.Char }, buffer.Area);
+        Assert.Equal("ae\u0301 ", buffer.RowText(0));                // the family doesn't fit in the last column
+        Assert.Equal("👨‍👩‍👧b", buffer.RowText(1));
+    }
+
+    [Fact]
+    public void Table_right_aligns_clusters_by_their_width()
+    {
+        var state = new ListState(-1);
+        var buffer = new CellBuffer(5, 2);
+        buffer.Render(new Table<TextRows>(new TextRows([["🇵🇱e\u0301"]]), [new TableColumn("c", Constraint.Fill(), Alignment.Right)]), buffer.Area, ref state);
+        Assert.Equal("  🇵🇱e\u0301", buffer.RowText(1));
+    }
+
+    [Fact]
     public void Dashed_block()
     {
         var buffer = new CellBuffer(5, 3);

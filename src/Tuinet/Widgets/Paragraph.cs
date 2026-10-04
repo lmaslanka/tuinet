@@ -129,7 +129,7 @@ public readonly ref struct Paragraph : IWidget
             return true;
         }
 
-        /// <summary>Chars of <paramref name="line"/> that fit in the width (at least one rune).</summary>
+        /// <summary>Chars of <paramref name="line"/> that fit in the width (at least one grapheme cluster).</summary>
         private readonly int Fit(ReadOnlySpan<char> line)
         {
             int width = 0;
@@ -137,8 +137,7 @@ public readonly ref struct Paragraph : IWidget
             int lastBreak = -1;
             while (i < line.Length)
             {
-                Rune.DecodeFromUtf16(line[i..], out Rune rune, out int consumed);
-                int w = TextWidth.Of(rune);
+                int consumed = Graphemes.Next(line[i..], out Rune rune, out int w, out bool multi);
                 if (width + w > _width)
                 {
                     if (i == 0)
@@ -151,7 +150,7 @@ public readonly ref struct Paragraph : IWidget
 
                 width += w;
                 i += consumed;
-                if (rune.Value == ' ')
+                if (rune.Value == ' ' && !multi)
                 {
                     lastBreak = i;
                 }
