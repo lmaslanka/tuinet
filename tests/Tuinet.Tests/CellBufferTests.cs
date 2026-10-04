@@ -153,11 +153,14 @@ public class CellBufferTests
     }
 
     [Fact]
-    public void Controls_and_combining_marks_are_dropped()
+    public void Controls_are_dropped_and_combining_marks_join_their_letter()
     {
         var buffer = new CellBuffer(8, 1);
-        Assert.Equal(3, buffer.SetString(0, 0, "a\u0007\u001bb́\u0085c"));
-        Assert.Equal("abc     ", buffer.RowText(0));
+        Assert.Equal(3, buffer.SetString(0, 0, "a\u0007\u001bb\u0301\u0085c"));
+        Assert.Equal("ab\u0301c     ", buffer.RowText(0));
+        Assert.True(buffer[1, 0].IsGrapheme);
+        Assert.Equal("b\u0301", buffer[1, 0].Text);
+        Assert.Equal(1, buffer[1, 0].Width);
     }
 
     [Fact]

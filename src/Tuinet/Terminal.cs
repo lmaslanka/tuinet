@@ -282,7 +282,8 @@ public sealed class Terminal : IDisposable
     {
         _out.Clear();
         _out.Reserve(128);
-        _out.Bytes("\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[0m\u001b[2J"u8);
+        // ?2027: grapheme cluster mode, so terminals that know it size clusters the way CellBuffer does.
+        _out.Bytes("\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h\u001b[0m\u001b[2J"u8);
         if (_options.Mouse)
         {
             _out.Bytes(_options.MouseMotion ? "\u001b[?1003h\u001b[?1006h"u8 : "\u001b[?1002h\u001b[?1006h"u8);
@@ -320,7 +321,7 @@ public sealed class Terminal : IDisposable
             leave.AddRange("\u001b[?1004l"u8);
         }
 
-        leave.AddRange("\u001b[0m\u001b[?7h\u001b[?25h\u001b[?1049l"u8);
+        leave.AddRange("\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h\u001b[?1049l"u8);
         return [.. leave];
     }
 

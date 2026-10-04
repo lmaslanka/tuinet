@@ -11,6 +11,7 @@ public class TerminalTests
         var tty = new TestTty();
         using var terminal = new Terminal(tty);
         Assert.Contains("\u001b[?1049h", tty.WrittenText);
+        Assert.Contains("\u001b[?2027h", tty.WrittenText);   // grapheme cluster mode
         Assert.Contains("\u001b[?25l", tty.WrittenText);
         Assert.Contains("\u001b[?7l", tty.WrittenText);
     }
@@ -21,7 +22,7 @@ public class TerminalTests
         var tty = new TestTty();
         new Terminal(tty).Dispose();
         string text = tty.WrittenText;
-        Assert.EndsWith("\u001b[0m\u001b[?7h\u001b[?25h\u001b[?1049l", text);
+        Assert.EndsWith("\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h\u001b[?1049l", text);
     }
 
     [Fact]

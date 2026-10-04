@@ -42,6 +42,7 @@ public class TextBenchmarks
     private readonly CellBuffer _buffer = new(200, 60);
     private const string Ascii = "the quick brown fox jumps over the lazy dog, again and again and again and again and again and again and again!";
     private const string Cjk = "你好世界こんにちは안녕하세요你好世界こんにちは안녕하세요你好世界こんにちは안녕하세요";
+    private const string Clusters = "status 👍🏽 done ❤️ café 🇵🇱 team 👨‍👩‍👧 ok 1️⃣ नमस्ते ok status 👍🏽 done ❤️ café 🇵🇱 team 👨‍👩‍👧";
 
     [Benchmark(Description = "SetString ascii 60 rows")]
     public int SetStringAscii()
@@ -75,6 +76,19 @@ public class TextBenchmarks
         for (int y = 0; y < 60; y++)
         {
             x += _buffer.SetString(0, y, Cjk);
+        }
+
+        return x;
+    }
+
+    /// <summary>Text mixing ASCII with emoji sequences, flags, decomposed accents and Devanagari.</summary>
+    [Benchmark(Description = "SetString grapheme clusters 60 rows")]
+    public int SetStringClusters()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x += _buffer.SetString(0, y, Clusters);
         }
 
         return x;

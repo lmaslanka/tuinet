@@ -234,6 +234,64 @@ public class RendererTests
         Assert.Equal("\u001b[?2026h\u001b[Hb\r\nc\r\nd\r\ne\r\nf\u001b[?2026l", output);
     }
 
+    [Fact]
+    public void A_cluster_is_sent_whole_and_the_next_cell_is_placed_absolutely()
+    {
+        var (prev, cur) = Buffers(4, 1);
+        cur.SetString(0, 0, "e\u0301x");
+        Assert.Equal("\u001b[?2026h\u001b[He\u0301\u001b[1;2Hx\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Cells_an_older_terminal_draws_over_are_repainted_after_a_cluster()
+    {
+        // Without grapheme support the family is three emoji, 6 columns: repaint columns 2-5 afterwards.
+        var (prev, cur) = Buffers(8, 1);
+        cur.SetString(0, 0, "👨‍👩‍👧y");
+        Assert.Equal("\u001b[?2026h\u001b[H👨‍👩‍👧\u001b[1;3Hy   \u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void A_cluster_an_older_terminal_draws_narrower_is_blanked_first()
+    {
+        // ❤️ is 2 columns; without grapheme support it's 1, so blank both cells before drawing it.
+        var (prev, cur) = Buffers(4, 1);
+        cur.SetString(0, 0, "❤️z");
+        Assert.Equal("\u001b[?2026h\u001b[H  \r❤️\u001b[1;3Hz\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Cells_that_would_merge_on_the_terminal_are_separated_by_a_cursor_move()
+    {
+        var (prev, cur) = Buffers(4, 1);
+        cur.SetString(0, 0, "🇵");
+        cur.SetString(2, 0, "🇱");
+        Assert.Equal("\u001b[?2026h\u001b[H🇵\u001b[1;3H🇱\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void A_cluster_that_starts_with_a_spacing_mark_is_kept_apart_from_the_letter_before_it()
+    {
+        // U+093F is a spacing vowel sign: drawn right after "a" it would attach to it on the terminal.
+        var (prev, cur) = Buffers(4, 1);
+        cur.SetString(0, 0, "a");
+        cur.SetString(1, 0, "\u093F\u0901");
+        Assert.True(cur[1, 0].IsGrapheme);
+        Assert.Equal("\u001b[?2026h\u001b[Ha\u001b[1;2H\u093F\u0901\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void The_cell_after_a_lone_emoji_plane_glyph_is_placed_absolutely()
+    {
+        // Terminals disagree on a lone skin tone (tmux attaches it to the emoji before it and doesn't
+        // advance), so nothing after it may rely on where the cursor ended up.
+        var (prev, cur) = Buffers(6, 1);
+        cur.SetString(0, 0, "👍");
+        cur.SetString(2, 0, "🏽");
+        cur.SetString(4, 0, "b");
+        Assert.Equal("\u001b[?2026h\u001b[H👍\u001b[1;3H🏽\u001b[1;5Hb\u001b[?2026l", Render(cur, prev));
+    }
+
     /// <summary>A 4-wide buffer with one line of text per row.</summary>
     private static CellBuffer Lines(params string[] rows)
     {

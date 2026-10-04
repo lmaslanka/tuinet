@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Tuinet.Testing;
 
@@ -22,25 +23,35 @@ public class RendererFuzzTests
         new(Color.Rgb(10, 20, 30), Color.Rgb(200, 210, 220), Attr.Reverse | Attr.Strike),
     ];
 
-    private static readonly string[] Words = ["a", "bc", "the quick", "你好", "x你y", "🚀!", "──", "é", "z"];
+    private static readonly string[] Words =
+    [
+        "a", "bc", "the quick", "你好", "x你y", "🚀!", "──", "é", "z",
+
+        // Grapheme clusters, and lone pieces that would merge with a neighbour if drawn back to back.
+        "e\u0301", "👨‍👩‍👧", "❤️", "🇵🇱", "🇵", "🇱", "👍🏽", "👍", "🏽", "\u0915\u093F", "\u1100", "가", "1\uFE0F\u20E3",
+    ];
 
     [Theory]
-    [InlineData(1, true)]
-    [InlineData(2, true)]
-    [InlineData(3, true)]
-    [InlineData(4, true)]
-    [InlineData(5, true)]
-    [InlineData(6, true)]
-    [InlineData(7, true)]
-    [InlineData(8, true)]
-    [InlineData(1, false)]
-    [InlineData(2, false)]
-    public void Screen_matches_every_frame(int seed, bool scrollRegions)
+    [InlineData(1, true, false)]
+    [InlineData(2, true, false)]
+    [InlineData(3, true, false)]
+    [InlineData(4, true, false)]
+    [InlineData(5, true, false)]
+    [InlineData(6, true, false)]
+    [InlineData(7, true, false)]
+    [InlineData(8, true, false)]
+    [InlineData(1, false, false)]
+    [InlineData(2, false, false)]
+    [InlineData(1, true, true)]
+    [InlineData(2, true, true)]
+    [InlineData(3, true, true)]
+    [InlineData(4, true, true)]
+    public void Screen_matches_every_frame(int seed, bool scrollRegions, bool legacyTerminal)
     {
         var random = new Random(seed);
         var tty = new TestTty(23, 7);
         using var terminal = new Terminal(tty, new TerminalOptions { ScrollRegions = scrollRegions });
-        var screen = new Emulator(23, 7);
+        var screen = new Emulator(23, 7, legacyTerminal);
         screen.Feed(tty.Written);
         var model = new CellBuffer(23, 7);
 
@@ -220,10 +231,17 @@ public class RendererFuzzTests
         }
     }
 
-    /// <summary>Just enough of a VT terminal to replay what the renderer emits.</summary>
-    private sealed class Emulator(int width, int height)
+    /// <summary>
+    /// Just enough of a VT terminal to replay what the renderer emits. Two kinds of terminal:
+    /// grapheme-aware (code points that extend the last printed cluster join it, and its width can grow
+    /// to 2) and legacy (every code point advances by its own width; zero-width ones attach to the
+    /// previous cell, like xterm). Any cursor move ends the current cluster.
+    /// </summary>
+    private sealed class Emulator(int width, int height, bool legacy = false)
     {
-        private (Rune Rune, Style Style, bool Cont)[,] _grid = Blank(width, height);
+        private (string Text, Style Style, bool Cont)[,] _grid = Blank(width, height);
+        private int _lastX = -1;
+        private int _lastY;
         private int _w = width;
         private int _h = height;
         private int _x;
@@ -262,12 +280,14 @@ public class RendererFuzzTests
                     }
 
                     Csi(text[(i + 2)..end], text[end]);
+                    _lastX = -1;
                     i = end + 1;
                     continue;
                 }
 
                 if (c == '\r')
                 {
+                    _lastX = -1;
                     _x = 0;
                     i++;
                     continue;
@@ -275,6 +295,7 @@ public class RendererFuzzTests
 
                 if (c == '\n')
                 {
+                    _lastX = -1;
                     Assert.True(_y != _bottom, "LF at the bottom margin scrolled the screen");
                     _y++;
                     Assert.True(_y < _h, "LF scrolled the screen");
@@ -285,7 +306,7 @@ public class RendererFuzzTests
                 Assert.True(c >= 0x20, $"control byte 0x{(int)c:X2} emitted");
                 Rune.DecodeFromUtf16(text.AsSpan(i), out Rune rune, out int consumed);
                 i += consumed;
-                Put(rune);
+                Print(rune);
             }
         }
 
@@ -298,10 +319,18 @@ public class RendererFuzzTests
                     Cell expected = buffer[x, y];
                     var actual = _grid[x, y];
                     string where = $"{context}: cell ({x},{y})\nexpected:\n{buffer}\nactual:\n{this}";
-                    Assert.True(expected.IsContinuation == actual.Cont, $"continuation mismatch at {where}");
-                    if (!expected.IsContinuation)
+                    // A legacy terminal fills a wide cluster's second cell with the blank drawn before it (❤️) or
+                    // with a later code point of the cluster (the spacing vowel of कि): either is fine.
+                    bool coveredByCluster = legacy && expected.IsContinuation && x > 0 && buffer[x - 1, y].IsGrapheme && !actual.Cont;
+                    Assert.True(expected.IsContinuation == actual.Cont || coveredByCluster, $"continuation mismatch at {where}");
+                    if (expected.IsGrapheme && legacy)
                     {
-                        Assert.True(expected.Rune == actual.Rune, $"glyph '{actual.Rune}' != '{expected.Rune}' at {where}");
+                        // A legacy terminal keeps only the first code point of a cluster in its cell.
+                        Assert.True(actual.Text.StartsWith(expected.Rune.ToString(), StringComparison.Ordinal), $"glyph '{actual.Text}' != '{expected.Text}' at {where}");
+                    }
+                    else if (!expected.IsContinuation)
+                    {
+                        Assert.True(expected.Text == actual.Text, $"glyph '{actual.Text}' != '{expected.Text}' at {where}");
                     }
 
                     Assert.True(expected.Style == actual.Style, $"style {actual.Style} != {expected.Style} at {where}");
@@ -324,7 +353,7 @@ public class RendererFuzzTests
                 {
                     if (!_grid[x, y].Cont)
                     {
-                        builder.Append(_grid[x, y].Rune);
+                        builder.Append(_grid[x, y].Text);
                     }
                 }
 
@@ -334,10 +363,53 @@ public class RendererFuzzTests
             return builder.ToString();
         }
 
-        private void Put(Rune rune)
+        private void Print(Rune rune)
         {
             int width = TextWidth.Of(rune);
-            Assert.True(_x + width <= _w, $"glyph '{rune}' written past the right edge at ({_x},{_y})");
+            if (_lastX >= 0)
+            {
+                string joined = _grid[_lastX, _lastY].Text + rune;
+                bool extends = StringInfo.GetNextTextElementLength(joined) == joined.Length;
+                if (legacy ? width == 0 : extends)
+                {
+                    Style style = _grid[_lastX, _lastY].Style;
+                    int before = TextWidth.Of(_grid[_lastX, _lastY].Text);
+                    _grid[_lastX, _lastY] = (joined, style, false);
+                    if (!legacy && TextWidth.Of(joined) == 2 && before == 1)
+                    {
+                        // VS16 made the cluster wide: it takes the next cell too.
+                        Assert.True(_lastX + 1 < _w, "cluster grew past the right edge");
+                        if (_lastX + 2 < _w && _grid[_lastX + 2, _lastY].Cont)
+                        {
+                            _grid[_lastX + 2, _lastY] = (" ", _grid[_lastX + 2, _lastY].Style, false);
+                        }
+
+                        _grid[_lastX + 1, _lastY] = ("", style, true);
+                        _x = Math.Min(_lastX + 2, _w - 1);
+                    }
+
+                    return;
+                }
+            }
+
+            if (width == 0)
+            {
+                return;
+            }
+
+            if (legacy && _x + width > _w)
+            {
+                return;   // a legacy terminal drawing a cluster as several glyphs ran out of room
+            }
+
+            _lastX = _x;
+            _lastY = _y;
+            Put(rune.ToString(), width);
+        }
+
+        private void Put(string glyph, int width)
+        {
+            Assert.True(_x + width <= _w, $"glyph '{glyph}' written past the right edge at ({_x},{_y})");
 
             // Like a real terminal: overwriting half of a wide glyph destroys the other half.
             for (int dx = 0; dx < width; dx++)
@@ -345,19 +417,19 @@ public class RendererFuzzTests
                 int cx = _x + dx;
                 if (_grid[cx, _y].Cont && cx > 0)
                 {
-                    _grid[cx - 1, _y] = (new Rune(' '), _grid[cx - 1, _y].Style, false);
+                    _grid[cx - 1, _y] = (" ", _grid[cx - 1, _y].Style, false);
                 }
 
-                if (cx + 1 < _w && _grid[cx + 1, _y].Cont && TextWidth.Of(_grid[cx, _y].Rune) == 2)
+                if (cx + 1 < _w && _grid[cx + 1, _y].Cont && TextWidth.Of(_grid[cx, _y].Text) == 2)
                 {
-                    _grid[cx + 1, _y] = (new Rune(' '), _grid[cx + 1, _y].Style, false);
+                    _grid[cx + 1, _y] = (" ", _grid[cx + 1, _y].Style, false);
                 }
             }
 
-            _grid[_x, _y] = (rune, _pen, false);
+            _grid[_x, _y] = (glyph, _pen, false);
             if (width == 2)
             {
-                _grid[_x + 1, _y] = (default, _pen, true);
+                _grid[_x + 1, _y] = ("", _pen, true);
             }
 
             // DECAWM off: the cursor stops at the last column.
@@ -504,18 +576,18 @@ public class RendererFuzzTests
         {
             for (int x = 0; x < _w; x++)
             {
-                _grid[x, y] = (new Rune(' '), new Style(default, _pen.Bg), false);
+                _grid[x, y] = (" ", new Style(default, _pen.Bg), false);
             }
         }
 
-        private static (Rune, Style, bool)[,] Blank(int w, int h, Color bg = default)
+        private static (string, Style, bool)[,] Blank(int w, int h, Color bg = default)
         {
-            var grid = new (Rune, Style, bool)[w, h];
+            var grid = new (string, Style, bool)[w, h];
             for (int x = 0; x < w; x++)
             {
                 for (int y = 0; y < h; y++)
                 {
-                    grid[x, y] = (new Rune(' '), new Style(default, bg), false);
+                    grid[x, y] = (" ", new Style(default, bg), false);
                 }
             }
 

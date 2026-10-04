@@ -108,7 +108,14 @@ internal sealed class Renderer
 
             Begin();
             _out.Reserve((last - first + 2) * MaxCellBytes + 64);
-            RenderRow(cur, prev, y, first, last);
+            if (current.RowMayJoin(y))
+            {
+                RenderRow<JoinChecks>(cur, prev, y, first, last);
+            }
+            else
+            {
+                RenderRow<NoJoinChecks>(cur, prev, y, first, last);
+            }
         }
 
         _out.Reserve(64);
@@ -293,7 +300,13 @@ internal sealed class Renderer
         }
     }
 
-    private void RenderRow(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+    /// <summary>
+    /// Rows whose glyphs could merge with a neighbour on the terminal (CellBuffer tracks it per row) take
+    /// <see cref="JoinChecks"/>; all others take <see cref="NoJoinChecks"/>, which the JIT compiles to the
+    /// plain loop with no cluster logic at all.
+    /// </summary>
+    private void RenderRow<TJoin>(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+        where TJoin : struct, IJoinPolicy
     {
         int width = cur.Length;
         int x = first;
@@ -308,6 +321,10 @@ internal sealed class Renderer
 
         int forceUntil = -1;
         bool positioned = false;
+
+        // The cell just emitted, to keep the next one from joining it into one cluster on the terminal.
+        Rune previous = default;
+        bool previousComplex = false;
         while (x < width)
         {
             bool dirty = x <= forceUntil || (x <= last && !cur[x].Equals(prev[x]));
@@ -348,13 +365,29 @@ internal sealed class Renderer
                 x--;
             }
 
+            ref readonly Cell cell = ref cur[x];
+            bool contiguous = positioned;
             if (!positioned)
             {
                 MoveTo(x, y);
                 positioned = true;
             }
 
-            int advance = Emit(in cur[x], x);
+            int advance;
+            if (!TJoin.Enabled || (!previousComplex && Graphemes.Simple(cell.RawRune.Value) && !cell.IsGrapheme))
+            {
+                advance = Emit(in cell, x);   // the common case: nothing here can join a neighbour
+            }
+            else
+            {
+                advance = EmitComplex(in cell, x, y, contiguous ? previous : default, ref positioned, ref forceUntil);
+                previousComplex = !Graphemes.Simple(cell.RawRune.Value) || cell.IsGrapheme;
+            }
+
+            if (TJoin.Enabled)
+            {
+                previous = cell.RawRune;
+            }
 
             // Overwriting the left half of a wide glyph with a narrow one: the terminal blanks the
             // right half, so the cell after it must be repainted even if it compares equal.
@@ -365,6 +398,73 @@ internal sealed class Renderer
 
             x += advance;
         }
+    }
+
+    /// <summary>
+    /// Emit a cell that is a cluster, or that could join the cell drawn just before it into one cluster
+    /// on the terminal (<paramref name="previous"/>; default when the cursor was just moved).
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private int EmitComplex(in Cell cell, int x, int y, Rune previous, ref bool positioned, ref int forceUntil)
+    {
+        if (previous.Value != 0 && Graphemes.MayJoin(previous, cell.Rune))
+        {
+            // Drawn back to back, the two cells would merge (two lone regional indicators, an emoji then
+            // a lone skin tone, a letter then a spacing mark): move explicitly, which ends the cluster.
+            _cx = -1;
+            MoveTo(x, y);
+        }
+
+        if (!cell.IsGrapheme)
+        {
+            int single = Emit(in cell, x);
+            if (cell.RawRune.Value >= 0x1F000)
+            {
+                // Emoji-plane code points on their own (a lone regional indicator or skin tone) get
+                // different widths in different terminals, and some attach them to the previous glyph:
+                // place the next cell absolutely.
+                _cx = -1;
+                positioned = false;
+            }
+
+            return single;
+        }
+
+        int advance = cell.Width;
+        if (advance == 2 && x + 1 >= _width)
+        {
+            Cell blank = Cell.Blank(cell.Style);   // a wide cluster with no room: draw a blank, as Emit does
+            return Emit(in blank, x);
+        }
+
+        if (!_penKnown || !cell.Style.Equals(_penSource))
+        {
+            SetPen(cell.Style);
+        }
+
+        EmitCluster(cell.GraphemeId, x, advance);
+
+        // Terminals disagree on how far a cluster moves the cursor (see EmitCluster). Reposition for
+        // the next cell, and repaint the cells a terminal without grapheme support may have drawn over.
+        positioned = false;
+        forceUntil = Math.Max(forceUntil, Math.Min(_width - 1, x + Graphemes.LegacyWidth(cell.GraphemeId) - 1));
+        return advance;
+    }
+
+    /// <summary>Compile-time switch for <see cref="RenderRow{TJoin}"/> (folded away by the JIT).</summary>
+    private interface IJoinPolicy
+    {
+        static abstract bool Enabled { get; }
+    }
+
+    private readonly struct JoinChecks : IJoinPolicy
+    {
+        public static bool Enabled => true;
+    }
+
+    private readonly struct NoJoinChecks : IJoinPolicy
+    {
+        public static bool Enabled => false;
     }
 
     /// <summary>Is writing the clean cells in [from, to) shorter than a CUF jump over them?</summary>
@@ -380,7 +480,7 @@ internal sealed class Renderer
         for (int i = from; i < to; i++)
         {
             Cell c = cur[i];
-            if (c.Width != 1 || c.Rune.Value >= 0x80 || !c.Style.Equals(_penSource))
+            if (c.Width != 1 || c.IsGrapheme || c.RawRune.Value >= 0x80 || !c.Style.Equals(_penSource))
             {
                 return false;
             }
@@ -389,11 +489,12 @@ internal sealed class Renderer
         return true;
     }
 
+    /// <summary>Emit a single-code-point cell. Clusters go through <see cref="EmitComplex"/>.</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     private int Emit(in Cell cell, int x)
     {
         int advance = cell.Width;
-        Rune rune = cell.Rune;
+        Rune rune = cell.RawRune;
         if (advance == 0 || (advance == 2 && x + 1 >= _width))
         {
             // Orphaned continuation, uninitialized cell, or a wide glyph with no room: draw a blank.
@@ -424,6 +525,35 @@ internal sealed class Renderer
         }
 
         return advance;
+    }
+
+    /// <summary>
+    /// Write a multi-code-point cluster. A grapheme-aware terminal advances by its width; an older one by
+    /// the sum of its code points' widths, which can be less (❤️ = 1 + 0) or more (👨‍👩‍👧 = 6). When it can
+    /// be less, blank the cluster's cells first so nothing stale shows beside it. Either way the cursor
+    /// column is unknown afterwards; the caller repositions and repaints what a wider draw covered.
+    /// </summary>
+    private void EmitCluster(int id, int x, int width)
+    {
+        string text = Graphemes.Text(id);
+        _out.Reserve(text.Length * 3 + width + 32);
+        if (Graphemes.LegacyWidth(id) < width)
+        {
+            for (int i = 0; i < width; i++)
+            {
+                _out.Byte((byte)' ');
+            }
+
+            _cx = -1;
+            MoveTo(x, _cy);
+        }
+
+        foreach (Rune rune in text.EnumerateRunes())
+        {
+            _out.Rune(rune);
+        }
+
+        _cx = -1;
     }
 
     private void PlaceCursor(CellBuffer current)

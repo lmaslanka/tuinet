@@ -41,6 +41,9 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Control characters in your text can never reach the terminal as escape sequences.
   - The terminal is restored on exit, on an unhandled exception, and on SIGINT/SIGTERM/SIGHUP.
   - Wide CJK and emoji glyphs are handled from Unicode 17 width tables.
+  - Grapheme clusters are one cell: accented letters written with combining marks, Indic and Thai
+    syllables, emoji sequences (👨‍👩‍👧, 👍🏽, ❤️) and flags (🇵🇱). Rows stay aligned on terminals with
+    or without grapheme support.
 - **Native AOT.** No reflection. The stress sample publishes to a 1.3 MB native binary.
 
 <table>

@@ -89,6 +89,9 @@ public class AllocationTests
             SortColumn = 1,
         }, panes[1], ref table);
 
+        // Grapheme clusters are interned on first sight; after warm-up they cost nothing.
+        frame.SetString(40, rows[2].Y, "👨‍👩‍👧 e\u0301 🇵🇱 ❤️ 👍🏽", default, 20);
+
         Span<char> status = stackalloc char[32];
         tick.TryFormat(status, out int written);
         frame.SetString(0, rows[2].Y, status[..written], new Style(Color.Rgb(200, 210, (byte)tick), Color.Default));
