@@ -40,6 +40,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
 - **Safe by default.**
   - Control characters in your text can never reach the terminal as escape sequences.
   - The terminal is restored on exit, on an unhandled exception, and on SIGINT/SIGTERM/SIGHUP.
+  - Ctrl+Z suspends and `fg` resumes with a full repaint (opt-in, Unix).
   - Wide CJK and emoji glyphs are handled from Unicode 17 width tables.
   - Grapheme clusters are one cell: accented letters written with combining marks, Indic and Thai
     syllables, emoji sequences (👨‍👩‍👧, 👍🏽, ❤️) and flags (🇵🇱). Rows stay aligned on terminals with
@@ -414,8 +415,23 @@ switch (ev.Kind)
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
 | `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
+| `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
+
+### Suspend (Ctrl+Z)
+
+Raw mode turns Ctrl+Z into an ordinary key. To let users background the app as they would a shell
+command, set `SuspendOnCtrlZ`, or call `Suspend` yourself:
+
+```csharp
+case EventKind.Key when ev.Key.IsCtrl('z'): term.Suspend(); break;
+```
+
+`Suspend` leaves the screen, restores the terminal and stops the process. When the user types `fg`, it
+returns with the alternate screen back, and the next `Poll` returns a `Resize` event so the app draws a
+frame, which repaints everything. A `kill -TSTP` from outside suspends the same way on the next `Poll`,
+and the app also recovers from `kill -STOP`. On Windows, `Suspend` returns false and does nothing.
 
 ### Custom widgets
 
@@ -535,7 +551,7 @@ Tests guard these properties too:
 
 | Platform | Backend | Status |
 |---|---|---|
-| Linux | termios raw mode, `poll(2)` + self-pipe wake, `SIGWINCH` | ✅ tested (x64), JIT and Native AOT |
+| Linux | termios raw mode, `poll(2)` + self-pipe wake, `SIGWINCH`, job control (`SIGTSTP`/`SIGCONT`) | ✅ tested (x64), JIT and Native AOT |
 | macOS | termios raw mode (macOS struct layout), arm64 variadic `ioctl` handled | ⚠️ implemented, not yet tested |
 | Windows 10+ | Console VT mode, `ReadConsoleInputW`, UTF-8 code page | ⚠️ implemented, not yet tested |
 
@@ -559,13 +575,16 @@ package ([`tools/pack/verify.sh`](https://github.com/lmaslanka/tuinet/blob/main/
 
 Every public API is listed in `src/Tuinet/PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`. Adding,
 changing or removing a public member fails the build (RS0016/RS0017) until the change is recorded in
-`PublicAPI.Unshipped.txt`, so API changes show up in review. The IDE code fix adds the entries for you,
-or run `dotnet format analyzers src/Tuinet --diagnostics RS0016 RS0017 --severity warn`.
+`PublicAPI.Unshipped.txt`, so API changes show up in review. The IDE code fix adds the entries for you;
+otherwise copy the symbol text from each RS0016 error into the file.
 
 The end-to-end checks ([`tools/e2e`](https://github.com/lmaslanka/tuinet/tree/main/tools/e2e)) run the AOT binaries in tmux, a real terminal
 implementation, and read the screen back:
 
 - **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog.
+- **suspend**: the showcase under an interactive bash. Ctrl+Z, `kill -TSTP` and `kill -STOP` each stop it,
+  the shell takes commands (with the terminal modes restored, where the app could restore them), and
+  `fg` brings back the whole screen with keys working.
 - **stress**: bursts of scrolling; every visible row must have the right content in the right order, and
   the terminal must have received scroll-region sequences.
 - **clusters**: the grapheme cluster cases in [`clusters.txt`](https://github.com/lmaslanka/tuinet/blob/main/tools/e2e/clusters.txt) must produce the

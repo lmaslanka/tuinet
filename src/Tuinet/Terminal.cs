@@ -35,6 +35,7 @@ public sealed class Terminal : IDisposable
     private CellBuffer _back;
     private Size _reportedSize;
     private bool _fullRedraw;
+    private bool _resumed;
     private bool _inFrame;
     private bool _disposed;
 
@@ -144,6 +145,28 @@ public sealed class Terminal : IDisposable
     /// <summary>Repaint everything on the next <see cref="Present"/> (e.g. after another program drew on the screen).</summary>
     public void Invalidate() => _fullRedraw = true;
 
+    /// <summary>
+    /// Leave the screen, restore the terminal and stop the process (Unix job control, as Ctrl+Z does in a
+    /// shell command). Returns once the process is continued (e.g. <c>fg</c>), back on the alternate screen;
+    /// the next <see cref="Poll"/> returns a <see cref="EventKind.Resize"/> event so the app draws a frame,
+    /// which repaints everything. Returns false, doing nothing, where suspending isn't supported (Windows).
+    /// <code>if (ev.Key.IsCtrl('z')) term.Suspend();</code>
+    /// See also <see cref="TerminalOptions.SuspendOnCtrlZ"/>.
+    /// </summary>
+    public bool Suspend()
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (!_tty.CanSuspend)
+        {
+            return false;
+        }
+
+        Write(_leave);
+        _tty.Suspend();
+        Resume();
+        return true;
+    }
+
     /// <summary>Queue a message for the loop and wake a blocked <see cref="Poll"/>. Thread-safe.</summary>
     public void Post(object message)
     {
@@ -217,15 +240,32 @@ public sealed class Terminal : IDisposable
 
     private bool TryNext(out Event ev)
     {
-        if (_parser.TryTake(out ev))
+        TtySignals signals = _tty.TakeSignals();
+        if (signals != TtySignals.None)
         {
-            return true;
+            if ((signals & TtySignals.StopRequested) != 0)
+            {
+                Suspend();
+            }
+            else
+            {
+                Resume();
+            }
+        }
+
+        while (_parser.TryTake(out ev))
+        {
+            if (!(_options.SuspendOnCtrlZ && ev.Kind == EventKind.Key && ev.Key.IsCtrl('z') && Suspend()))
+            {
+                return true;
+            }
         }
 
         Size size = Clamp(_tty.Size);
-        if (size != _reportedSize)
+        if (size != _reportedSize || _resumed)
         {
             _reportedSize = size;
+            _resumed = false;
             ev = Event.FromResize(size);
             return true;
         }
@@ -263,6 +303,14 @@ public sealed class Terminal : IDisposable
 
             return;
         }
+    }
+
+    /// <summary>Back from a stop: the screen is the shell's, so enter again and repaint everything.</summary>
+    private void Resume()
+    {
+        Enter();
+        Invalidate();
+        _resumed = true;
     }
 
     private void SyncSize()

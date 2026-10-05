@@ -6,6 +6,8 @@ records the exit code and the tty modes before and after, with HOME pointed at a
 read the screen back with `capture-pane`; waits poll the screen, so slow machines don't make them flaky.
 
   showcase  navigation, edit + save, progress animation, clean exit; at 110x34 and 80x24
+  suspend   job control in an interactive bash: Ctrl+Z, kill -TSTP and kill -STOP each return to the
+            shell (in cooked mode where the app could restore it), and fg brings the screen back intact
   stress    scrolling bursts: every visible row has the right content, in order, and the terminal
             really received scroll-region (IL/DL) sequences
   clusters  grapheme clusters: the screen TUI.NET produces equals a reference that places every cell
@@ -18,6 +20,7 @@ import argparse
 import os
 import re
 import shlex
+import signal
 import subprocess
 import sys
 import tempfile
@@ -159,6 +162,86 @@ def showcase(tmux, binary, width, height):
     app.finish(label)
 
 
+def suspend(tmux, binary):
+    """The showcase under an interactive bash, which does job control (Stopped / fg) like a user's shell."""
+    label, n = "suspend", "suspend"
+    d = tempfile.mkdtemp(prefix="tuinet-e2e-suspend-")
+    home = os.path.join(d, "home")
+    os.makedirs(home)
+    shell = (f"env -i PATH=\"$PATH\" TERM=\"$TERM\" HOME={shlex.quote(home)} PS1='$ ' "
+             "bash --norc --noprofile -i")
+    tmux.start(n, 80, 24, shell)
+    tmux.wait(n, lambda t: "$" in t)
+    q = shlex.quote
+    # A wrapper script, as in App: bash abandons the rest of a command list once a job stops. It shares the
+    # app's process group, so it also checks that the app stops the whole group, as Ctrl+Z would.
+    script = f"stty -g > {q(d)}/before; {q(binary)}; echo $? > {q(d)}/exit; stty -g > {q(d)}/after"
+    tmux.type(n, f"sh -c {q(script)}")
+    tmux.keys(n, "Enter")
+    ok, s = tmux.wait(n, lambda t: "ITEMS · 20" in t)
+    check(ok, f"{label}: showcase starts under an interactive shell", s)
+    tmux.type(n, "jj")
+    ok, s = tmux.wait(n, lambda t: "SELECTED · 03" in t)
+
+    def child(pid):
+        out = subprocess.run(["pgrep", "-P", str(pid)], capture_output=True, text=True).stdout.split()
+        return int(out[0]) if out else None
+
+    wrapper = child(tmux.run("display", "-p", "-t", n, "#{pane_pid}").strip())
+
+    def back_at_shell(how, cooked):
+        ok, s = tmux.wait(n, lambda t: "Stopped" in t)
+        check(ok, f"{label}: {how} stops the app and the shell reports it", s)
+        if cooked:
+            check("ITEMS · 20" not in s, f"{label}: {how} leaves the app's screen", s)
+            tmux.keys(n, "clear", "Enter")
+            tmux.type(n, f"stty -g > {q(d)}/stopped; echo shell-$((6*7))")
+            tmux.keys(n, "Enter")
+            ok, s = tmux.wait(n, lambda t: "shell-42" in t)
+            check(ok, f"{label}: {how}: the shell takes commands", s)
+            stopped_file = os.path.join(d, "stopped")
+            stopped = open(stopped_file).read() if os.path.exists(stopped_file) else ""
+            check(stopped == open(os.path.join(d, "before")).read(), f"{label}: {how}: terminal modes restored while stopped")
+
+    def resumes(how, selected):
+        tmux.type(n, "fg")
+        tmux.keys(n, "Enter")
+        ok, s = tmux.wait(n, lambda t: "ITEMS · 20" in t and f"SELECTED · {selected:02}" in t and "Stopped" not in t)
+        check(ok, f"{label}: fg after {how} repaints the whole screen", s)
+        tmux.type(n, "j")
+        ok, s = tmux.wait(n, lambda t: f"SELECTED · {selected + 1:02}" in t)
+        check(ok, f"{label}: keys work after {how} (raw mode again)", s)
+
+    tmux.keys(n, "C-z")
+    back_at_shell("ctrl+z", cooked=True)
+    resumes("ctrl+z", 3)
+
+    pid = child(wrapper) if wrapper else None
+    check(pid is not None, f"{label}: found the app's pid")
+    if pid:
+        # Only the app gets SIGTSTP; it must leave the screen and then stop its whole group.
+        os.kill(pid, signal.SIGTSTP)
+        back_at_shell("kill -TSTP", cooked=True)
+        resumes("kill -TSTP", 4)
+        # SIGSTOP can't be caught: the job stops on the app's screen, and SIGCONT must bring it back.
+        os.killpg(os.getpgid(pid), signal.SIGSTOP)
+        back_at_shell("kill -STOP", cooked=False)
+        resumes("kill -STOP", 5)
+
+    tmux.type(n, "q")
+    exit_file, after_file = os.path.join(d, "exit"), os.path.join(d, "after")
+    end = time.time() + TIMEOUT
+    while not os.path.exists(after_file) and time.time() < end:
+        time.sleep(0.05)
+    time.sleep(0.1)
+    code = open(exit_file).read().strip() if os.path.exists(exit_file) else "none"
+    check(code == "0", f"{label}: exit code 0 (got {code})")
+    after = open(after_file).read() if os.path.exists(after_file) else ""
+    check(after == open(os.path.join(d, "before")).read(), f"{label}: terminal modes restored")
+    written = [os.path.join(r, f) for r, _, fs in os.walk(home) for f in fs if not f.startswith(".bash_history")]
+    check(written == [], f"{label}: wrote no files under HOME" + (f" {written}" if written else ""))
+
+
 def stress(tmux, binary):
     label = "stress"
     app = App(tmux, "stress", 100, 30, [binary])
@@ -272,6 +355,7 @@ def main():
         if args.showcase:
             showcase(tmux, os.path.abspath(args.showcase), 110, 34)
             showcase(tmux, os.path.abspath(args.showcase), 80, 24)
+            suspend(tmux, os.path.abspath(args.showcase))
         if args.stress:
             stress(tmux, os.path.abspath(args.stress))
         if args.clusters:

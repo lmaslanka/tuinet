@@ -41,6 +41,13 @@ public sealed record TerminalOptions
     /// </summary>
     public bool ScrollRegions { get; init; } = true;
 
+    /// <summary>
+    /// Handle Ctrl+Z inside <see cref="Terminal.Poll"/> by calling <see cref="Terminal.Suspend"/>, so the app can
+    /// be backgrounded like a shell command. Off by default: Ctrl+Z is a normal key. Where suspending isn't
+    /// supported (Windows) the key is delivered as usual.
+    /// </summary>
+    public bool SuspendOnCtrlZ { get; init; }
+
     /// <summary>Best guess at the terminal's color depth from NO_COLOR, COLORTERM, TERM_PROGRAM, WT_SESSION and TERM.</summary>
     public static ColorMode DetectColorMode()
     {

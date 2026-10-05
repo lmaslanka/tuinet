@@ -28,6 +28,9 @@ The first release.
 - Safety: control characters in text never reach the terminal; the terminal is restored on exit, on an
   unhandled exception and on SIGINT/SIGTERM/SIGHUP.
 - Backends: Linux and macOS (termios, `poll(2)`, `SIGWINCH`) and Windows 10+ (console VT mode).
+- Suspend and resume (Unix): `Terminal.Suspend()` and `TerminalOptions.SuspendOnCtrlZ` stop the app
+  the way Ctrl+Z stops a shell command; `fg` resumes with a full repaint. `kill -TSTP` suspends cleanly
+  and the app recovers from `kill -STOP`.
 - `TestTty` for driving a `Terminal` in tests.
 - Native AOT and trimming compatible.
 

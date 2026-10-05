@@ -23,4 +23,35 @@ public interface ITty : IDisposable
 
     /// <summary>Restore the terminal's original modes (termios / console modes). Idempotent; must not throw.</summary>
     void Restore();
+
+    /// <summary>Whether <see cref="Suspend"/> can stop the process (Unix job control). False by default.</summary>
+    bool CanSuspend => false;
+
+    /// <summary>
+    /// Restore the original modes, stop the process until it is continued (e.g. the shell's <c>fg</c>), then
+    /// re-enter raw mode. Called only when <see cref="CanSuspend"/>; <see cref="Terminal"/> writes the
+    /// leave and enter sequences around it.
+    /// </summary>
+    void Suspend()
+    {
+    }
+
+    /// <summary>
+    /// Job-control signals from outside the app since the last call; called on every poll, so it must be
+    /// cheap. Before reporting <see cref="TtySignals.Continued"/>, re-apply raw mode.
+    /// </summary>
+    TtySignals TakeSignals() => TtySignals.None;
+}
+
+/// <summary>Job-control signals an <see cref="ITty"/> reports to <see cref="Terminal"/>.</summary>
+[Flags]
+public enum TtySignals : byte
+{
+    None = 0,
+
+    /// <summary>Something asked the app to stop (SIGTSTP, e.g. <c>kill -TSTP</c>); the terminal suspends on the next poll.</summary>
+    StopRequested = 1,
+
+    /// <summary>The process continued after a stop it didn't make itself (e.g. SIGSTOP then <c>fg</c>); the terminal re-enters and repaints.</summary>
+    Continued = 2,
 }

@@ -395,6 +395,31 @@
         <member name="M:Tuinet.ITty.Restore">
             <summary>Restore the terminal's original modes (termios / console modes). Idempotent; must not throw.</summary>
         </member>
+        <member name="P:Tuinet.ITty.CanSuspend">
+            <summary>Whether <see cref="M:Tuinet.ITty.Suspend"/> can stop the process (Unix job control). False by default.</summary>
+        </member>
+        <member name="M:Tuinet.ITty.Suspend">
+            <summary>
+            Restore the original modes, stop the process until it is continued (e.g. the shell's <c>fg</c>), then
+            re-enter raw mode. Called only when <see cref="P:Tuinet.ITty.CanSuspend"/>; <see cref="T:Tuinet.Terminal"/> writes the
+            leave and enter sequences around it.
+            </summary>
+        </member>
+        <member name="M:Tuinet.ITty.TakeSignals">
+            <summary>
+            Job-control signals from outside the app since the last call; called on every poll, so it must be
+            cheap. Before reporting <see cref="F:Tuinet.TtySignals.Continued"/>, re-apply raw mode.
+            </summary>
+        </member>
+        <member name="T:Tuinet.TtySignals">
+            <summary>Job-control signals an <see cref="T:Tuinet.ITty"/> reports to <see cref="T:Tuinet.Terminal"/>.</summary>
+        </member>
+        <member name="F:Tuinet.TtySignals.StopRequested">
+            <summary>Something asked the app to stop (SIGTSTP, e.g. <c>kill -TSTP</c>); the terminal suspends on the next poll.</summary>
+        </member>
+        <member name="F:Tuinet.TtySignals.Continued">
+            <summary>The process continued after a stop it didn't make itself (e.g. SIGSTOP then <c>fg</c>); the terminal re-enters and repaints.</summary>
+        </member>
         <member name="T:Tuinet.IWidget">
             <summary>
             An immediate-mode widget: a value describing what to draw, rendered into an area of a buffer.
@@ -453,10 +478,23 @@
             <summary>
             termios raw mode on stdin/stdout (or /dev/tty when redirected). Input waits in poll(2) on the
             tty plus a self-pipe for <see cref="M:Tuinet.UnixTty.Wake"/>. Size is cached and refreshed only after SIGWINCH.
+            <para>
+            Job control: raw mode turns ISIG off, so Ctrl+Z is a key; <see cref="M:Tuinet.UnixTty.Suspend"/> stops the process
+            itself. A SIGTSTP from outside is caught and reported as <see cref="F:Tuinet.TtySignals.StopRequested"/> so the
+            terminal can leave the screen first; a SIGCONT after a stop we didn't make (SIGSTOP) is reported as
+            <see cref="F:Tuinet.TtySignals.Continued"/>.
+            </para>
             </summary>
         </member>
         <member name="M:Tuinet.UnixTty.Wake">
             <summary>At most one byte is ever in flight, so the pipe cannot fill and block a poster.</summary>
+        </member>
+        <member name="M:Tuinet.UnixTty.Suspend">
+            <summary>
+            The runtime handles a signal on its own thread while any registration exists, so raise() would return
+            before the stop. Drop ours first: with none, SIGTSTP stops the process synchronously, and kill()
+            returns after SIGCONT. Signalling the process group stops a pipeline (app | tee) as Ctrl+Z would.
+            </summary>
         </member>
         <member name="T:Tuinet.WindowsTty">
             <summary>
@@ -617,6 +655,16 @@
         <member name="M:Tuinet.Terminal.Invalidate">
             <summary>Repaint everything on the next <see cref="M:Tuinet.Terminal.Present"/> (e.g. after another program drew on the screen).</summary>
         </member>
+        <member name="M:Tuinet.Terminal.Suspend">
+            <summary>
+            Leave the screen, restore the terminal and stop the process (Unix job control, as Ctrl+Z does in a
+            shell command). Returns once the process is continued (e.g. <c>fg</c>), back on the alternate screen;
+            the next <see cref="M:Tuinet.Terminal.Poll(Tuinet.Event@,System.Int32)"/> returns a <see cref="F:Tuinet.EventKind.Resize"/> event so the app draws a frame,
+            which repaints everything. Returns false, doing nothing, where suspending isn't supported (Windows).
+            <code>if (ev.Key.IsCtrl('z')) term.Suspend();</code>
+            See also <see cref="P:Tuinet.TerminalOptions.SuspendOnCtrlZ"/>.
+            </summary>
+        </member>
         <member name="M:Tuinet.Terminal.Post(System.Object)">
             <summary>Queue a message for the loop and wake a blocked <see cref="M:Tuinet.Terminal.Poll(Tuinet.Event@,System.Int32)"/>. Thread-safe.</summary>
         </member>
@@ -625,6 +673,9 @@
             Wait up to <paramref name="timeoutMs"/> (-1 = forever, 0 = don't wait) for the next event:
             input, a resize, or a posted message. Returns false on timeout.
             </summary>
+        </member>
+        <member name="M:Tuinet.Terminal.Resume">
+            <summary>Back from a stop: the screen is the shell's, so enter again and repaint everything.</summary>
         </member>
         <member name="F:Tuinet.ColorMode.TrueColor">
             <summary>24-bit RGB (<c>38;2;r;g;b</c>).</summary>
@@ -662,6 +713,13 @@
             insert/delete line) instead of repainting every row. Turn off for a terminal that mishandles them.
             </summary>
         </member>
+        <member name="P:Tuinet.TerminalOptions.SuspendOnCtrlZ">
+            <summary>
+            Handle Ctrl+Z inside <see cref="M:Tuinet.Terminal.Poll(Tuinet.Event@,System.Int32)"/> by calling <see cref="M:Tuinet.Terminal.Suspend"/>, so the app can
+            be backgrounded like a shell command. Off by default: Ctrl+Z is a normal key. Where suspending isn't
+            supported (Windows) the key is delivered as usual.
+            </summary>
+        </member>
         <member name="M:Tuinet.TerminalOptions.DetectColorMode">
             <summary>Best guess at the terminal's color depth from NO_COLOR, COLORTERM, TERM_PROGRAM, WT_SESSION and TERM.</summary>
         </member>
@@ -669,7 +727,8 @@
             <summary>
             An in-memory <see cref="T:Tuinet.ITty"/> for tests: script input with <see cref="M:Tuinet.Testing.TestTty.Enqueue(System.ReadOnlySpan{System.Byte})"/>,
             resize with <see cref="M:Tuinet.Testing.TestTty.Resize(System.Int32,System.Int32)"/>, and inspect what the terminal wrote. Counts writes and bytes so
-            tests can pin the output cost of a frame.
+            tests can pin the output cost of a frame. Suspends are recorded instead of stopping the process, and
+            <see cref="M:Tuinet.Testing.TestTty.Signal(Tuinet.TtySignals)"/> simulates job-control signals from outside.
             </summary>
         </member>
         <member name="P:Tuinet.Testing.TestTty.WriteCount">
@@ -680,6 +739,15 @@
         </member>
         <member name="P:Tuinet.Testing.TestTty.Blocked">
             <summary>Set when a <see cref="M:Tuinet.Testing.TestTty.Read(System.Span{System.Byte},System.Int32)"/> is about to block.</summary>
+        </member>
+        <member name="P:Tuinet.Testing.TestTty.CanSuspend">
+            <summary>Whether <see cref="M:Tuinet.Testing.TestTty.Suspend"/> is supported. Set false to act like Windows.</summary>
+        </member>
+        <member name="P:Tuinet.Testing.TestTty.Suspends">
+            <summary>For each <see cref="M:Tuinet.Testing.TestTty.Suspend"/>, how many bytes had been written when it was called.</summary>
+        </member>
+        <member name="M:Tuinet.Testing.TestTty.Signal(Tuinet.TtySignals)">
+            <summary>Simulate a job-control signal from outside (SIGTSTP, SIGCONT): reported by the next poll.</summary>
         </member>
         <member name="T:Tuinet.TextWidth">
             <summary>Terminal display width of text, in columns.</summary>

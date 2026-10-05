@@ -209,9 +209,12 @@ Tuinet.EventKind.Resize = 2 -> Tuinet.EventKind
 Tuinet.IStatefulWidget<TState>
 Tuinet.IStatefulWidget<TState>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref TState state) -> void
 Tuinet.ITty
+Tuinet.ITty.CanSuspend.get -> bool
 Tuinet.ITty.Read(System.Span<byte> buffer, int timeoutMs) -> int
 Tuinet.ITty.Restore() -> void
 Tuinet.ITty.Size.get -> Tuinet.Size
+Tuinet.ITty.Suspend() -> void
+Tuinet.ITty.TakeSignals() -> Tuinet.TtySignals
 Tuinet.ITty.Wake() -> void
 Tuinet.ITty.Write(System.ReadOnlySpan<byte> bytes) -> void
 Tuinet.IWidget
@@ -373,6 +376,7 @@ Tuinet.Terminal.Poll(out Tuinet.Event ev, int timeoutMs) -> bool
 Tuinet.Terminal.Post(object! message) -> void
 Tuinet.Terminal.Present() -> void
 Tuinet.Terminal.Size.get -> Tuinet.Size
+Tuinet.Terminal.Suspend() -> bool
 Tuinet.Terminal.Terminal(Tuinet.ITty! tty, Tuinet.TerminalOptions? options = null) -> void
 Tuinet.Terminal.Width.get -> int
 Tuinet.TerminalOptions
@@ -392,9 +396,13 @@ Tuinet.TerminalOptions.MouseMotion.get -> bool
 Tuinet.TerminalOptions.MouseMotion.init -> void
 Tuinet.TerminalOptions.ScrollRegions.get -> bool
 Tuinet.TerminalOptions.ScrollRegions.init -> void
+Tuinet.TerminalOptions.SuspendOnCtrlZ.get -> bool
+Tuinet.TerminalOptions.SuspendOnCtrlZ.init -> void
 Tuinet.TerminalOptions.TerminalOptions() -> void
 Tuinet.Testing.TestTty
 Tuinet.Testing.TestTty.Blocked.get -> System.Threading.ManualResetEventSlim!
+Tuinet.Testing.TestTty.CanSuspend.get -> bool
+Tuinet.Testing.TestTty.CanSuspend.set -> void
 Tuinet.Testing.TestTty.ClearWritten() -> void
 Tuinet.Testing.TestTty.Dispose() -> void
 Tuinet.Testing.TestTty.Enqueue(string! input) -> void
@@ -404,7 +412,11 @@ Tuinet.Testing.TestTty.ReadTimeouts.get -> System.Collections.Generic.List<int>!
 Tuinet.Testing.TestTty.Resize(int width, int height) -> void
 Tuinet.Testing.TestTty.Restore() -> void
 Tuinet.Testing.TestTty.Restored.get -> bool
+Tuinet.Testing.TestTty.Signal(Tuinet.TtySignals signals) -> void
 Tuinet.Testing.TestTty.Size.get -> Tuinet.Size
+Tuinet.Testing.TestTty.Suspend() -> void
+Tuinet.Testing.TestTty.Suspends.get -> System.Collections.Generic.List<int>!
+Tuinet.Testing.TestTty.TakeSignals() -> Tuinet.TtySignals
 Tuinet.Testing.TestTty.TestTty(int width = 80, int height = 24) -> void
 Tuinet.Testing.TestTty.Wake() -> void
 Tuinet.Testing.TestTty.Write(System.ReadOnlySpan<byte> bytes) -> void
@@ -412,6 +424,10 @@ Tuinet.Testing.TestTty.WriteCount.get -> int
 Tuinet.Testing.TestTty.Written.get -> byte[]!
 Tuinet.Testing.TestTty.WrittenText.get -> string!
 Tuinet.TextWidth
+Tuinet.TtySignals
+Tuinet.TtySignals.Continued = 2 -> Tuinet.TtySignals
+Tuinet.TtySignals.None = 0 -> Tuinet.TtySignals
+Tuinet.TtySignals.StopRequested = 1 -> Tuinet.TtySignals
 Tuinet.WidgetExtensions
 Tuinet.Widgets.Alignment
 Tuinet.Widgets.Alignment.Center = 1 -> Tuinet.Widgets.Alignment

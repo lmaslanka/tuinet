@@ -290,4 +290,139 @@ public class TerminalTests
         Assert.Contains("38;5;196m", tty.WrittenText);
         Assert.DoesNotContain("38;2;", tty.WrittenText);
     }
+
+    private const string Leave = "\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h\u001b[?1049l";
+
+    [Fact]
+    public void Suspend_leaves_the_screen_before_stopping_and_enters_again_after()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        terminal.BeginFrame().SetString(0, 0, "same");
+        terminal.Present();
+        tty.ClearWritten();
+
+        Assert.True(terminal.Suspend());
+
+        int stoppedAt = Assert.Single(tty.Suspends);
+        string text = tty.WrittenText;
+        Assert.Equal(Leave, text[..stoppedAt]);
+        Assert.StartsWith("\u001b[?1049h", text[stoppedAt..]);
+    }
+
+    [Fact]
+    public void After_suspend_poll_returns_resize_and_the_next_frame_repaints_everything()
+    {
+        var tty = new TestTty(40, 10);
+        using var terminal = new Terminal(tty);
+        terminal.BeginFrame().SetString(0, 0, "same");
+        terminal.Present();
+
+        terminal.Suspend();
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.Equal(EventKind.Resize, ev.Kind);
+        Assert.Equal(new Size(40, 10), ev.Size);
+        Assert.False(terminal.Poll(out _, 0));
+
+        tty.ClearWritten();
+        terminal.BeginFrame().SetString(0, 0, "same");
+        terminal.Present();
+        Assert.Contains("\u001b[2J", tty.WrittenText);
+        Assert.Contains("same", tty.WrittenText);
+    }
+
+    [Fact]
+    public void Suspend_does_nothing_where_unsupported()
+    {
+        var tty = new TestTty { CanSuspend = false };
+        using var terminal = new Terminal(tty);
+        tty.ClearWritten();
+        Assert.False(terminal.Suspend());
+        Assert.Empty(tty.Suspends);
+        Assert.Equal("", tty.WrittenText);
+        Assert.False(terminal.Poll(out _, 0));
+    }
+
+    [Fact]
+    public void Ctrl_z_is_a_normal_key_by_default()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        tty.Enqueue("\u001a");
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.True(ev.Key.IsCtrl('z'));
+        Assert.Empty(tty.Suspends);
+    }
+
+    [Fact]
+    public void Suspend_on_ctrl_z_suspends_inside_poll()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty, new TerminalOptions { SuspendOnCtrlZ = true });
+        tty.Enqueue("\u001aj");
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.True(ev.Key.IsChar('j'));
+        Assert.Single(tty.Suspends);
+        Assert.True(terminal.Poll(out ev, 0));
+        Assert.Equal(EventKind.Resize, ev.Kind);
+    }
+
+    [Fact]
+    public void Suspend_on_ctrl_z_delivers_the_key_where_unsupported()
+    {
+        var tty = new TestTty { CanSuspend = false };
+        using var terminal = new Terminal(tty, new TerminalOptions { SuspendOnCtrlZ = true });
+        tty.Enqueue("\u001a");
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.True(ev.Key.IsCtrl('z'));
+    }
+
+    [Fact]
+    public void Stop_requested_from_outside_suspends_on_the_next_poll()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        tty.ClearWritten();
+        tty.Signal(TtySignals.StopRequested);
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.Equal(EventKind.Resize, ev.Kind);
+        int stoppedAt = Assert.Single(tty.Suspends);
+        Assert.Equal(Leave, tty.WrittenText[..stoppedAt]);
+    }
+
+    [Fact]
+    public void Stop_request_wakes_a_blocked_poll()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        Event ev = default;
+        var poller = new Thread(() => terminal.Poll(out ev, Timeout.Infinite));
+        poller.Start();
+        Assert.True(tty.Blocked.Wait(1000));
+        tty.Signal(TtySignals.StopRequested);
+        Assert.True(poller.Join(2000), "Poll did not unblock");
+        Assert.Equal(EventKind.Resize, ev.Kind);
+        Assert.Single(tty.Suspends);
+    }
+
+    [Fact]
+    public void Continued_after_an_outside_stop_enters_again_and_repaints()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        terminal.BeginFrame().SetString(0, 0, "same");
+        terminal.Present();
+        tty.ClearWritten();
+
+        tty.Signal(TtySignals.Continued);
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.Equal(EventKind.Resize, ev.Kind);
+        Assert.Empty(tty.Suspends);
+        Assert.StartsWith("\u001b[?1049h", tty.WrittenText);
+
+        tty.ClearWritten();
+        terminal.BeginFrame().SetString(0, 0, "same");
+        terminal.Present();
+        Assert.Contains("same", tty.WrittenText);
+    }
 }

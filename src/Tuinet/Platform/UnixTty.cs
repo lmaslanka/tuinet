@@ -5,6 +5,12 @@ namespace Tuinet;
 /// <summary>
 /// termios raw mode on stdin/stdout (or /dev/tty when redirected). Input waits in poll(2) on the
 /// tty plus a self-pipe for <see cref="Wake"/>. Size is cached and refreshed only after SIGWINCH.
+/// <para>
+/// Job control: raw mode turns ISIG off, so Ctrl+Z is a key; <see cref="Suspend"/> stops the process
+/// itself. A SIGTSTP from outside is caught and reported as <see cref="TtySignals.StopRequested"/> so the
+/// terminal can leave the screen first; a SIGCONT after a stop we didn't make (SIGSTOP) is reported as
+/// <see cref="TtySignals.Continued"/>.
+/// </para>
 /// </summary>
 [System.Runtime.Versioning.UnsupportedOSPlatform("windows")]
 internal sealed class UnixTty : ITty
@@ -18,11 +24,15 @@ internal sealed class UnixTty : ITty
     private readonly bool _ownsFd;
     private readonly bool _mac;
     private readonly PosixSignalRegistration? _winch;
+    private readonly PosixSignalRegistration? _cont;
+    private PosixSignalRegistration? _tstp;
     private TermiosLinux _savedLinux;
     private TermiosMac _savedMac;
     private Size _size = new(80, 24);
     private volatile bool _resized;
     private int _wakePending;
+    private int _signals;
+    private int _selfStop;
     private int _restored;
     private bool _disposed;
 
@@ -60,6 +70,7 @@ internal sealed class UnixTty : ITty
 
         try
         {
+            SaveModes();
             EnterRaw();
         }
         catch
@@ -77,7 +88,20 @@ internal sealed class UnixTty : ITty
             _resized = true;
             Wake();
         });
+        // Cancel skips the runtime's own SIGCONT handling, which re-applies the termios it captured at the
+        // first signal registration (raw, by then), writes keypad_xmit, and makes it re-apply raw at exit.
+        _cont = PosixSignalRegistration.Create(PosixSignal.SIGCONT, ctx =>
+        {
+            ctx.Cancel = true;
+            if (Interlocked.Exchange(ref _selfStop, 0) == 0)
+            {
+                Raise(TtySignals.Continued);
+            }
+        });
+        _tstp = CreateTstp();
     }
+
+    public bool CanSuspend => true;
 
     public Size Size
     {
@@ -189,6 +213,49 @@ internal sealed class UnixTty : ITty
         }
     }
 
+    /// <summary>
+    /// The runtime handles a signal on its own thread while any registration exists, so raise() would return
+    /// before the stop. Drop ours first: with none, SIGTSTP stops the process synchronously, and kill()
+    /// returns after SIGCONT. Signalling the process group stops a pipeline (app | tee) as Ctrl+Z would.
+    /// </summary>
+    public void Suspend()
+    {
+        _tstp?.Dispose();
+        _tstp = null;
+        Restore();
+        Volatile.Write(ref _selfStop, 1);
+        if (LibC.kill(0, LibC.SigTstp) != 0)
+        {
+            Volatile.Write(ref _selfStop, 0);
+        }
+
+        // Continued. Raw mode is rebuilt from the modes saved at startup, which Restore still needs.
+        EnterRaw();
+        Volatile.Write(ref _restored, 0);
+        _resized = true;
+        _tstp = CreateTstp();
+    }
+
+    public TtySignals TakeSignals()
+    {
+        if (Volatile.Read(ref _signals) == 0)
+        {
+            return TtySignals.None;
+        }
+
+        var signals = (TtySignals)Interlocked.Exchange(ref _signals, 0);
+        if ((signals & TtySignals.Continued) != 0)
+        {
+            // The shell restored the modes it saved when the job stopped (raw, since we couldn't leave); re-apply
+            // raw mode anyway, but never save these as the originals.
+            EnterRaw();
+            Volatile.Write(ref _restored, 0);
+            _resized = true;
+        }
+
+        return signals;
+    }
+
     public void Restore()
     {
         if (Interlocked.Exchange(ref _restored, 1) != 0)
@@ -215,10 +282,24 @@ internal sealed class UnixTty : ITty
 
         _disposed = true;
         _winch?.Dispose();
+        _cont?.Dispose();
+        _tstp?.Dispose();
         Restore();
         CloseOwned();
         _ = LibC.close(_wakeRead);
         _ = LibC.close(_wakeWrite);
+    }
+
+    private PosixSignalRegistration CreateTstp() => PosixSignalRegistration.Create(PosixSignal.SIGTSTP, ctx =>
+    {
+        ctx.Cancel = true;
+        Raise(TtySignals.StopRequested);
+    });
+
+    private void Raise(TtySignals signal)
+    {
+        Interlocked.Or(ref _signals, (int)signal);
+        Wake();
     }
 
     private void CloseOwned()
@@ -229,15 +310,19 @@ internal sealed class UnixTty : ITty
         }
     }
 
+    private void SaveModes()
+    {
+        int rc = _mac ? LibC.tcgetattrMac(_inFd, out _savedMac) : LibC.tcgetattr(_inFd, out _savedLinux);
+        if (rc != 0)
+        {
+            throw new IOException($"tcgetattr failed (errno {Marshal.GetLastPInvokeError()})");
+        }
+    }
+
     private void EnterRaw()
     {
         if (_mac)
         {
-            if (LibC.tcgetattrMac(_inFd, out _savedMac) != 0)
-            {
-                throw new IOException($"tcgetattr failed (errno {Marshal.GetLastPInvokeError()})");
-            }
-
             TermiosMac raw = _savedMac;
             MakeRawMac(ref raw);
             if (LibC.tcsetattrMac(_inFd, TcsaNow, in raw) != 0)
@@ -246,11 +331,6 @@ internal sealed class UnixTty : ITty
             }
 
             return;
-        }
-
-        if (LibC.tcgetattr(_inFd, out _savedLinux) != 0)
-        {
-            throw new IOException($"tcgetattr failed (errno {Marshal.GetLastPInvokeError()})");
         }
 
         TermiosLinux linux = _savedLinux;

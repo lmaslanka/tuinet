@@ -24,6 +24,8 @@ internal static unsafe partial class LibC
 
     public static bool IsEAgain(int errno) => errno == (OperatingSystem.IsMacOS() ? 35 : 11);
 
+    public static int SigTstp => OperatingSystem.IsMacOS() ? 18 : 20;
+
     /// <summary>
     /// TIOCGWINSZ. ioctl is variadic: on Apple arm64 variadic arguments go on the stack, so the
     /// pointer is passed as the 9th argument (after 8 register slots) to land where va_arg reads it.
@@ -60,6 +62,9 @@ internal static unsafe partial class LibC
 
     [LibraryImport("libc", SetLastError = true)]
     public static partial int pipe(ref int pipefd);
+
+    [LibraryImport("libc", SetLastError = true)]
+    public static partial int kill(int pid, int sig);
 
     [LibraryImport("libc", SetLastError = true)]
     private static partial int ioctl(int fd, nuint request, WinSize* winsize);
