@@ -28,6 +28,9 @@ The first release.
 - Safety: control characters in text never reach the terminal; the terminal is restored on exit, on an
   unhandled exception and on SIGINT/SIGTERM/SIGHUP.
 - Backends: Linux and macOS (termios, `poll(2)`, `SIGWINCH`) and Windows 10+ (console VT mode).
+- Inline mode: `TerminalOptions.Inline = new InlineOptions(height)` draws in a band under the shell prompt
+  instead of on the alternate screen; the band stays in the scrollback after exit. `Terminal.PrintAbove`
+  prints log lines above the band. The band is placed with a cursor position query and follows resizes.
 - Mouse in widgets: `ListState.HandleMouse` (click selects, wheel scrolls lists and tables),
   `ListState.RowAt`, `Table.HeaderColumnAt` (click a header to sort), `DropdownState.HandleMouse` and
   `TextInputState.HandleMouse` (click places the caret), plus `MouseEvent.IsClick`, `IsWheel`,

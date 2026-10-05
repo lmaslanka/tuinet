@@ -9,6 +9,9 @@ override Tuinet.Color.GetHashCode() -> int
 override Tuinet.Color.ToString() -> string!
 override Tuinet.Constraint.GetHashCode() -> int
 override Tuinet.Event.ToString() -> string!
+override Tuinet.InlineOptions.Equals(object? obj) -> bool
+override Tuinet.InlineOptions.GetHashCode() -> int
+override Tuinet.InlineOptions.ToString() -> string!
 override Tuinet.KeyEvent.Equals(object? obj) -> bool
 override Tuinet.KeyEvent.GetHashCode() -> int
 override Tuinet.KeyEvent.ToString() -> string!
@@ -67,6 +70,8 @@ static Tuinet.Event.FromMessage(object! message) -> Tuinet.Event
 static Tuinet.Event.FromMouse(Tuinet.MouseEvent mouse) -> Tuinet.Event
 static Tuinet.Event.FromPaste(string! text) -> Tuinet.Event
 static Tuinet.Event.FromResize(Tuinet.Size size) -> Tuinet.Event
+static Tuinet.InlineOptions.operator !=(Tuinet.InlineOptions? left, Tuinet.InlineOptions? right) -> bool
+static Tuinet.InlineOptions.operator ==(Tuinet.InlineOptions? left, Tuinet.InlineOptions? right) -> bool
 static Tuinet.KeyEvent.Char(char c, Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> Tuinet.KeyEvent
 static Tuinet.KeyEvent.operator !=(Tuinet.KeyEvent left, Tuinet.KeyEvent right) -> bool
 static Tuinet.KeyEvent.operator ==(Tuinet.KeyEvent left, Tuinet.KeyEvent right) -> bool
@@ -206,6 +211,13 @@ Tuinet.EventKind.Mouse = 4 -> Tuinet.EventKind
 Tuinet.EventKind.None = 0 -> Tuinet.EventKind
 Tuinet.EventKind.Paste = 5 -> Tuinet.EventKind
 Tuinet.EventKind.Resize = 2 -> Tuinet.EventKind
+Tuinet.InlineOptions
+Tuinet.InlineOptions.<Clone>$() -> Tuinet.InlineOptions!
+Tuinet.InlineOptions.CursorReportTimeoutMs.get -> int
+Tuinet.InlineOptions.CursorReportTimeoutMs.init -> void
+Tuinet.InlineOptions.Equals(Tuinet.InlineOptions? other) -> bool
+Tuinet.InlineOptions.Height.get -> int
+Tuinet.InlineOptions.InlineOptions(int height) -> void
 Tuinet.IStatefulWidget<TState>
 Tuinet.IStatefulWidget<TState>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref TState state) -> void
 Tuinet.ITty
@@ -380,6 +392,7 @@ Tuinet.Terminal.Options.get -> Tuinet.TerminalOptions!
 Tuinet.Terminal.Poll(out Tuinet.Event ev, int timeoutMs) -> bool
 Tuinet.Terminal.Post(object! message) -> void
 Tuinet.Terminal.Present() -> void
+Tuinet.Terminal.PrintAbove(Tuinet.StyledText text) -> void
 Tuinet.Terminal.Size.get -> Tuinet.Size
 Tuinet.Terminal.Suspend() -> bool
 Tuinet.Terminal.Terminal(Tuinet.ITty! tty, Tuinet.TerminalOptions? options = null) -> void
@@ -395,6 +408,8 @@ Tuinet.TerminalOptions.EscapeTimeoutMs.get -> int
 Tuinet.TerminalOptions.EscapeTimeoutMs.init -> void
 Tuinet.TerminalOptions.FocusEvents.get -> bool
 Tuinet.TerminalOptions.FocusEvents.init -> void
+Tuinet.TerminalOptions.Inline.get -> Tuinet.InlineOptions?
+Tuinet.TerminalOptions.Inline.init -> void
 Tuinet.TerminalOptions.Mouse.get -> bool
 Tuinet.TerminalOptions.Mouse.init -> void
 Tuinet.TerminalOptions.MouseMotion.get -> bool

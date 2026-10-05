@@ -32,6 +32,7 @@ internal sealed class Renderer
     private int _width;
     private int _cx = -1;
     private int _cy = -1;
+    private int _top;
     private Style _pen;
     private Style _penSource;
     private bool _penKnown;
@@ -44,6 +45,31 @@ internal sealed class Renderer
     }
 
     public ColorMode Mode => _mode;
+
+    /// <summary>
+    /// Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
+    /// All cursor addressing and scroll margins are offset by it.
+    /// </summary>
+    public int Top
+    {
+        get => _top;
+        set
+        {
+            // The tracked cursor stays where it is on screen: re-express it relative to the new top.
+            _cy = _cy < 0 || _cy + _top - value < 0 ? -1 : _cy + _top - value;
+            _cx = _cy < 0 ? -1 : _cx;
+            _top = value;
+        }
+    }
+
+    /// <summary>Row (buffer coordinates) the terminal cursor is on, or -1 if unknown.</summary>
+    public int CursorRow => _cy;
+
+    /// <summary>
+    /// Inline mode: after a frame with no visible cursor, leave the cursor at the start of row 0. A terminal that
+    /// reflows on resize keeps it on that row's first line, so the cursor position reports where the band starts.
+    /// </summary>
+    public bool ParkCursor { get; set; }
 
     /// <summary>The screen was just cleared with SGR reset: pen is default, cursor position unknown.</summary>
     public void AfterClear()
@@ -65,9 +91,21 @@ internal sealed class Renderer
 
     public void Render(CellBuffer current, CellBuffer previous, VtBuffer output)
     {
+        Open(output);
+        Frame(current, previous);
+    }
+
+    /// <summary>Start writing to <paramref name="output"/>; inline operations and <see cref="Frame"/> share one synchronized update.</summary>
+    public void Open(VtBuffer output)
+    {
         _out = output;
-        _width = current.Width;
         _started = false;
+    }
+
+    /// <summary>Diff <paramref name="current"/> against <paramref name="previous"/> and end the synchronized update.</summary>
+    public void Frame(CellBuffer current, CellBuffer previous)
+    {
+        _width = current.Width;
         int height = current.Height;
 
         // source[y]: the previous row the terminal shows at y (-1: a blank row left by a scroll).
@@ -123,7 +161,85 @@ internal sealed class Renderer
         if (_started)
         {
             _out.Bytes(SyncEnd);
+            _started = false;
         }
+    }
+
+    /// <summary>End the synchronized update started by inline operations without rendering a frame.</summary>
+    public void Close()
+    {
+        if (_started)
+        {
+            _out.Reserve(16);
+            _out.Bytes(SyncEnd);
+            _started = false;
+        }
+    }
+
+    /// <summary>Erase from buffer row <paramref name="y"/> to the end of the screen, with the default background.</summary>
+    public void EraseBelow(int y)
+    {
+        Begin();
+        _out.Reserve(32);
+        SetPen(default);
+        MoveTo(0, y);
+        _out.Bytes("\u001b[J"u8);
+    }
+
+    /// <summary>
+    /// Scroll the whole screen up <paramref name="lines"/> lines (into the scrollback) with line feeds on its
+    /// last row, <paramref name="screenHeight"/> - 1. The new rows are blank. Leaves the cursor on the last row.
+    /// </summary>
+    public void ScrollScreen(int screenHeight, int lines)
+    {
+        Begin();
+        _out.Reserve(32 + lines);
+        SetPen(default);
+        MoveTo(0, screenHeight - 1 - Top);
+        for (int i = 0; i < lines; i++)
+        {
+            _out.Byte((byte)'\n');
+        }
+    }
+
+    /// <summary>Draw <paramref name="row"/> on buffer row <paramref name="y"/>, which must be blank on screen.</summary>
+    public void PrintRow(ReadOnlySpan<Cell> row, int y)
+    {
+        _width = row.Length;
+        ReadOnlySpan<Cell> blank = BlankRow();
+        int first = CommonPrefix(row, blank);
+        if (first == row.Length)
+        {
+            return;
+        }
+
+        int last = row.Length - 1;
+        while (last > first && row[last].Equals(blank[last]))
+        {
+            last--;
+        }
+
+        Begin();
+        _out.Reserve((last - first + 2) * MaxCellBytes + 64);
+        RenderRow<JoinChecks>(row, blank, y, first, last);
+    }
+
+    /// <summary>
+    /// Put the cursor at the start of the line after buffer row <paramref name="y"/> (scrolling at the bottom),
+    /// or at the start of row 0 when <paramref name="y"/> is negative.
+    /// </summary>
+    public void LineAfter(int y)
+    {
+        _out.Reserve(48);
+        SetPen(default);
+        MoveTo(0, Math.Max(0, y));
+        if (y >= 0)
+        {
+            _out.Bytes("\r\n"u8);
+        }
+
+        _cx = -1;
+        _cy = -1;
     }
 
     private void Begin()
@@ -272,11 +388,11 @@ internal sealed class Renderer
         // New lines are filled with the current background (BCE): reset the pen so they are plain blanks.
         SetPen(default);
         _out.Bytes("\u001b["u8);
-        _out.Int(top + 1);
+        _out.Int(Top + top + 1);
         _out.Byte((byte)';');
-        _out.Int(bottom + 1);
+        _out.Int(Top + bottom + 1);
         _out.Bytes("r\u001b["u8);
-        _out.Int(top + 1);
+        _out.Int(Top + top + 1);
         _out.Byte((byte)'H');
         _out.Bytes("\u001b["u8);
         int count = Math.Abs(shift);
@@ -566,6 +682,11 @@ internal sealed class Renderer
                 _cursorShown = false;
             }
 
+            if (ParkCursor && _started)
+            {
+                MoveTo(0, 0);
+            }
+
             return;
         }
 
@@ -611,13 +732,13 @@ internal sealed class Renderer
         else
         {
             _out.Bytes("\u001b["u8);
-            if (x == 0 && y == 0)
+            if (x == 0 && y + Top == 0)
             {
                 _out.Byte((byte)'H');
             }
             else
             {
-                _out.Int(y + 1);
+                _out.Int(y + Top + 1);
                 if (x > 0)
                 {
                     _out.Byte((byte)';');

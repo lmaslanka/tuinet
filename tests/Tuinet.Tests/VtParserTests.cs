@@ -163,6 +163,23 @@ public class VtParserTests
         Assert.True(ev.Key.IsChar('j'));
     }
 
+    [Fact]
+    public void Cursor_report_is_taken_only_while_expected()
+    {
+        var parser = new VtParser { ExpectCursorReport = true };
+        parser.Feed("\u001b[12;"u8);
+        parser.Feed("40R\u001b[1;2R"u8);                              // split reply, then Shift+F3
+        Assert.True(parser.TryTakeCursorReport(out int row, out int column));
+        Assert.Equal((11, 39), (row, column));
+        Assert.False(parser.ExpectCursorReport);
+        Assert.False(parser.TryTakeCursorReport(out _, out _));
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.True(ev.Key.Is(KeyCode.F3, Modifiers.Shift));
+    }
+
+    [Fact]
+    public void Csi_R_without_a_query_is_f3() => Assert.True(Key("\u001b[1;5R").Is(KeyCode.F3, Modifiers.Ctrl));
+
     private static KeyEvent Key(string input) => Key(Encoding.UTF8.GetBytes(input));
 
     private static KeyEvent Key(byte[] input)

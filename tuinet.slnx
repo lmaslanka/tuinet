@@ -3,6 +3,7 @@
     <Project Path="src/Tuinet/Tuinet.csproj" />
   </Folder>
   <Folder Name="/samples/">
+    <Project Path="samples/Tuinet.Samples.Inline/Tuinet.Samples.Inline.csproj" />
     <Project Path="samples/Tuinet.Samples.Showcase/Tuinet.Samples.Showcase.csproj" />
     <Project Path="samples/Tuinet.Samples.Stress/Tuinet.Samples.Stress.csproj" />
   </Folder>

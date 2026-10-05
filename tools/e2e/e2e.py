@@ -7,6 +7,9 @@ read the screen back with `capture-pane`; waits poll the screen, so slow machine
 
   showcase  navigation, edit + save, progress animation, mouse (click, wheel, header sort), clean exit;
             at 110x34 and 80x24
+  inline    the inline sample under an interactive bash: logs printed above the live band end up in order
+            in the history (also on a short terminal, where they scroll), the band leaves one summary line,
+            the shell continues right after it, Ctrl+C cancels, terminal modes are restored
   suspend   job control in an interactive bash: Ctrl+Z, kill -TSTP and kill -STOP each return to the
             shell (in cooked mode where the app could restore it), and fg brings the screen back intact
   stress    scrolling bursts: every visible row has the right content, in order, and the terminal
@@ -53,6 +56,7 @@ class Tmux:
 
     def start(self, name, width, height, command):
         self.run("new-session", "-d", "-s", name, "-x", str(width), "-y", str(height), command)
+        self.run("set-option", "-t", name, "window-size", "manual")   # resize-window keeps the size it is given
 
     def screen(self, name):
         return self.run("capture-pane", "-p", "-t", name)
@@ -287,6 +291,48 @@ def suspend(tmux, binary):
     check(written == [], f"{label}: wrote no files under HOME" + (f" {written}" if written else ""))
 
 
+def inline(tmux, binary, width, height, cancel=False, resize=None):
+    """The inline sample run like a CLI tool: everything it printed must read cleanly in the history."""
+    label = f"inline {width}x{height}" + (" ctrl+c" if cancel else "") + (f" resized to {resize[0]}x{resize[1]}" if resize else "")
+    n = f"inline{width}x{height}{'c' if cancel else ''}{'r%dx%d' % resize if resize else ''}"
+    d = tempfile.mkdtemp(prefix=f"tuinet-e2e-{n}-")
+    tmux.start(n, width, height, f"env -i PATH=\"$PATH\" TERM=\"$TERM\" PS1='$ ' bash --norc --noprofile -i")
+    tmux.wait(n, lambda t: "$" in t)
+    q = shlex.quote
+    tmux.type(n, f"clear; echo before; stty -g > {q(d)}/before; {q(binary)}; echo after=$?; stty -g > {q(d)}/after")
+    tmux.keys(n, "Enter")
+    if cancel or resize:
+        ok, s = tmux.wait(n, lambda t: "downloading" in t and "3 of 8 done" in t)
+        check(ok, f"{label}: the live band shows", s)
+    if cancel:
+        tmux.keys(n, "C-c")
+    if resize:
+        # Narrowing is left out: terminals that reflow long lines (tmux among them) move the cursor in ways
+        # that can leave a stale copy of the band above it. Taller, shorter and wider must stay clean.
+        tmux.run("resize-window", "-t", n, "-x", str(resize[0]), "-y", str(resize[1]))
+    ok, s = tmux.wait(n, lambda t: "after=" in t, timeout=20)
+    history = tmux.run("capture-pane", "-p", "-S", "-", "-t", n)
+    lines = [line.rstrip() for line in history.split("\n") if line.strip()]
+    check(ok and "after=0" in lines, f"{label}: exits with code 0", history)
+    if not ok:
+        return
+
+    start = lines.index("before") + 1
+    end = lines.index("after=0")
+    output = lines[start:end]
+    logs = [line for line in output if line.startswith("✓ ") and " MB in " in line and " files " not in line]
+    if cancel:
+        check(output[-2:-1] == ["✗ cancelled"] and output[-1].startswith("✗ ") and "of 8 files" in output[-1],
+              f"{label}: ctrl+c prints 'cancelled' and leaves a summary line", "\n".join(output))
+        check(output[:-2] == logs, f"{label}: only finished files above it", "\n".join(output))
+    else:
+        check(len(logs) == 8 and len(set(logs)) == 8, f"{label}: all 8 files logged once each", "\n".join(output))
+        check(output == logs + [output[-1]] and output[-1].startswith("✓ 8 of 8 files"),
+              f"{label}: logs, then one summary line, then the shell (no leftover bars)", "\n".join(output))
+    after = open(os.path.join(d, "after")).read() if os.path.exists(os.path.join(d, "after")) else ""
+    check(after == open(os.path.join(d, "before")).read(), f"{label}: terminal modes restored")
+
+
 def stress(tmux, binary):
     label = "stress"
     app = App(tmux, "stress", 100, 30, [binary])
@@ -387,6 +433,7 @@ def main():
     parser.add_argument("--showcase", help="Tuinet.Samples.Showcase binary")
     parser.add_argument("--stress", help="Tuinet.Samples.Stress binary")
     parser.add_argument("--clusters", help="ClusterScreen binary (tools/e2e/ClusterScreen)")
+    parser.add_argument("--inline", help="Tuinet.Samples.Inline binary")
     parser.add_argument("--cases", default=os.path.join(os.path.dirname(os.path.abspath(__file__)), "clusters.txt"))
     parser.add_argument("--reference", help=argparse.SUPPRESS)
     args = parser.parse_args()
@@ -401,6 +448,12 @@ def main():
             showcase(tmux, os.path.abspath(args.showcase), 110, 34)
             showcase(tmux, os.path.abspath(args.showcase), 80, 24)
             suspend(tmux, os.path.abspath(args.showcase))
+        if args.inline:
+            inline(tmux, os.path.abspath(args.inline), 90, 20)
+            inline(tmux, os.path.abspath(args.inline), 80, 8)      # 8 log lines + band don't fit: they scroll
+            inline(tmux, os.path.abspath(args.inline), 90, 20, cancel=True)
+            for size in [(90, 9), (130, 20), (90, 30)]:
+                inline(tmux, os.path.abspath(args.inline), 90, 20, resize=size)
         if args.stress:
             stress(tmux, os.path.abspath(args.stress))
         if args.clusters:

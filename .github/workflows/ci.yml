@@ -118,7 +118,7 @@ jobs:
       # Trim/AOT analysis warnings are errors (TreatWarningsAsErrors), so this fails on any AOT regression.
       - name: Publish samples with Native AOT
         run: |
-          for sample in Showcase Stress; do
+          for sample in Showcase Stress Inline; do
             dotnet publish "samples/Tuinet.Samples.$sample" -c Release -p:PublishAot=true -o "publish/$sample"
           done
           ls -la publish/*/Tuinet.Samples.*

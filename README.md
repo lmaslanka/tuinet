@@ -33,6 +33,8 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Widgets: blocks, paragraphs, virtualized lists and tables, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
+  - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
+    it, instead of the alternate screen.
 - **Full input.**
   - Keys with Ctrl/Alt/Shift, F1–F12, PgUp/PgDn.
   - Mouse (SGR 1006), bracketed paste and focus events.
@@ -96,6 +98,7 @@ To see what the library can do, run the samples:
 
 ```sh
 ./run           # the showcase in the screenshots: list, edit form, progress dialog
+./run inline    # inline mode: a download with live progress bars under the prompt
 ./run stress    # latency harness: hold j on 100k items, or press n for full-screen noise
 ```
 
@@ -437,6 +440,7 @@ in the edit dialog.
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
 | `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
+| `Inline` | null | A band of `InlineOptions.Height` rows under the prompt instead of the alternate screen (see below) |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
 
@@ -453,6 +457,36 @@ case EventKind.Key when ev.Key.IsCtrl('z'): term.Suspend(); break;
 returns with the alternate screen back, and the next `Poll` returns a `Resize` event so the app draws a
 frame, which repaints everything. A `kill -TSTP` from outside suspends the same way on the next `Poll`,
 and the app also recovers from `kill -STOP`. On Windows, `Suspend` returns false and does nothing.
+
+### Inline mode
+
+CLI tools often want a live area under the prompt, not a full screen: progress bars, a spinner, a prompt, a
+live table. With `Inline`, the terminal draws the frame in a band of that many rows under the cursor, and the
+band stays in the terminal (and its scrollback) after exit. Everything else is the same: `BeginFrame`
+returns a buffer the size of the band, and only changes are written.
+
+```csharp
+using var term = Terminal.Open(new TerminalOptions { Inline = new InlineOptions(height: 4) });
+
+term.PrintAbove($"✓ {file.Name}");    // a log line above the band; it stays in the scrollback
+CellBuffer frame = term.BeginFrame();  // 4 rows, full width
+frame.Render(new ProgressBar(done / (double)total), new Rect(0, 0, frame.Width, 1));
+term.Present();
+```
+
+- **Start.** The band starts on the cursor's line (the next one if that line has text). Near the bottom of
+  the screen, the screen scrolls up to make room. To find the cursor, the terminal is asked for its
+  position (`CSI 6n`); with no reply within `CursorReportTimeoutMs`, the band goes at the bottom.
+- **`PrintAbove`** prints wrapped, sanitized text (plain or `StyledText`) where the band was, moves the band
+  down (scrolling once it reaches the bottom) and repaints it, in one write.
+- **Exit** keeps the last frame and continues on the line after its last non-blank row, so a final
+  one-line summary frame reads like ordinary output.
+- **Resize** reports a `Resize` with the band's size, asks the terminal where the band went and repaints
+  it there. Taller, shorter and wider are seamless. When a terminal that reflows long lines gets
+  narrower, the band's old rows can be rewrapped in ways that leave a stale copy above it (tmux does
+  this).
+
+The `Tuinet.Samples.Inline` sample is a complete example.
 
 ### Custom widgets
 
@@ -604,6 +638,9 @@ implementation, and read the screen back:
 
 - **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog, and real
   SGR mouse reports (click a row, wheel-scroll, click a header to sort).
+- **inline**: the inline sample under an interactive bash, at 90×20, at 80×8 (the logs scroll), with Ctrl+C,
+  and resized taller, shorter and wider mid-run. The history must read: the command, the 8 log lines once
+  each, one summary line, then the shell, with no leftover progress bars. Terminal modes are restored.
 - **suspend**: the showcase under an interactive bash. Ctrl+Z, `kill -TSTP` and `kill -STOP` each stop it,
   the shell takes commands (with the terminal modes restored, where the app could restore them), and
   `fg` brings back the whole screen with keys working.
@@ -640,6 +677,7 @@ src/Tuinet/                      the library
   Platform/                      Unix and Windows backends
   Testing/                       TestTty
 samples/Tuinet.Samples.Showcase  list, edit form and progress dialog (the screenshots)
+samples/Tuinet.Samples.Inline    inline mode: download progress under the prompt, logs above it
 samples/Tuinet.Samples.Stress    latency and throughput harness
 bench/Tuinet.Benchmarks          BenchmarkDotNet suite
 tests/                           unit, widget, allocation, renderer fuzz and sample tests

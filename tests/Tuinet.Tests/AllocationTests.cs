@@ -39,6 +39,30 @@ public class AllocationTests
     }
 
     [Fact]
+    public void Inline_frames_and_print_above_allocate_nothing()
+    {
+        var tty = new NullTty(120, 40) { Input = "\u001b[30;1R"u8.ToArray() };
+        using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(10) });
+        var list = new ListState();
+        var table = new ListState();
+        var input = new TextInputState("hello");
+        for (int i = 0; i < 50; i++)
+        {
+            Frame(terminal, i, ref list, ref table, input);
+            terminal.PrintAbove("downloaded part 17 of 200 · 1.2 MB/s");
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            Frame(terminal, i, ref list, ref table, input);
+            terminal.PrintAbove("downloaded part 17 of 200 · 1.2 MB/s");
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
     public void Polling_keys_allocates_nothing()
     {
         var tty = new NullTty(80, 24);

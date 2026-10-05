@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
 # ./run          showcase sample: list, edit dialog, progress dialog
+# ./run inline   inline mode: download progress under the prompt
 # ./run stress   latency / throughput harness
 # ./run e2e      end-to-end checks in tmux (tools/e2e)
 set -euo pipefail
@@ -7,6 +8,10 @@ root="$(cd "$(dirname "$0")" && pwd)"
 if [ "${1:-}" = "e2e" ]; then
   shift
   exec "$root/tools/e2e/run.sh" "$@"
+fi
+if [ "${1:-}" = "inline" ]; then
+  shift
+  exec dotnet run -c Release --project "$root/samples/Tuinet.Samples.Inline" -- "$@"
 fi
 if [ "${1:-}" = "stress" ]; then
   shift

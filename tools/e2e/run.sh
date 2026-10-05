@@ -3,7 +3,7 @@
 #
 #   tools/e2e/run.sh [publish-dir]
 #
-# Binaries already in publish-dir/{Showcase,Stress} are reused (CI publishes them first); anything missing
+# Binaries already in publish-dir/{Showcase,Stress,Inline} are reused (CI publishes them first); anything missing
 # is published there. Default publish-dir: artifacts/e2e. Needs tmux and python3.
 set -euo pipefail
 root="$(cd "$(dirname "$0")/../.." && pwd)"
@@ -21,10 +21,12 @@ publish() {   # publish <project dir> <output dir> <binary name>
 
 publish "$root/samples/Tuinet.Samples.Showcase" "$out/Showcase" Tuinet.Samples.Showcase
 publish "$root/samples/Tuinet.Samples.Stress" "$out/Stress" Tuinet.Samples.Stress
+publish "$root/samples/Tuinet.Samples.Inline" "$out/Inline" Tuinet.Samples.Inline
 publish "$root/tools/e2e/ClusterScreen" "$out/ClusterScreen" ClusterScreen
 
 exec python3 "$root/tools/e2e/e2e.py" \
   --showcase "$out/Showcase/Tuinet.Samples.Showcase" \
   --stress "$out/Stress/Tuinet.Samples.Stress" \
+  --inline "$out/Inline/Tuinet.Samples.Inline" \
   --clusters "$out/ClusterScreen/ClusterScreen" \
   --cases "$root/tools/e2e/clusters.txt"

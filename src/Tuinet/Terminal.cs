@@ -1,9 +1,11 @@
 using System.Collections.Concurrent;
+using Tuinet.Widgets;
 
 namespace Tuinet;
 
 /// <summary>
-/// An immediate-mode terminal session: alternate screen, raw input, double-buffered output.
+/// An immediate-mode terminal session: the alternate screen (or, with <see cref="TerminalOptions.Inline"/>, a
+/// band under the prompt), raw input, double-buffered output.
 /// <para>
 /// Single-threaded: call <see cref="Poll"/>, <see cref="BeginFrame"/> and <see cref="Present"/>
 /// from one thread. <see cref="Post"/> may be called from any thread to wake the loop.
@@ -31,9 +33,13 @@ public sealed class Terminal : IDisposable
     private readonly byte[] _readBuf = new byte[4096];
     private readonly ConcurrentQueue<object> _messages = new();
     private readonly byte[] _leave;
+    private readonly InlineOptions? _inline;
     private CellBuffer _front;
     private CellBuffer _back;
-    private Size _reportedSize;
+    private CellBuffer? _print;
+    private CellBuffer? _blank;
+    private Size _screen;
+    private Size _reportedScreen;
     private bool _fullRedraw;
     private bool _resumed;
     private bool _inFrame;
@@ -49,10 +55,12 @@ public sealed class Terminal : IDisposable
         _tty = tty;
         _ownsTty = ownsTty;
         _options = options;
-        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions);
+        _inline = options.Inline;
+        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions) { ParkCursor = _inline is not null };
 
-        Size size = Clamp(tty.Size);
-        _reportedSize = size;
+        _screen = Clamp(tty.Size);
+        _reportedScreen = _screen;
+        Size size = FrameSize(_screen);
         _front = new CellBuffer(size.Width, size.Height);
         _back = new CellBuffer(size.Width, size.Height);
         _out = new VtBuffer(size.Width * size.Height * 8 + 4096);
@@ -126,20 +134,83 @@ public sealed class Terminal : IDisposable
 
         _inFrame = false;
         _out.Clear();
+        _renderer.Open(_out);
         if (_fullRedraw)
         {
-            _out.Reserve(16);
-            _out.Bytes("\u001b[0m\u001b[2J"u8);
+            if (_inline is null)
+            {
+                _out.Reserve(16);
+                _out.Bytes("\u001b[0m\u001b[2J"u8);
+                _renderer.AfterClear();
+            }
+            else
+            {
+                PlaceBand(_renderer.Top);
+            }
+
             _front.Clear();
-            _renderer.AfterClear();
             _fullRedraw = false;
         }
 
-        _renderer.Render(_back, _front, _out);
+        _renderer.Frame(_back, _front);
         LastFrameBytes = _out.Length;
         Flush();
         (_front, _back) = (_back, _front);
         Frames++;
+    }
+
+    /// <summary>
+    /// Inline mode: print <paramref name="text"/> above the band, as ordinary terminal output that stays in the
+    /// scrollback (logs over a progress bar). Long lines wrap; a trailing newline is ignored. The band moves
+    /// down (the screen scrolls once it reaches the bottom) and is repainted, all in one write.
+    /// </summary>
+    public void PrintAbove(StyledText text)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_inline is null)
+        {
+            throw new InvalidOperationException("PrintAbove needs inline mode (TerminalOptions.Inline).");
+        }
+
+        if (!_inFrame)
+        {
+            SyncSize();
+        }
+
+        if (text.Text.EndsWith('\n'))
+        {
+            int end = text.Text.Length - 1;
+            text = text.Slice(0, end > 0 && text.Text[end - 1] == '\r' ? end - 1 : end);
+        }
+
+        int width = _screen.Width;
+        int lines = Math.Max(1, Paragraph.LineCount(text.Text, width, TextWrap.Char));
+        _print = Fresh(_print, width, lines);
+        _print.Render(new Paragraph(text) { Wrap = TextWrap.Char }, _print.Area);
+
+        _out.Clear();
+        _renderer.Open(_out);
+        _renderer.EraseBelow(0);
+
+        // Rows go where the band was, then below; on the last screen row the screen scrolls up first.
+        int screenHeight = _screen.Height;
+        int row = _renderer.Top;
+        for (int i = 0; i < lines; i++)
+        {
+            if (row == screenHeight)
+            {
+                _renderer.ScrollScreen(screenHeight, 1);
+                row--;
+            }
+
+            _renderer.PrintRow(_print.Row(i), row - _renderer.Top);
+            row++;
+        }
+
+        PlaceBand(row);
+        _blank = Fresh(_blank, _front.Width, _front.Height);
+        _renderer.Frame(_front, _blank);
+        Flush();
     }
 
     /// <summary>Repaint everything on the next <see cref="Present"/> (e.g. after another program drew on the screen).</summary>
@@ -224,6 +295,15 @@ public sealed class Terminal : IDisposable
         _disposed = true;
         try
         {
+            if (_inline is not null)
+            {
+                // Keep the last frame; the shell continues on the line after its last non-blank row.
+                _out.Clear();
+                _renderer.Open(_out);
+                _renderer.LineAfter(LastContentRow(_front));
+                Flush();
+            }
+
             Write(_leave);
         }
         catch
@@ -261,12 +341,12 @@ public sealed class Terminal : IDisposable
             }
         }
 
-        Size size = Clamp(_tty.Size);
-        if (size != _reportedSize || _resumed)
+        Size screen = Clamp(_tty.Size);
+        if (screen != _reportedScreen || _resumed)
         {
-            _reportedSize = size;
+            _reportedScreen = screen;
             _resumed = false;
-            ev = Event.FromResize(size);
+            ev = Event.FromResize(FrameSize(screen));
             return true;
         }
 
@@ -315,15 +395,111 @@ public sealed class Terminal : IDisposable
 
     private void SyncSize()
     {
-        Size size = Clamp(_tty.Size);
-        if (size == _back.Size)
+        Size screen = Clamp(_tty.Size);
+        if (screen == _screen)
         {
             return;
         }
 
+        _screen = screen;
+        Size size = FrameSize(screen);
         _back.Resize(size.Width, size.Height);
         _front.Resize(size.Width, size.Height);
+        if (_inline is not null)
+        {
+            // The terminal may have moved the band (reflow, or rows pushed into the scrollback): ask where the
+            // cursor is now, and so where the band is.
+            int cursorRow = _renderer.CursorRow;
+            int top = _renderer.Top;
+            if (cursorRow >= 0 && QueryCursor(out int row, out _))
+            {
+                top = row - cursorRow;
+            }
+
+            _renderer.Top = Math.Clamp(top, 0, screen.Height - 1);
+        }
+
         _fullRedraw = true;
+    }
+
+    private Size FrameSize(Size screen) =>
+        _inline is null ? screen : new Size(screen.Width, Math.Min(_inline.Height, screen.Height));
+
+    /// <summary>
+    /// Inline: put the band at screen row <paramref name="top"/>, scrolling the screen up if it doesn't fit
+    /// below, and erase it (and everything under it).
+    /// </summary>
+    private void PlaceBand(int top)
+    {
+        int screenHeight = _screen.Height;
+        int height = _back.Height;
+        if (top + height > screenHeight)
+        {
+            _renderer.ScrollScreen(screenHeight, top + height - screenHeight);
+            top = screenHeight - height;
+        }
+
+        _renderer.Top = top;
+        _renderer.EraseBelow(0);
+    }
+
+    /// <summary>
+    /// Ask the terminal where the cursor is (<c>CSI 6n</c>) and wait for the reply. Input that arrives
+    /// meanwhile is kept for <see cref="Poll"/>.
+    /// </summary>
+    private bool QueryCursor(out int row, out int column)
+    {
+        _out.Clear();
+        _out.Reserve(8);
+        _out.Bytes("\u001b[6n"u8);
+        Flush();
+        _parser.ExpectCursorReport = true;
+        long deadline = Environment.TickCount64 + _inline!.CursorReportTimeoutMs;
+        while (!_parser.TryTakeCursorReport(out row, out column))
+        {
+            // On a timeout the flag stays set, so a late reply is swallowed instead of becoming F3.
+            int remaining = (int)(deadline - Environment.TickCount64);
+            if (remaining <= 0)
+            {
+                return false;
+            }
+
+            int n = _tty.Read(_readBuf, remaining);
+            if (n > 0)
+            {
+                _parser.Feed(_readBuf.AsSpan(0, n));
+            }
+        }
+
+        return true;
+    }
+
+    private static CellBuffer Fresh(CellBuffer? buffer, int width, int height)
+    {
+        if (buffer is null)
+        {
+            return new CellBuffer(width, height);
+        }
+
+        buffer.Resize(width, height);
+        buffer.Clear();
+        return buffer;
+    }
+
+    private static int LastContentRow(CellBuffer buffer)
+    {
+        for (int y = buffer.Height - 1; y >= 0; y--)
+        {
+            foreach (Cell cell in buffer.Row(y))
+            {
+                if (!cell.Equals(Cell.Empty))
+                {
+                    return y;
+                }
+            }
+        }
+
+        return -1;
     }
 
     private void Enter()
@@ -331,7 +507,9 @@ public sealed class Terminal : IDisposable
         _out.Clear();
         _out.Reserve(128);
         // ?2027: grapheme cluster mode, so terminals that know it size clusters the way CellBuffer does.
-        _out.Bytes("\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h\u001b[0m\u001b[2J"u8);
+        _out.Bytes(_inline is null
+            ? "\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h\u001b[0m\u001b[2J"u8
+            : "\u001b[?25l\u001b[?7l\u001b[?2027h"u8);
         if (_options.Mouse)
         {
             _out.Bytes(_options.MouseMotion ? "\u001b[?1003h\u001b[?1006h"u8 : "\u001b[?1002h\u001b[?1006h"u8);
@@ -347,7 +525,24 @@ public sealed class Terminal : IDisposable
             _out.Bytes("\u001b[?1004h"u8);
         }
 
-        _renderer.AfterClear();
+        if (_inline is null)
+        {
+            _renderer.AfterClear();
+            Flush();
+            return;
+        }
+
+        // The band starts on the cursor's line, or the next one if that line has text; with no reply to the
+        // cursor query, at the bottom of the screen.
+        Flush();
+        int start = QueryCursor(out int row, out int column) ? (column > 0 ? row + 1 : row) : _screen.Height;
+        _out.Clear();
+        _renderer.Open(_out);
+        _renderer.Forget();
+        _renderer.Top = 0;
+        PlaceBand(start);
+        _renderer.Close();
+        _front.Clear();
         Flush();
     }
 
@@ -369,7 +564,12 @@ public sealed class Terminal : IDisposable
             leave.AddRange("\u001b[?1004l"u8);
         }
 
-        leave.AddRange("\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h\u001b[?1049l"u8);
+        leave.AddRange("\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h"u8);
+        if (options.Inline is null)
+        {
+            leave.AddRange("\u001b[?1049l"u8);
+        }
+
         return [.. leave];
     }
 

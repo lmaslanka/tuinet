@@ -33,11 +33,28 @@ internal sealed class VtParser
     private int _utf8Needed;
     private int _pasteLen;
     private bool _alt;
+    private int _reportRow = -1;
+    private int _reportColumn;
 
     /// <summary>True while a partial escape or UTF-8 sequence is buffered (a paste in progress is not "incomplete").</summary>
     public bool IsIncomplete => _state is State.Esc or State.Csi or State.Ss3 or State.Utf8;
 
     public int Pending => _events.Count;
+
+    /// <summary>
+    /// Set after sending a cursor position query (<c>CSI 6n</c>): the next <c>CSI row;col R</c> is the reply,
+    /// not F3 with modifiers (xterm sends those as <c>CSI 1;mod R</c>). Cleared by the reply.
+    /// </summary>
+    public bool ExpectCursorReport { get; set; }
+
+    /// <summary>The reply to a cursor position query, 0-based, once it has arrived.</summary>
+    public bool TryTakeCursorReport(out int row, out int column)
+    {
+        row = _reportRow;
+        column = _reportColumn;
+        _reportRow = -1;
+        return row >= 0;
+    }
 
     public void Feed(ReadOnlySpan<byte> data)
     {
@@ -246,6 +263,11 @@ internal sealed class VtParser
             case (byte)'F': Key(KeyCode.End, 0, mods); return;
             case (byte)'P': Key(KeyCode.F1, 0, mods); return;
             case (byte)'Q': Key(KeyCode.F2, 0, mods); return;
+            case (byte)'R' when ExpectCursorReport && count == 2:
+                ExpectCursorReport = false;
+                _reportRow = Math.Max(0, p[0] - 1);
+                _reportColumn = Math.Max(0, p[1] - 1);
+                return;
             case (byte)'R': Key(KeyCode.F3, 0, mods); return;
             case (byte)'S': Key(KeyCode.F4, 0, mods); return;
             case (byte)'Z': Key(KeyCode.Tab, 0, mods | Modifiers.Shift); return;

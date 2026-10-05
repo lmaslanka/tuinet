@@ -15,8 +15,33 @@ public enum ColorMode : byte
     None,
 }
 
+/// <summary>
+/// Inline mode: instead of the alternate screen, draw a live band of <see cref="Height"/> rows under the
+/// shell prompt. The band stays in the terminal (and its scrollback) after exit.
+/// </summary>
+public sealed record InlineOptions
+{
+    public InlineOptions(int height)
+    {
+        ArgumentOutOfRangeException.ThrowIfLessThan(height, 1);
+        Height = height;
+    }
+
+    /// <summary>Rows of the band (fewer if the terminal is shorter).</summary>
+    public int Height { get; }
+
+    /// <summary>
+    /// How long to wait for the terminal to report the cursor position, which says where the band starts.
+    /// Without a reply the band goes at the bottom of the screen.
+    /// </summary>
+    public int CursorReportTimeoutMs { get; init; } = 1000;
+}
+
 public sealed record TerminalOptions
 {
+    /// <summary>Draw in a band under the prompt instead of on the alternate screen (null: full screen).</summary>
+    public InlineOptions? Inline { get; init; }
+
     /// <summary>Report mouse clicks, drags and wheel as <see cref="EventKind.Mouse"/> (SGR 1006).</summary>
     public bool Mouse { get; init; }
 
