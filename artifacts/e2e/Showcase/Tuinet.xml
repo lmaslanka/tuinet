@@ -195,6 +195,21 @@
         <member name="M:Tuinet.MouseEvent.#ctor(Tuinet.MouseKind,Tuinet.MouseButton,System.Int32,System.Int32,Tuinet.Modifiers)">
             <summary>A mouse report (requires <see cref="P:Tuinet.TerminalOptions.Mouse"/>). Coordinates are 0-based cells.</summary>
         </member>
+        <member name="P:Tuinet.MouseEvent.IsClick">
+            <summary>The left button went down. Widgets act on the press, as most terminal apps do.</summary>
+        </member>
+        <member name="P:Tuinet.MouseEvent.IsWheel">
+            <summary>A vertical wheel notch.</summary>
+        </member>
+        <member name="P:Tuinet.MouseEvent.WheelDelta">
+            <summary>-1 for a wheel notch up, +1 down, 0 otherwise.</summary>
+        </member>
+        <member name="M:Tuinet.MouseEvent.IsIn(Tuinet.Rect)">
+            <summary>The pointer is inside <paramref name="area"/>.</summary>
+        </member>
+        <member name="M:Tuinet.MouseEvent.IsClickIn(Tuinet.Rect)">
+            <summary>A click (<see cref="P:Tuinet.MouseEvent.IsClick"/>) inside <paramref name="area"/>, e.g. the rect a button was rendered into.</summary>
+        </member>
         <member name="T:Tuinet.Event">
             <summary>One input event. Only the members matching <see cref="P:Tuinet.Event.Kind"/> are meaningful.</summary>
         </member>
@@ -842,10 +857,23 @@
         <member name="F:Tuinet.Widgets.DropdownState.List">
             <summary>Highlight inside the open list.</summary>
         </member>
+        <member name="P:Tuinet.Widgets.DropdownState.Field">
+            <summary>Where the closed field was last rendered, for mouse hit-testing.</summary>
+        </member>
+        <member name="P:Tuinet.Widgets.DropdownState.Popup">
+            <summary>Where the open list was last rendered (border included), or empty while closed.</summary>
+        </member>
         <member name="M:Tuinet.Widgets.DropdownState.Handle(Tuinet.KeyEvent,System.Int32)">
             <summary>
             Closed: Enter, Space or Down opens. Open: Up/Down (or k/j) move, Enter commits, Esc cancels.
             Returns false for keys it does not use (e.g. Tab while closed), so the caller can handle them.
+            </summary>
+        </member>
+        <member name="M:Tuinet.Widgets.DropdownState.HandleMouse(Tuinet.MouseEvent,System.Int32)">
+            <summary>
+            Closed: a click on the field opens. Open: a click on an item commits it, the wheel scrolls the list, a
+            click on the field or anywhere else cancels. Returns whether the event was used; a click elsewhere closes
+            the list but returns false, so the caller can still act on it (e.g. focus what was clicked).
             </summary>
         </member>
         <member name="T:Tuinet.Widgets.Dropdown`1">
@@ -870,16 +898,41 @@
             <summary>Draw item <paramref name="index"/> into a one-row <paramref name="area"/>.</summary>
         </member>
         <member name="T:Tuinet.Widgets.ListState">
-            <summary>Selection and scroll position of a list. Owned by the app, updated by input and by render.</summary>
+            <summary>
+            Selection and scroll position of a list. Owned by the app, updated by input and by render. Render
+            scrolls to keep <see cref="P:Tuinet.Widgets.ListState.Selected"/> visible whenever it changes (or the list is resized); in between,
+            <see cref="P:Tuinet.Widgets.ListState.Offset"/> can scroll on its own, e.g. with the mouse wheel.
+            </summary>
         </member>
         <member name="P:Tuinet.Widgets.ListState.Selected">
             <summary>Selected index, or -1 for none.</summary>
         </member>
         <member name="P:Tuinet.Widgets.ListState.Offset">
-            <summary>First visible index. Render adjusts it to keep <see cref="P:Tuinet.Widgets.ListState.Selected"/> visible.</summary>
+            <summary>First visible index. Render adjusts it to keep <see cref="P:Tuinet.Widgets.ListState.Selected"/> visible when that changes.</summary>
         </member>
         <member name="P:Tuinet.Widgets.ListState.Viewport">
             <summary>Visible rows at the last render (used for paging).</summary>
+        </member>
+        <member name="P:Tuinet.Widgets.ListState.Area">
+            <summary>Where the widget was last rendered (a table's includes its header), for mouse hit-testing.</summary>
+        </member>
+        <member name="M:Tuinet.Widgets.ListState.Scroll(System.Int32,System.Int32)">
+            <summary>Scroll the view by <paramref name="rows"/> (negative is up) without moving the selection.</summary>
+        </member>
+        <member name="M:Tuinet.Widgets.ListState.RowAt(System.Int32,System.Int32,System.Int32)">
+            <summary>The item drawn at cell (<paramref name="x"/>, <paramref name="y"/>) at the last render, or -1.</summary>
+        </member>
+        <member name="M:Tuinet.Widgets.ListState.HandleMouse(Tuinet.MouseEvent,System.Int32,System.Int32)">
+            <summary>
+            A click on a row selects it; the wheel over the list scrolls it by <paramref name="wheelRows"/> per notch.
+            Returns whether the event was used (false for events elsewhere), so the caller can route it on.
+            </summary>
+        </member>
+        <member name="M:Tuinet.Widgets.ListState.Reveal">
+            <summary>Make the next render scroll to <see cref="P:Tuinet.Widgets.ListState.Selected"/> even if it hasn't changed.</summary>
+        </member>
+        <member name="M:Tuinet.Widgets.ListState.Follow(System.Int32,Tuinet.Rect,Tuinet.Rect)">
+            <summary>Called by render: <paramref name="area"/> is the whole widget, <paramref name="body"/> its item rows.</summary>
         </member>
         <member name="T:Tuinet.Widgets.ListView`1">
             <summary>A scrolling, selectable list over any <see cref="T:Tuinet.Widgets.IListSource"/>.</summary>
@@ -1035,6 +1088,12 @@
         <member name="P:Tuinet.Widgets.Table`1.SortDescending">
             <summary>Show '▼' instead of '▲' on <see cref="P:Tuinet.Widgets.Table`1.SortColumn"/>.</summary>
         </member>
+        <member name="M:Tuinet.Widgets.Table`1.HeaderColumnAt(System.Int32,System.Int32,Tuinet.Widgets.ListState@)">
+            <summary>
+            The column whose header is at cell (<paramref name="x"/>, <paramref name="y"/>) at the last render, or -1:
+            e.g. to sort on a header click. Build the table with the same columns and settings as for render.
+            </summary>
+        </member>
         <member name="M:Tuinet.Widgets.Table`1.RenderSeparators(Tuinet.CellBuffer,Tuinet.Rect,Tuinet.Rect,System.ReadOnlySpan{Tuinet.Rect},System.Char)">
             <summary>Draw <paramref name="separator"/> in each column gap over the rows of <paramref name="band"/>.</summary>
         </member>
@@ -1061,11 +1120,23 @@
         <member name="P:Tuinet.Widgets.TextInputState.Scroll">
             <summary>First visible rune; maintained by <see cref="T:Tuinet.Widgets.TextInput"/> to keep the caret in view.</summary>
         </member>
+        <member name="P:Tuinet.Widgets.TextInputState.Area">
+            <summary>The row the input was last rendered on, for mouse hit-testing.</summary>
+        </member>
+        <member name="F:Tuinet.Widgets.TextInputState._shownScroll">
+            <summary>First rune shown at the last render (0 when unfocused, which shows the beginning).</summary>
+        </member>
         <member name="M:Tuinet.Widgets.TextInputState.Insert(System.ReadOnlySpan{System.Char})">
             <summary>Insert text at the caret (e.g. a paste). Control characters are dropped; marks and joiners are kept.</summary>
         </member>
         <member name="M:Tuinet.Widgets.TextInputState.Handle(Tuinet.KeyEvent)">
             <summary>Apply an editing key. Returns false if the key is not an editing key (e.g. Tab, Enter, Up).</summary>
+        </member>
+        <member name="M:Tuinet.Widgets.TextInputState.HandleMouse(Tuinet.MouseEvent)">
+            <summary>
+            A click on the input moves the caret to the clicked cluster (or the end, past the text), as the last
+            render showed it, so clicking an unfocused input works too. Returns whether the event was used.
+            </summary>
         </member>
         <member name="M:Tuinet.Widgets.TextInputState.DisplayRune(System.Int32)">
             <summary>The rune drawn at <paramref name="index"/> (the mask when masked).</summary>

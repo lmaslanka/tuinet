@@ -113,7 +113,8 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
         area = area.Intersect(buffer.Area);
         int headerRows = HeaderSeparator ? 2 : 1;
         int count = _source.RowCount;
-        state.Follow(count, Math.Max(0, area.Height - headerRows));
+        int header = Math.Min(area.Height, headerRows);
+        state.Follow(count, area, new Rect(area.X, area.Y + header, area.Width, area.Height - header));
         int n = _columns.Length;
         if (area.IsEmpty || n == 0)
         {
@@ -121,15 +122,8 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
         }
 
         int indent = HighlightSymbol.IsEmpty ? 0 : TextWidth.Of(HighlightSymbol);
-        var content = new Rect(area.X + indent, area.Y, Math.Max(0, area.Width - indent), 1);
-        Span<Constraint> widths = n <= MaxStackColumns ? stackalloc Constraint[n] : new Constraint[n];
         Span<Rect> cells = n <= MaxStackColumns ? stackalloc Rect[n] : new Rect[n];
-        for (int i = 0; i < n; i++)
-        {
-            widths[i] = _columns[i].Width;
-        }
-
-        Layout.Horizontal(content, widths, cells, ColumnSpacing);
+        LayoutColumns(area, indent, cells);
 
         RenderHeader(buffer, area, cells);
         if (HeaderSeparator && area.Height > 1)
@@ -172,6 +166,46 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
                 buffer.SetString(row.X, row.Y, HighlightSymbol, SelectedStyle.Patch(HighlightSymbolStyle), row.Width);
             }
         }
+    }
+
+    /// <summary>
+    /// The column whose header is at cell (<paramref name="x"/>, <paramref name="y"/>) at the last render, or -1:
+    /// e.g. to sort on a header click. Build the table with the same columns and settings as for render.
+    /// </summary>
+    public int HeaderColumnAt(int x, int y, in ListState state)
+    {
+        Rect area = state.Area;
+        int n = _columns.Length;
+        if (area.IsEmpty || n == 0 || y != area.Y || !area.Contains(x, y))
+        {
+            return -1;
+        }
+
+        int indent = HighlightSymbol.IsEmpty ? 0 : TextWidth.Of(HighlightSymbol);
+        Span<Rect> cells = n <= MaxStackColumns ? stackalloc Rect[n] : new Rect[n];
+        LayoutColumns(area, indent, cells);
+        for (int i = 0; i < n; i++)
+        {
+            if (x >= cells[i].X && x < cells[i].Right)
+            {
+                return i;
+            }
+        }
+
+        return -1;
+    }
+
+    private void LayoutColumns(Rect area, int indent, Span<Rect> cells)
+    {
+        int n = _columns.Length;
+        var content = new Rect(area.X + indent, area.Y, Math.Max(0, area.Width - indent), 1);
+        Span<Constraint> widths = n <= MaxStackColumns ? stackalloc Constraint[n] : new Constraint[n];
+        for (int i = 0; i < n; i++)
+        {
+            widths[i] = _columns[i].Width;
+        }
+
+        Layout.Horizontal(content, widths, cells, ColumnSpacing);
     }
 
     private void RenderHeader(CellBuffer buffer, Rect area, ReadOnlySpan<Rect> cells)

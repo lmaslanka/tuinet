@@ -274,12 +274,17 @@ Tuinet.MouseEvent.Button.get -> Tuinet.MouseButton
 Tuinet.MouseEvent.Button.init -> void
 Tuinet.MouseEvent.Deconstruct(out Tuinet.MouseKind Kind, out Tuinet.MouseButton Button, out int X, out int Y, out Tuinet.Modifiers Modifiers) -> void
 Tuinet.MouseEvent.Equals(Tuinet.MouseEvent other) -> bool
+Tuinet.MouseEvent.IsClick.get -> bool
+Tuinet.MouseEvent.IsClickIn(Tuinet.Rect area) -> bool
+Tuinet.MouseEvent.IsIn(Tuinet.Rect area) -> bool
+Tuinet.MouseEvent.IsWheel.get -> bool
 Tuinet.MouseEvent.Kind.get -> Tuinet.MouseKind
 Tuinet.MouseEvent.Kind.init -> void
 Tuinet.MouseEvent.Modifiers.get -> Tuinet.Modifiers
 Tuinet.MouseEvent.Modifiers.init -> void
 Tuinet.MouseEvent.MouseEvent() -> void
 Tuinet.MouseEvent.MouseEvent(Tuinet.MouseKind Kind, Tuinet.MouseButton Button, int X, int Y, Tuinet.Modifiers Modifiers) -> void
+Tuinet.MouseEvent.WheelDelta.get -> int
 Tuinet.MouseEvent.X.get -> int
 Tuinet.MouseEvent.X.init -> void
 Tuinet.MouseEvent.Y.get -> int
@@ -543,10 +548,13 @@ Tuinet.Widgets.DropdownState
 Tuinet.Widgets.DropdownState.Close() -> void
 Tuinet.Widgets.DropdownState.DropdownState() -> void
 Tuinet.Widgets.DropdownState.DropdownState(int selected) -> void
+Tuinet.Widgets.DropdownState.Field.get -> Tuinet.Rect
 Tuinet.Widgets.DropdownState.Handle(Tuinet.KeyEvent key, int count) -> bool
+Tuinet.Widgets.DropdownState.HandleMouse(Tuinet.MouseEvent ev, int count) -> bool
 Tuinet.Widgets.DropdownState.IsOpen.get -> bool
 Tuinet.Widgets.DropdownState.List -> Tuinet.Widgets.ListState
 Tuinet.Widgets.DropdownState.Open() -> void
+Tuinet.Widgets.DropdownState.Popup.get -> Tuinet.Rect
 Tuinet.Widgets.DropdownState.Selected.get -> int
 Tuinet.Widgets.DropdownState.Selected.set -> void
 Tuinet.Widgets.IListSource
@@ -556,7 +564,9 @@ Tuinet.Widgets.ITableSource
 Tuinet.Widgets.ITableSource.Cell(int row, int column, System.Span<char> scratch, out Tuinet.Style style) -> System.ReadOnlySpan<char>
 Tuinet.Widgets.ITableSource.RowCount.get -> int
 Tuinet.Widgets.ListState
+Tuinet.Widgets.ListState.Area.get -> Tuinet.Rect
 Tuinet.Widgets.ListState.First(int count) -> void
+Tuinet.Widgets.ListState.HandleMouse(Tuinet.MouseEvent ev, int count, int wheelRows = 3) -> bool
 Tuinet.Widgets.ListState.Last(int count) -> void
 Tuinet.Widgets.ListState.ListState() -> void
 Tuinet.Widgets.ListState.ListState(int selected = 0) -> void
@@ -566,6 +576,8 @@ Tuinet.Widgets.ListState.Offset.set -> void
 Tuinet.Widgets.ListState.PageDown(int count) -> void
 Tuinet.Widgets.ListState.PageUp(int count) -> void
 Tuinet.Widgets.ListState.Previous(int count) -> void
+Tuinet.Widgets.ListState.RowAt(int x, int y, int count) -> int
+Tuinet.Widgets.ListState.Scroll(int rows, int count) -> void
 Tuinet.Widgets.ListState.Selected.get -> int
 Tuinet.Widgets.ListState.Selected.set -> void
 Tuinet.Widgets.ListState.Viewport.get -> int
@@ -619,6 +631,7 @@ Tuinet.Widgets.Table<TSource>.ColumnSeparator.get -> char
 Tuinet.Widgets.Table<TSource>.ColumnSeparator.init -> void
 Tuinet.Widgets.Table<TSource>.ColumnSpacing.get -> int
 Tuinet.Widgets.Table<TSource>.ColumnSpacing.init -> void
+Tuinet.Widgets.Table<TSource>.HeaderColumnAt(int x, int y, in Tuinet.Widgets.ListState state) -> int
 Tuinet.Widgets.Table<TSource>.HeaderSeparator.get -> bool
 Tuinet.Widgets.Table<TSource>.HeaderSeparator.init -> void
 Tuinet.Widgets.Table<TSource>.HeaderStyle.get -> Tuinet.Style
@@ -665,10 +678,12 @@ Tuinet.Widgets.TextInput.Style.get -> Tuinet.Style
 Tuinet.Widgets.TextInput.Style.init -> void
 Tuinet.Widgets.TextInput.TextInput() -> void
 Tuinet.Widgets.TextInputState
+Tuinet.Widgets.TextInputState.Area.get -> Tuinet.Rect
 Tuinet.Widgets.TextInputState.Caret.get -> int
 Tuinet.Widgets.TextInputState.Clear() -> void
 Tuinet.Widgets.TextInputState.DisplayRune(int index) -> System.Text.Rune
 Tuinet.Widgets.TextInputState.Handle(Tuinet.KeyEvent key) -> bool
+Tuinet.Widgets.TextInputState.HandleMouse(Tuinet.MouseEvent ev) -> bool
 Tuinet.Widgets.TextInputState.Insert(System.ReadOnlySpan<char> text) -> void
 Tuinet.Widgets.TextInputState.Insert(System.Text.Rune rune) -> void
 Tuinet.Widgets.TextInputState.IsEmpty.get -> bool

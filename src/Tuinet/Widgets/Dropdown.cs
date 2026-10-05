@@ -15,10 +15,17 @@ public struct DropdownState
     /// <summary>Highlight inside the open list.</summary>
     public ListState List;
 
+    /// <summary>Where the closed field was last rendered, for mouse hit-testing.</summary>
+    public Rect Field { get; private set; }
+
+    /// <summary>Where the open list was last rendered (border included), or empty while closed.</summary>
+    public Rect Popup { get; private set; }
+
     public void Open()
     {
         IsOpen = true;
         List.Selected = Math.Max(0, Selected);
+        List.Reveal();
     }
 
     public void Close() => IsOpen = false;
@@ -73,6 +80,57 @@ public struct DropdownState
 
         return true;
     }
+
+    /// <summary>
+    /// Closed: a click on the field opens. Open: a click on an item commits it, the wheel scrolls the list, a
+    /// click on the field or anywhere else cancels. Returns whether the event was used; a click elsewhere closes
+    /// the list but returns false, so the caller can still act on it (e.g. focus what was clicked).
+    /// </summary>
+    public bool HandleMouse(MouseEvent ev, int count)
+    {
+        if (!IsOpen)
+        {
+            if (!ev.IsClickIn(Field))
+            {
+                return false;
+            }
+
+            Open();
+            return true;
+        }
+
+        if (ev.IsIn(Popup))
+        {
+            int row = ev.IsClick ? List.RowAt(ev.X, ev.Y, count) : -1;
+            if (ev.IsWheel)
+            {
+                List.Scroll(ev.WheelDelta * 3, count);
+            }
+            else if (row >= 0)
+            {
+                Selected = row;
+                IsOpen = false;
+            }
+
+            return true;
+        }
+
+        if (!ev.IsClick)
+        {
+            return false;
+        }
+
+        IsOpen = false;
+        return ev.IsIn(Field);
+    }
+
+    internal void Rendered(Rect field)
+    {
+        Field = field;
+        Popup = default;
+    }
+
+    internal void RenderedPopup(Rect popup) => Popup = popup;
 }
 
 /// <summary>
@@ -108,6 +166,7 @@ public readonly ref struct Dropdown<TSource> : IStatefulWidget<DropdownState>
         }
 
         var row = new Rect(area.X, area.Y, area.Width, 1);
+        state.Rendered(row);
         buffer.Erase(row, Style);
 
         var text = new Rect(row.X, row.Y, Math.Max(0, row.Width - 2), 1);
@@ -136,6 +195,7 @@ public readonly ref struct Dropdown<TSource> : IStatefulWidget<DropdownState>
         int below = buffer.Height - anchor.Bottom;
         int y = below >= height || below >= anchor.Y ? anchor.Bottom : Math.Max(0, anchor.Y - height);
         var popup = new Rect(anchor.X, y, anchor.Width, Math.Min(height, Math.Max(below, anchor.Y)));
+        state.RenderedPopup(popup);
 
         buffer.Render(new Clear(PopupStyle), popup);
         Rect inner = popup;

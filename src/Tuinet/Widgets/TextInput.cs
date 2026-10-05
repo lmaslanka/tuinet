@@ -36,6 +36,12 @@ public sealed class TextInputState
     /// <summary>First visible rune; maintained by <see cref="TextInput"/> to keep the caret in view.</summary>
     public int Scroll { get; internal set; }
 
+    /// <summary>The row the input was last rendered on, for mouse hit-testing.</summary>
+    public Rect Area { get; private set; }
+
+    /// <summary>First rune shown at the last render (0 when unfocused, which shows the beginning).</summary>
+    private int _shownScroll;
+
     public string Text => _text ??= Build();
 
     public void Set(ReadOnlySpan<char> text)
@@ -134,6 +140,44 @@ public sealed class TextInputState
             default:
                 return false;
         }
+    }
+
+    /// <summary>
+    /// A click on the input moves the caret to the clicked cluster (or the end, past the text), as the last
+    /// render showed it, so clicking an unfocused input works too. Returns whether the event was used.
+    /// </summary>
+    public bool HandleMouse(MouseEvent ev)
+    {
+        if (!ev.IsClickIn(Area))
+        {
+            return false;
+        }
+
+        Span<char> chars = stackalloc char[Graphemes.MaxChars + 2];
+        int column = ev.X - Area.X;
+        int x = 0;
+        int i = Math.Min(_shownScroll, _length);
+        while (i < _length)
+        {
+            int width = TextInput.ClusterWidth(this, i, chars, out int end);
+            if (column < x + width)
+            {
+                break;
+            }
+
+            x += width;
+            i = end;
+        }
+
+        Caret = i;
+        Scroll = Math.Min(_shownScroll, i);
+        return true;
+    }
+
+    internal void Rendered(Rect row, int scroll)
+    {
+        Area = row;
+        _shownScroll = scroll;
     }
 
     /// <summary>The rune drawn at <paramref name="index"/> (the mask when masked).</summary>
@@ -245,7 +289,7 @@ public sealed class TextInputState
 public readonly ref struct TextInput : IStatefulWidget<TextInputState>
 {
     /// <summary>Columns of the cluster starting at rune <paramref name="start"/> (1 per cluster when masked).</summary>
-    private static int ClusterWidth(TextInputState state, int start, Span<char> chars, out int end)
+    internal static int ClusterWidth(TextInputState state, int start, Span<char> chars, out int end)
     {
         int n = state.Cluster(start, chars, out end);
         return state.Mask is char mask ? TextWidth.Of(new Rune(mask)) : TextWidth.Of(chars[..n]);
@@ -304,6 +348,8 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
         {
             state.Scroll = scroll;
         }
+
+        state.Rendered(row, scroll);
 
         int x = row.X;
         int caretX = row.X;

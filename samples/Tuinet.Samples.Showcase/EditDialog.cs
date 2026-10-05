@@ -25,7 +25,7 @@ public sealed class EditDialog
     private const int FocusCount = 9;
 
     private readonly Item _item;
-    private readonly int _number;
+    private readonly Rect[] _targets = new Rect[FocusCount];   // where each control was last drawn, for clicks
     private TextInputState _name;
     private TextInputState _owner;
     private TextInputState _description;
@@ -36,10 +36,9 @@ public sealed class EditDialog
     private string _status = "";
     private bool _nameMissing;
 
-    public EditDialog(Item item, int number)
+    public EditDialog(Item item)
     {
         _item = item;
-        _number = number;
         _name = new TextInputState(item.Name);
         _owner = new TextInputState(item.Owner);
         _description = new TextInputState(item.Description);
@@ -57,6 +56,11 @@ public sealed class EditDialog
         {
             pasteTarget.Insert(ev.Paste);
             return DialogResult.Open;
+        }
+
+        if (ev.Kind == EventKind.Mouse)
+        {
+            return HandleMouse(ev.Mouse);
         }
 
         if (ev.Kind != EventKind.Key)
@@ -151,13 +155,56 @@ public sealed class EditDialog
         return DialogResult.Open;
     }
 
+    /// <summary>Clicking a control focuses and uses it: caret placement, open/pick, toggle, Save, Close.</summary>
+    private DialogResult HandleMouse(MouseEvent mouse)
+    {
+        // An open dropdown sees the mouse first: a click on an item commits it, a click elsewhere cancels.
+        if (_kind.IsOpen && _kind.HandleMouse(mouse, Item.Kinds.Length)
+            || _priority.IsOpen && _priority.HandleMouse(mouse, Item.Priorities.Length))
+        {
+            return DialogResult.Open;
+        }
+
+        int field = mouse.IsClick ? Array.FindIndex(_targets, mouse.IsIn) : -1;
+        if (field < 0)
+        {
+            return DialogResult.Open;
+        }
+
+        Move(field - Focus);
+        switch (field)
+        {
+            case Name or Owner or Description:
+                FocusedText()!.HandleMouse(mouse);
+                break;
+            case Kind:
+                _kind.Open();
+                break;
+            case Priority:
+                _priority.Open();
+                break;
+            case Enabled:
+                _enabled = !_enabled;
+                break;
+            case Notify:
+                _notify = !_notify;
+                break;
+            case Save:
+                return TrySave();
+            case Close:
+                return DialogResult.Closed;
+        }
+
+        return DialogResult.Open;
+    }
+
     public void Render(CellBuffer buffer)
     {
         Rect dialog = buffer.Area.Centered(64, 20);
         buffer.Render(new Clear(Theme.Dialog), dialog);
 
         Span<char> title = stackalloc char[24];
-        title.TryWrite($" EDIT ITEM · {_number:D2} ", out int titleLength);
+        title.TryWrite($" EDIT ITEM · {_item.Number:D2} ", out int titleLength);
         var frame = new Block
         {
             BorderType = BorderType.Rounded,
@@ -178,12 +225,17 @@ public sealed class EditDialog
             Constraint.Length(1), Constraint.Length(1), Constraint.Length(1), Constraint.Length(1),
         ], rows);
 
+        _targets[Name] = rows[0];
+        _targets[Owner] = rows[1];
+        _targets[Description] = rows[2];
         RenderText(buffer, rows[0], " name ", ref _name, Name, _nameMissing ? "required" : null);
         RenderText(buffer, rows[1], " owner ", ref _owner, Owner, null);
         RenderText(buffer, rows[2], " description ", ref _description, Description, null);
 
         Span<Rect> pickers = stackalloc Rect[2];
         Layout.Horizontal(rows[3], [Constraint.Fill(), Constraint.Fill()], pickers, spacing: 2);
+        _targets[Kind] = pickers[0];
+        _targets[Priority] = pickers[1];
         Rect kindBox = RenderPickerBox(buffer, pickers[0], " kind ", Kind);
         Rect priorityBox = RenderPickerBox(buffer, pickers[1], " priority ", Priority);
         Dropdown<Options> kind = Picker(Item.Kinds, kindColors: true);
@@ -193,13 +245,17 @@ public sealed class EditDialog
 
         Span<Rect> checks = stackalloc Rect[2];
         Layout.Horizontal(rows[5], [Constraint.Fill(), Constraint.Fill()], checks, spacing: 2);
+        _targets[Enabled] = checks[0];
+        _targets[Notify] = checks[1];
         RenderCheckbox(buffer, checks[0], "enabled", _enabled, Enabled);
         RenderCheckbox(buffer, checks[1], "notify on finish", _notify, Notify);
 
         int x = rows[7].X;
+        _targets[Save] = new Rect(x, rows[7].Y, 8, 1);
+        _targets[Close] = new Rect(x + 10, rows[7].Y, 9, 1);
         Style idle = new(Theme.Text, Theme.Raised);
-        buffer.Render(new Button("Save") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Green, Attr.Bold), Focused = Focus == Save }, new Rect(x, rows[7].Y, 8, 1));
-        buffer.Render(new Button("Close") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Coral, Attr.Bold), Focused = Focus == Close }, new Rect(x + 10, rows[7].Y, 9, 1));
+        buffer.Render(new Button("Save") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Green, Attr.Bold), Focused = Focus == Save }, _targets[Save]);
+        buffer.Render(new Button("Close") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Coral, Attr.Bold), Focused = Focus == Close }, _targets[Close]);
         if (_status.Length > 0)
         {
             buffer.SetString(x + 21, rows[7].Y, _status, Theme.Accent(Theme.Coral), rows[7].Right - x - 21, Overflow.Ellipsis);

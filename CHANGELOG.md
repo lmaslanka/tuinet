@@ -28,6 +28,10 @@ The first release.
 - Safety: control characters in text never reach the terminal; the terminal is restored on exit, on an
   unhandled exception and on SIGINT/SIGTERM/SIGHUP.
 - Backends: Linux and macOS (termios, `poll(2)`, `SIGWINCH`) and Windows 10+ (console VT mode).
+- Mouse in widgets: `ListState.HandleMouse` (click selects, wheel scrolls lists and tables),
+  `ListState.RowAt`, `Table.HeaderColumnAt` (click a header to sort), `DropdownState.HandleMouse` and
+  `TextInputState.HandleMouse` (click places the caret), plus `MouseEvent.IsClick`, `IsWheel`,
+  `WheelDelta`, `IsIn` and `IsClickIn`. Hit-testing uses where each widget was drawn on the last frame.
 - Suspend and resume (Unix): `Terminal.Suspend()` and `TerminalOptions.SuspendOnCtrlZ` stop the app
   the way Ctrl+Z stops a shell command; `fg` resumes with a full repaint. `kill -TSTP` suspends cleanly
   and the app recovers from `kill -STOP`.

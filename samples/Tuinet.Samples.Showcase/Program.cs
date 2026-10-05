@@ -4,7 +4,7 @@ using System.Diagnostics;
 using Tuinet;
 using Tuinet.Samples.Showcase;
 
-using var terminal = Terminal.Open(new TerminalOptions { BracketedPaste = true, SuspendOnCtrlZ = true });
+using var terminal = Terminal.Open(new TerminalOptions { Mouse = true, BracketedPaste = true, SuspendOnCtrlZ = true });
 var app = new ShowcaseApp();
 var clock = Stopwatch.StartNew();
 

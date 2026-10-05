@@ -222,6 +222,132 @@ public class ShowcaseTests
         Assert.False(new ShowcaseApp().Handle(Event.FromChar('c', Modifiers.Ctrl), 0));
     }
 
+    [Fact]
+    public void Clicking_a_row_selects_it()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "05  schema");
+        Click(app, x, y);
+        Assert.Equal(4, app.Selected);
+        Assert.Contains("SELECTED · 05", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Wheel_scrolls_the_table_and_keeps_the_selection()
+    {
+        var app = new ShowcaseApp();
+        var buffer = new CellBuffer(80, 24);                            // 12 rows fit: the table can scroll
+        app.Render(buffer, 0);
+        (int x, int y) = Find(buffer, "01  parse");
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.ScrollDown, MouseButton.None, x, y, Modifiers.None)), 0);
+        app.Render(buffer, 0);
+        string screen = buffer.ToString();
+        Assert.DoesNotContain("01  parse", screen);
+        Assert.Contains("04  verify", screen);
+        Assert.Contains("SELECTED · 01", screen);
+        Assert.Equal(0, app.Selected);
+    }
+
+    [Fact]
+    public void Header_click_sorts_and_a_second_click_reverses()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "name  ");
+        Click(app, x, y);
+        Assert.Equal(1, app.SortColumn);
+        string screen = Render(app).ToString();
+        Assert.Contains("#  name ▲", screen);
+        Assert.Contains("18  advisor hooks", screen);
+        Assert.Contains("SELECTED · 01", screen);                       // the same item stays selected
+        Assert.Equal("parse & validate intent", app.Items[app.Selected].Name);
+
+        Click(app, x, y);
+        Assert.True(app.SortDescending);
+        Assert.Contains("#  name ▼", Render(app).ToString());
+        Assert.Equal("verify & return diff", app.Items[0].Name);
+    }
+
+    [Fact]
+    public void Double_click_on_a_row_opens_the_edit_dialog()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "03  run");
+        Click(app, x, y, 1000);
+        Click(app, x, y, 1000 + ShowcaseApp.DoubleClickMs + 1);         // too slow: two single clicks
+        Assert.Null(app.Edit);
+        Click(app, x, y, 1000 + ShowcaseApp.DoubleClickMs + 101);       // 100 ms after the last one
+        Assert.NotNull(app.Edit);
+        Assert.Contains("EDIT ITEM · 03", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Edit_dialog_controls_work_with_the_mouse()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+
+        CellBuffer screen = Render(app);
+        (int x, int y) = Find(screen, "ada");                           // the owner text
+        Click(app, x + 1, y);
+        Assert.Equal(EditDialog.Owner, app.Edit!.Focus);
+        Type(app, "X");                                                 // caret went between a and da
+
+        screen = Render(app);
+        (x, y) = Find(screen, "● feature");
+        Click(app, x, y);
+        Assert.Equal(EditDialog.Kind, app.Edit.Focus);
+        screen = Render(app);
+        (x, y) = Find(screen, "● bugfix");                              // in the open popup
+        Click(app, x, y);
+
+        screen = Render(app);
+        (x, y) = Find(screen, "enabled");
+        Click(app, x, y);
+        screen = Render(app);
+        (x, y) = Find(screen, "Save");
+        Click(app, x, y);
+
+        Item item = app.Items[0];
+        Assert.Null(app.Edit);
+        Assert.Equal("aXda", item.Owner);
+        Assert.Equal(1, item.Kind);
+        Assert.False(item.Enabled);
+    }
+
+    [Fact]
+    public void Clicking_outside_an_open_dropdown_closes_it()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        (int x, int y) = Find(Render(app), "● feature");
+        Click(app, x, y);
+        Assert.Contains("● spike", Render(app).ToString());
+        Click(app, 0, 0);
+        Assert.DoesNotContain("● spike", Render(app).ToString());
+        Assert.Equal(0, app.Items[0].Kind);
+    }
+
+    /// <summary>Cell of the first occurrence of <paramref name="text"/> (the screen is one column per char here).</summary>
+    private static (int X, int Y) Find(CellBuffer buffer, string text)
+    {
+        for (int y = 0; y < buffer.Height; y++)
+        {
+            int x = buffer.RowText(y).IndexOf(text, StringComparison.Ordinal);
+            if (x >= 0)
+            {
+                return (x, y);
+            }
+        }
+
+        throw new Xunit.Sdk.XunitException($"'{text}' is not on screen:\n{buffer}");
+    }
+
+    private static void Click(ShowcaseApp app, int x, int y, long now = 0)
+    {
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Down, MouseButton.Left, x, y, Modifiers.None)), now);
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Up, MouseButton.Left, x, y, Modifiers.None)), now);
+    }
+
     private static CellBuffer Render(ShowcaseApp app, long now = 0)
     {
         var buffer = new CellBuffer(110, 34);

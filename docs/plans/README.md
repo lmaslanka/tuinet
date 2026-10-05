@@ -8,7 +8,7 @@ One plan per gap found in the 2026-10-03 review. Priority 1 is next.
 | 02 | [Suspend and resume (Ctrl+Z)](02-suspend-resume.md) ✅ done | hole | S | 4 |
 | 03 | [End-to-end tests in the repo and CI](03-e2e-tests-in-repo.md) ✅ done | hole | S | 3 |
 | 04 | [Release pipeline and API hygiene](04-release-pipeline.md) ✅ done | hole | S | 3 |
-| 05 | [Mouse support in widgets](05-mouse-helpers.md) | hole | M | 4 |
+| 05 | [Mouse support in widgets](05-mouse-helpers.md) ✅ done | hole | M | 4 |
 | 06 | [Mixed-style text](06-styled-text.md) ✅ done | missing | M | 2 |
 | 07 | [Scrollbar](07-scrollbar.md) | missing | S | 5 |
 | 08 | [Multi-line text editing](08-text-area.md) | missing | L | 5 |

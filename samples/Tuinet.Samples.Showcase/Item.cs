@@ -6,6 +6,9 @@ public sealed class Item
     public static readonly string[] Kinds = ["feature", "bugfix", "chore", "docs", "spike"];
     public static readonly string[] Priorities = ["low", "medium", "high", "critical"];
 
+    /// <summary>1-based number, fixed for the item's lifetime (the list can be re-sorted).</summary>
+    public int Number { get; init; }
+
     public required string Name { get; set; }
     public required string Owner { get; set; }
     public string Description { get; set; } = "";
@@ -45,6 +48,7 @@ public sealed class Item
         {
             items[i] = new Item
             {
+                Number = i + 1,
                 Name = rows[i].Name,
                 Owner = rows[i].Owner,
                 Description = rows[i].Description,

@@ -10,11 +10,20 @@ public sealed class ShowcaseApp
     private EditDialog? _edit;
     private ProgressDialog? _progress;
     private string _flash = "";
+    private int _sortColumn;
+    private bool _sortDescending;
+    private long _lastClickMs = long.MinValue;
+    private int _lastClickRow = -1;
 
     public IReadOnlyList<Item> Items => _items;
     public int Selected => _list.Selected;
     public EditDialog? Edit => _edit;
     public bool ProgressOpen => _progress is not null;
+    public int SortColumn => _sortColumn;
+    public bool SortDescending => _sortDescending;
+
+    /// <summary>Two clicks on the same row within this long open the edit dialog.</summary>
+    public const int DoubleClickMs = 400;
 
     /// <summary>The loop redraws on a timer only while something animates; otherwise it sleeps until input.</summary>
     public bool IsAnimating(long nowMs) => _progress?.IsAnimating(nowMs) == true;
@@ -49,6 +58,12 @@ public sealed class ShowcaseApp
             return true;
         }
 
+        if (ev.Kind == EventKind.Mouse)
+        {
+            HandleMouse(ev.Mouse, nowMs);
+            return true;
+        }
+
         if (ev.Kind != EventKind.Key)
         {
             return true;
@@ -67,12 +82,61 @@ public sealed class ShowcaseApp
         else if (key.IsChar('G') || key.Is(KeyCode.End)) _list.Last(count);
         else if (key.Is(KeyCode.PageDown)) _list.PageDown(count);
         else if (key.Is(KeyCode.PageUp)) _list.PageUp(count);
-        else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected], _list.Selected + 1);
+        else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected]);
         else if (key.IsChar('p')) _progress = new ProgressDialog(nowMs);
         else if (key.IsChar(' ')) _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
 
         _flash = "";
         return true;
+    }
+
+    /// <summary>A header click sorts by that column (again: reverses); a row click selects; a double-click edits.</summary>
+    private void HandleMouse(MouseEvent mouse, long nowMs)
+    {
+        int column = mouse.IsClick ? ItemTable(_list.Area.Width).HeaderColumnAt(mouse.X, mouse.Y, _list) : -1;
+        if (column >= 0)
+        {
+            Sort(column, column == _sortColumn ? !_sortDescending : false);
+            return;
+        }
+
+        if (!_list.HandleMouse(mouse, _items.Length) || !mouse.IsClick)
+        {
+            return;
+        }
+
+        _flash = "";
+        if (_list.Selected == _lastClickRow && nowMs - _lastClickMs <= DoubleClickMs)
+        {
+            _edit = new EditDialog(_items[_list.Selected]);
+            _lastClickRow = -1;
+            return;
+        }
+
+        _lastClickRow = _list.Selected;
+        _lastClickMs = nowMs;
+    }
+
+    /// <summary>Sort the items by <paramref name="column"/>, keeping the same item selected.</summary>
+    public void Sort(int column, bool descending)
+    {
+        Item selected = _items[_list.Selected];
+        _sortColumn = column;
+        _sortDescending = descending;
+        Array.Sort(_items, (a, b) =>
+        {
+            int order = column switch
+            {
+                1 => string.Compare(a.Name, b.Name, StringComparison.OrdinalIgnoreCase),
+                2 => a.Kind.CompareTo(b.Kind),
+                3 => a.Priority.CompareTo(b.Priority),
+                4 => string.Compare(a.Owner, b.Owner, StringComparison.OrdinalIgnoreCase),
+                _ => 0,
+            };
+            order = order != 0 ? order : a.Number.CompareTo(b.Number);
+            return descending ? -order : order;
+        });
+        _list.Selected = Array.IndexOf(_items, selected);
     }
 
     public void Render(CellBuffer buffer, long nowMs)
@@ -119,19 +183,23 @@ public sealed class ShowcaseApp
         };
         buffer.Render(block, box);
         Rect inner = block.Inner(box).Inset(1, 1);
-        int shown = FittingColumns(inner.Width - 1);   // 1 for the highlight symbol
-        buffer.Render(new Table<ItemRows>(new ItemRows(_items), ItemColumns.AsSpan(0, shown))
+        buffer.Render(ItemTable(inner.Width), inner, ref _list);
+    }
+
+    /// <summary>The item table for an area <paramref name="width"/> wide; render and header clicks use the same one.</summary>
+    private Table<ItemRows> ItemTable(int width) =>
+        new(new ItemRows(_items), ItemColumns.AsSpan(0, FittingColumns(width - 1)))   // 1 for the highlight symbol
         {
             HeaderStyle = Theme.Heading(Theme.Muted),
             HeaderSeparator = true,
             SeparatorStyle = Theme.Faded,
             ColumnSpacing = ColumnSpacing,
-            SortColumn = 0,
+            SortColumn = _sortColumn,
+            SortDescending = _sortDescending,
             SelectedStyle = Theme.RowSelected,
             HighlightSymbol = "▌",
             HighlightSymbolStyle = Theme.Accent(Theme.Blue),
-        }, inner, ref _list);
-    }
+        };
 
     private void RenderDetails(CellBuffer buffer, Rect area)
     {
@@ -139,7 +207,7 @@ public sealed class ShowcaseApp
         int y = area.Y;
 
         Span<char> heading = stackalloc char[24];
-        heading.TryWrite($"SELECTED · {_list.Selected + 1:D2}", out int length);
+        heading.TryWrite($"SELECTED · {item.Number:D2}", out int length);
         buffer.SetString(area.X, y++, heading[..length], Theme.Heading(Theme.Green), area.Width);
         buffer.SetString(area.X, y++, item.Name, Theme.Strong, area.Width, Overflow.Ellipsis);
         int lines = Paragraph.LineCount(item.Description, area.Width, TextWrap.Word);
@@ -236,7 +304,7 @@ public sealed class ShowcaseApp
             {
                 case 0:
                     style = Theme.Faded;
-                    scratch.TryWrite($"{row + 1:D2}", out written);
+                    scratch.TryWrite($"{item.Number:D2}", out written);
                     return scratch[..written];
                 case 1:
                     style = item.Enabled ? Theme.Body : Theme.Faded;

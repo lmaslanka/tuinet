@@ -5,7 +5,8 @@ Each app runs in a detached tmux session (private server, no user config) inside
 records the exit code and the tty modes before and after, with HOME pointed at an empty directory. Checks
 read the screen back with `capture-pane`; waits poll the screen, so slow machines don't make them flaky.
 
-  showcase  navigation, edit + save, progress animation, clean exit; at 110x34 and 80x24
+  showcase  navigation, edit + save, progress animation, mouse (click, wheel, header sort), clean exit;
+            at 110x34 and 80x24
   suspend   job control in an interactive bash: Ctrl+Z, kill -TSTP and kill -STOP each return to the
             shell (in cooked mode where the app could restore it), and fg brings the screen back intact
   stress    scrolling bursts: every visible row has the right content, in order, and the terminal
@@ -61,6 +62,21 @@ class Tmux:
 
     def type(self, name, text):
         self.run("send-keys", "-t", name, "-l", text)
+
+    def mouse(self, name, x, y, button=0):
+        """An SGR (1006) mouse press and release at 0-based cell (x, y); button 64/65 is the wheel up/down."""
+        seq = f"\x1b[<{button};{x + 1};{y + 1}M"
+        if button < 64:
+            seq += f"\x1b[<{button};{x + 1};{y + 1}m"
+        self.run("send-keys", "-t", name, "-l", seq)
+
+    def find(self, name, text):
+        """0-based cell of the first occurrence of text on screen, or None."""
+        for y, line in enumerate(self.screen(name).split("\n")):
+            x = line.find(text)
+            if x >= 0:
+                return x, y
+        return None
 
     def log_output(self, name, path):
         self.run("pipe-pane", "-o", "-t", name, f"cat >> {shlex.quote(path)}")
@@ -158,8 +174,37 @@ def showcase(tmux, binary, width, height):
     ok, s = tmux.wait(n, lambda t: "PIPELINE" not in t)
     check(ok, f"{label}: esc closes the progress dialog", s)
 
+    showcase_mouse(tmux, n, label, height)
     tmux.type(n, "q")
     app.finish(label)
+
+
+def showcase_mouse(tmux, n, label, height):
+    """Real SGR mouse reports through tmux: coordinates, the parser and the widgets' hit-testing together."""
+    at = tmux.find(n, "05  schema")
+    if not check(at is not None, f"{label}: mouse: row 05 is on screen", tmux.screen(n)):
+        return
+    tmux.mouse(n, *at)
+    ok, s = tmux.wait(n, lambda t: "SELECTED · 05" in t)
+    check(ok, f"{label}: mouse: a click selects the row", s)
+
+    if height < 30:                                     # only 12 of 20 rows fit: the wheel can scroll
+        top = tmux.find(n, "01  parse")
+        tmux.mouse(n, *top, button=65)
+        ok, s = tmux.wait(n, lambda t: "01  parse" not in t and "04  verify" in t and "SELECTED · 05" in t)
+        check(ok, f"{label}: mouse: the wheel scrolls the table and keeps the selection", s)
+        tmux.mouse(n, *top, button=64)
+        tmux.wait(n, lambda t: "01  parse" in t)
+
+    header = tmux.find(n, "name  ")
+    tmux.mouse(n, *header)
+    # Sorted by name, and the view follows the selected item (at 80x24 the first rows scroll off).
+    ok, s = tmux.wait(n, lambda t: "name ▲" in t and "SELECTED · 05" in t
+                      and -1 < t.find("12  diff") < t.find("06  ephemeral") < t.find("05  schema"))
+    check(ok, f"{label}: mouse: a header click sorts by that column", s)
+    tmux.mouse(n, *tmux.find(n, "name ▲"))
+    ok, s = tmux.wait(n, lambda t: "name ▼" in t)
+    check(ok, f"{label}: mouse: a second header click reverses the order", s)
 
 
 def suspend(tmux, binary):

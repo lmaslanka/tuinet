@@ -103,7 +103,23 @@ public enum MouseButton : byte
 }
 
 /// <summary>A mouse report (requires <see cref="TerminalOptions.Mouse"/>). Coordinates are 0-based cells.</summary>
-public readonly record struct MouseEvent(MouseKind Kind, MouseButton Button, int X, int Y, Modifiers Modifiers);
+public readonly record struct MouseEvent(MouseKind Kind, MouseButton Button, int X, int Y, Modifiers Modifiers)
+{
+    /// <summary>The left button went down. Widgets act on the press, as most terminal apps do.</summary>
+    public bool IsClick => Kind == MouseKind.Down && Button == MouseButton.Left;
+
+    /// <summary>A vertical wheel notch.</summary>
+    public bool IsWheel => Kind is MouseKind.ScrollUp or MouseKind.ScrollDown;
+
+    /// <summary>-1 for a wheel notch up, +1 down, 0 otherwise.</summary>
+    public int WheelDelta => Kind == MouseKind.ScrollUp ? -1 : Kind == MouseKind.ScrollDown ? 1 : 0;
+
+    /// <summary>The pointer is inside <paramref name="area"/>.</summary>
+    public bool IsIn(Rect area) => area.Contains(X, Y);
+
+    /// <summary>A click (<see cref="IsClick"/>) inside <paramref name="area"/>, e.g. the rect a button was rendered into.</summary>
+    public bool IsClickIn(Rect area) => IsClick && area.Contains(X, Y);
+}
 
 public enum EventKind : byte
 {

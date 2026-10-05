@@ -251,7 +251,11 @@ frame.Render(new ListView<Files>(new Files(files))
 if (ev.Key.IsChar('j')) state.Next(files.Length);
 if (ev.Key.IsChar('k')) state.Previous(files.Length);
 if (ev.Key.Is(KeyCode.PageDown)) state.PageDown(files.Length);
+if (ev.Kind == EventKind.Mouse) state.HandleMouse(ev.Mouse, files.Length);   // click selects, wheel scrolls
 ```
+
+The view scrolls to the selected row whenever the selection changes. In between, it can scroll on its
+own (the mouse wheel, or `state.Scroll(rows, count)`) and leave the selection off screen.
 
 For plain strings, use the built-in `TextItems` source: `new ListView<TextItems>(new TextItems(names))`.
 
@@ -400,12 +404,29 @@ switch (ev.Kind)
 {
     case EventKind.Key when ev.Key.Is(KeyCode.Up, Modifiers.Ctrl): /* Ctrl+↑ */ break;
     case EventKind.Key when ev.Key.IsCtrl('s'): /* Ctrl+S */ break;
-    case EventKind.Mouse when ev.Mouse.Kind == MouseKind.Down: Click(ev.Mouse.X, ev.Mouse.Y); break;
-    case EventKind.Mouse when ev.Mouse.Kind == MouseKind.ScrollDown: list.Next(count); break;
+    case EventKind.Mouse when ev.Mouse.IsClickIn(saveButton): Save(); break;
     case EventKind.Paste: input.Insert(ev.Paste); break;   // one event, not a key per char
     case EventKind.Resize: break;                         // the next BeginFrame already has the new size
 }
 ```
+
+**Mouse.** There is no retained widget tree to route clicks, so hit-testing uses where things were
+drawn on the last frame. Stateful widgets record it in their state. For stateless ones (buttons,
+checkboxes), keep the `Rect` you rendered into and test it with `ev.Mouse.IsClickIn(rect)`. Every
+`HandleMouse` returns whether it used the event, so you can try one control after another.
+
+| Call | Does |
+|---|---|
+| `ListState.HandleMouse(ev, count)` | Click selects the row under the pointer, wheel scrolls (lists and tables) |
+| `ListState.RowAt(x, y, count)` | Item drawn at a cell, or -1 |
+| `table.HeaderColumnAt(x, y, state)` | Column whose header is at a cell, or -1 (e.g. click to sort) |
+| `DropdownState.HandleMouse(ev, count)` | Click opens; click an item to pick it; wheel scrolls the list; click elsewhere cancels |
+| `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included) |
+| `MouseEvent.IsClick` / `IsWheel` / `WheelDelta` / `IsIn(rect)` / `IsClickIn(rect)` | Conveniences |
+
+Widgets act on the press (`MouseKind.Down`), as most terminal apps do. The showcase uses all of these:
+click rows, double-click to edit, wheel-scroll the table, click a header to sort, and click every control
+in the edit dialog.
 
 | `TerminalOptions` | Default | |
 |---|---|---|
@@ -504,10 +525,10 @@ public void Key_in_frame_out()
 |---|---|---|
 | `Block` | | Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, `Inner(area)` |
 | `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; `LineCount` for scrollbars |
-| `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol |
-| `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow |
-| `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor |
-| `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below |
+| `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol; click and wheel |
+| `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow; click, wheel and header hit-testing |
+| `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor; click to place the caret |
+| `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below; click to open and pick |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
 | `Button` | | Padded label with idle and focused styles |
 | `ProgressBar` | | Eighth-block precision, custom fill/empty glyphs (segmented meters) |
@@ -581,7 +602,8 @@ otherwise copy the symbol text from each RS0016 error into the file.
 The end-to-end checks ([`tools/e2e`](https://github.com/lmaslanka/tuinet/tree/main/tools/e2e)) run the AOT binaries in tmux, a real terminal
 implementation, and read the screen back:
 
-- **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog.
+- **showcase**, at 110×34 and 80×24: navigation, edit and save, the animated progress dialog, and real
+  SGR mouse reports (click a row, wheel-scroll, click a header to sort).
 - **suspend**: the showcase under an interactive bash. Ctrl+Z, `kill -TSTP` and `kill -STOP` each stop it,
   the shell takes commands (with the terminal modes restored, where the app could restore them), and
   `fg` brings back the whole screen with keys working.
