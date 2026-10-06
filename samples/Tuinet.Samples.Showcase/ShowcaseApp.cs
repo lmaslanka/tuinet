@@ -2,11 +2,14 @@ using Tuinet.Widgets;
 
 namespace Tuinet.Samples.Showcase;
 
-/// <summary>Main screen: a 20-item list with a details panel, plus the edit and progress dialogs.</summary>
+/// <summary>Main screen: a tabbed panel (the 20-item list, stats) with a details panel, plus the edit and progress dialogs.</summary>
 public sealed class ShowcaseApp
 {
     private readonly Item[] _items = Item.Samples();
     private ListState _list;
+    private TabsState _tabs;
+    private long _frameBytes;
+    private TimeSpan _frameTime;
     private EditDialog? _edit;
     private ProgressDialog? _progress;
     private string _flash = "";
@@ -18,6 +21,11 @@ public sealed class ShowcaseApp
 
     public IReadOnlyList<Item> Items => _items;
     public int Selected => _list.Selected;
+    public int Page => _tabs.Selected;
+
+    public const int ListPage = 0;
+    public const int StatsPage = 1;
+    private static readonly string[] Pages = ["List", "Stats"];
     public EditDialog? Edit => _edit;
     public bool ProgressOpen => _progress is not null;
     public int SortColumn => _sortColumn;
@@ -34,13 +42,21 @@ public sealed class ShowcaseApp
         return text;
     }
 
+    /// <summary>What the previous frame cost, shown on the stats page (the loop reports it after each <see cref="Terminal.Present"/>).</summary>
+    public void RecordFrame(long bytes, TimeSpan time)
+    {
+        _frameBytes = bytes;
+        _frameTime = time;
+    }
+
     /// <summary>The loop redraws on a timer only while something animates; otherwise it sleeps until input.</summary>
     public bool IsAnimating(long nowMs) => _progress?.IsAnimating(nowMs) == true;
 
     /// <summary>Returns false when the app should exit.</summary>
     public bool Handle(Event ev, long nowMs)
     {
-        if (ev.Kind == EventKind.Key && ev.Key.IsCtrl('c'))
+        // Ctrl+C quits, unless it copies text selected in the edit dialog.
+        if (ev.Kind == EventKind.Key && ev.Key.IsCtrl('c') && _edit?.HasSelection != true)
         {
             return false;
         }
@@ -48,6 +64,7 @@ public sealed class ShowcaseApp
         if (_edit is not null)
         {
             DialogResult result = _edit.Handle(ev);
+            _copy = _edit.TakeCopy() ?? _copy;
             if (result != DialogResult.Open)
             {
                 _flash = result == DialogResult.Saved ? $"saved · {_items[_list.Selected].Name}" : "";
@@ -85,29 +102,62 @@ public sealed class ShowcaseApp
             return false;
         }
 
-        if (key.IsChar('j') || key.Is(KeyCode.Down)) _list.Next(count);
-        else if (key.IsChar('k') || key.Is(KeyCode.Up)) _list.Previous(count);
-        else if (key.IsChar('g') || key.Is(KeyCode.Home)) _list.First(count);
-        else if (key.IsChar('G') || key.Is(KeyCode.End)) _list.Last(count);
-        else if (key.Is(KeyCode.PageDown)) _list.PageDown(count);
-        else if (key.Is(KeyCode.PageUp)) _list.PageUp(count);
-        else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected]);
+        if (SwitchPage(key)) { }
         else if (key.IsChar('p')) _progress = new ProgressDialog(nowMs);
-        else if (key.IsChar(' ')) _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
-        else if (key.IsChar('y'))
+        else if (Page == ListPage)
         {
-            _copy = _items[_list.Selected].Name;
-            _flash = $"copied · {_copy}";
-            return true;
+            if (key.IsChar('j') || key.Is(KeyCode.Down)) _list.Next(count);
+            else if (key.IsChar('k') || key.Is(KeyCode.Up)) _list.Previous(count);
+            else if (key.IsChar('g') || key.Is(KeyCode.Home)) _list.First(count);
+            else if (key.IsChar('G') || key.Is(KeyCode.End)) _list.Last(count);
+            else if (key.Is(KeyCode.PageDown)) _list.PageDown(count);
+            else if (key.Is(KeyCode.PageUp)) _list.PageUp(count);
+            else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected]);
+            else if (key.IsChar(' ')) _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
+            else if (key.IsChar('y'))
+            {
+                _copy = _items[_list.Selected].Name;
+                _flash = $"copied · {_copy}";
+                return true;
+            }
         }
 
         _flash = "";
         return true;
     }
 
+    /// <summary>] and [ step through the tabs (wrapping); Alt+1…9 jump to one.</summary>
+    private bool SwitchPage(KeyEvent key)
+    {
+        if (key.IsChar(']'))
+        {
+            _tabs.Next(Pages.Length);
+        }
+        else if (key.IsChar('['))
+        {
+            _tabs.Previous(Pages.Length);
+        }
+        else if (key.Code == KeyCode.Char && key.Modifiers == Modifiers.Alt && key.Kind != KeyKind.Release
+            && (uint)(key.Rune.Value - '1') < (uint)Pages.Length)
+        {
+            _tabs.Select(key.Rune.Value - '1', Pages.Length);
+        }
+        else
+        {
+            return false;
+        }
+
+        return true;
+    }
+
     /// <summary>A header click sorts by that column (again: reverses); a row click selects; a double-click edits.</summary>
     private void HandleMouse(MouseEvent mouse, long nowMs)
     {
+        if (PageTabs().HandleMouse(mouse, ref _tabs) || Page != ListPage)
+        {
+            return;   // the list isn't drawn on other pages, so it must not hit-test its last position
+        }
+
         int column = mouse.IsClick ? ItemTable(_list.Area.Width).HeaderColumnAt(mouse.X, mouse.Y, _list) : -1;
         if (column >= 0)
         {
@@ -168,7 +218,7 @@ public sealed class ShowcaseApp
 
         Span<Rect> columns = stackalloc Rect[2];
         Layout.Horizontal(rows[2], [Constraint.Fill(), Constraint.Length(38)], columns, spacing: 3);
-        RenderList(buffer, columns[0]);
+        RenderPanel(buffer, columns[0]);
         RenderDetails(buffer, columns[1]);
         RenderKeys(buffer, rows[3]);
 
@@ -196,7 +246,8 @@ public sealed class ShowcaseApp
         }
     }
 
-    private void RenderList(CellBuffer buffer, Rect box)
+    /// <summary>The left panel: tabs in its top border, the count on the right of it, and the selected page inside.</summary>
+    private void RenderPanel(CellBuffer buffer, Rect box)
     {
         Span<char> title = stackalloc char[24];
         title.TryWrite($" ITEMS · {_items.Length} ", out int length);
@@ -206,10 +257,104 @@ public sealed class ShowcaseApp
             BorderStyle = Theme.Accent(Theme.Amber),
             Title = title[..length],
             TitleStyle = Theme.Heading(Theme.Amber),
+            TitleAlignment = Alignment.Right,
         };
         buffer.Render(block, box);
+
+        // Between the corner and the title, leaving a ─ on each side.
+        var bar = new Rect(box.X + 2, box.Y, box.Width - 5 - TextWidth.Of(title[..length]), 1);
+        buffer.Render(PageTabs(), bar, ref _tabs);
+
         Rect inner = block.Inner(box).Inset(1, 1);
-        buffer.Render(ItemTable(inner.Width), inner, ref _list);
+        if (Page == StatsPage)
+        {
+            RenderStats(buffer, inner);
+        }
+        else
+        {
+            buffer.Render(ItemTable(inner.Width), inner, ref _list);
+        }
+    }
+
+    /// <summary>The page tabs; render and clicks use the same one.</summary>
+    private static Tabs PageTabs() => new(Pages)
+    {
+        Style = Theme.Dim,
+        SelectedStyle = new Style(Theme.Amber, Theme.Raised, Attr.Bold),
+        Divider = "─",
+        DividerStyle = Theme.Accent(Theme.Amber),
+        ArrowStyle = Theme.Accent(Theme.Amber),
+    };
+
+    /// <summary>Counts per kind, priority and flag, and what the previous frame cost.</summary>
+    private void RenderStats(CellBuffer buffer, Rect area)
+    {
+        Span<int> kinds = stackalloc int[Item.Kinds.Length];
+        Span<int> priorities = stackalloc int[Item.Priorities.Length];
+        int enabled = 0;
+        int notify = 0;
+        foreach (Item item in _items)
+        {
+            kinds[item.Kind]++;
+            priorities[item.Priority]++;
+            enabled += item.Enabled ? 1 : 0;
+            notify += item.Notify ? 1 : 0;
+        }
+
+        Span<char> value = stackalloc char[48];
+        int y = area.Y;
+        y = Heading(buffer, area, y, "BY KIND", Theme.Blue);
+        for (int k = 0; k < kinds.Length; k++)
+        {
+            value.TryWrite($"{kinds[k],3}", out int written);
+            y = Stat(buffer, area, y, "● ", Theme.KindColor(k), Item.Kinds[k], value[..written]);
+        }
+
+        y = Heading(buffer, area, y + 1, "BY PRIORITY", Theme.Violet);
+        for (int p = 0; p < priorities.Length; p++)
+        {
+            value.TryWrite($"{priorities[p],3}", out int written);
+            y = Stat(buffer, area, y, "▲ ", Theme.PriorityColor(p), Item.Priorities[p], value[..written]);
+        }
+
+        y = Heading(buffer, area, y + 1, "FLAGS", Theme.Coral);
+        value.TryWrite($"{enabled,3} of {_items.Length}", out int length);
+        y = Stat(buffer, area, y, "■ ", Theme.Green, "enabled", value[..length]);
+        value.TryWrite($"{notify,3} of {_items.Length}", out length);
+        y = Stat(buffer, area, y, "■ ", Theme.Green, "notify", value[..length]);
+
+        y = Heading(buffer, area, y + 1, "PREVIOUS FRAME", Theme.Green);
+        value.TryWrite($"{_frameBytes,3} B", out length);
+        y = Stat(buffer, area, y, "→ ", Theme.Muted, "written", value[..length]);
+        value.TryWrite($"{_frameTime.TotalMicroseconds,3:F0} µs", out length);
+        Stat(buffer, area, y, "→ ", Theme.Muted, "render + diff + write", value[..length]);
+    }
+
+    private static int Heading(CellBuffer buffer, Rect area, int y, ReadOnlySpan<char> text, Color color)
+    {
+        if (y < area.Bottom)
+        {
+            buffer.SetString(area.X, y, text, Theme.Heading(color), area.Width);
+        }
+
+        return y + 1;
+    }
+
+    private static int Stat(CellBuffer buffer, Rect area, int y, ReadOnlySpan<char> glyph, Color color, ReadOnlySpan<char> label, ReadOnlySpan<char> value)
+    {
+        if (y < area.Bottom)
+        {
+            const int ValueColumn = 26;
+            int valueX = area.X + ValueColumn;
+            int x = buffer.SetString(area.X, y, glyph, Theme.Accent(color), area.Width);
+            buffer.SetString(x, y, label, Theme.Body, Math.Min(area.Right, valueX - 1) - x, Overflow.Ellipsis);
+            if (valueX < area.Right)
+            {
+                buffer.SetString(valueX, y, value, Theme.Strong, area.Right - valueX);
+            }
+        }
+
+        return y + 1;
     }
 
     /// <summary>The item table for an area <paramref name="width"/> wide; render and header clicks use the same one.</summary>
@@ -273,11 +418,11 @@ public sealed class ShowcaseApp
     }
 
     private static readonly (string Key, string Action)[] KeyHints =
-        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("y", "copy"), ("p", "progress"), ("q", "quit")];
+        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("y", "copy"), ("[ ]", "tabs"), ("p", "progress"), ("q", "quit")];
 
     private static void RenderKeys(CellBuffer buffer, Rect row)
     {
-        var keys = new StyledTextBuilder(stackalloc char[96], stackalloc StyledRun[24]);
+        var keys = new StyledTextBuilder(stackalloc char[112], stackalloc StyledRun[32]);
         foreach ((string key, string action) in KeyHints)
         {
             if (keys.Length > 0)

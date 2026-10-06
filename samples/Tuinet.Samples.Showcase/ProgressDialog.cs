@@ -24,6 +24,7 @@ public sealed class ProgressDialog
     ];
 
     private long _startMs;
+    private Rect _frame;   // the box drawn last frame, for click-outside
 
     public ProgressDialog(long nowMs) => _startMs = nowMs;
 
@@ -32,6 +33,12 @@ public sealed class ProgressDialog
 
     public DialogResult Handle(Event ev, long nowMs)
     {
+        // A click outside closes it: there's nothing to lose. (The edit dialog ignores those: unsaved input.)
+        if (ev.Kind == EventKind.Mouse)
+        {
+            return ev.Mouse.IsClick && !ev.Mouse.IsIn(_frame) ? DialogResult.Closed : DialogResult.Open;
+        }
+
         if (ev.Kind != EventKind.Key)
         {
             return DialogResult.Open;
@@ -52,21 +59,27 @@ public sealed class ProgressDialog
     {
         double t = Seconds(nowMs);
         long elapsedMs = nowMs - _startMs;
-        Rect dialog = buffer.Area.Centered(78, 28);
-        buffer.Render(new Clear(Theme.Dialog), dialog);
-        var frame = new Block
+        var popup = new Popup
         {
-            BorderType = BorderType.Rounded,
-            BorderStyle = Theme.Accent(Theme.Faint),
-            Title = " PIPELINE · progress ",
-            TitleStyle = Theme.Heading(Theme.Text),
-            TitleAlignment = Alignment.Center,
-            Footer = " r restart · esc close ",
-            FooterAlignment = Alignment.Right,
-            Style = Theme.Dialog,
+            Block = new Block
+            {
+                BorderType = BorderType.Rounded,
+                BorderStyle = Theme.Accent(Theme.Faint),
+                Title = " PIPELINE · progress ",
+                TitleStyle = Theme.Heading(Theme.Text),
+                TitleAlignment = Alignment.Center,
+                Footer = " r restart · esc close ",
+                FooterAlignment = Alignment.Right,
+                Style = Theme.Dialog,
+            },
+            Shadow = true,
+            ShadowStyle = Theme.Shadow,
+            Padding = 1,
         };
-        buffer.Render(frame, dialog);
-        Rect inner = frame.Inner(dialog).Inset(2, 1);
+        Rect dialog = buffer.Area.Centered(popup.Outer(72, 24));
+        buffer.Render(popup, dialog);
+        _frame = popup.Frame(dialog);
+        Rect inner = popup.Inner(dialog);
 
         Span<Rect> rows = stackalloc Rect[6];
         Layout.Vertical(inner,

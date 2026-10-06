@@ -349,9 +349,9 @@ public class InputWidgetTests
     public void Text_input_moves_and_deletes_by_grapheme_cluster()
     {
         var state = new TextInputState("a👨‍👩‍👧e\u0301");
-        Assert.Equal(1 + 5 + 2, state.Length);                       // runes
+        Assert.Equal(1 + 8 + 2, state.Length);                       // UTF-16 chars
         state.Handle(new KeyEvent(KeyCode.Left));
-        Assert.Equal(6, state.Caret);                                 // before "é", not between e and the accent
+        Assert.Equal(9, state.Caret);                                 // before "é", not between e and the accent
         state.Handle(new KeyEvent(KeyCode.Left));
         Assert.Equal(1, state.Caret);                                 // the whole family is one step
         state.Handle(new KeyEvent(KeyCode.Delete));
@@ -396,7 +396,7 @@ public class InputWidgetTests
         buffer.Render(new TextInput { Focused = true }, buffer.Area, ref state);
         Assert.Equal("🇵🇱🇵🇱 ", buffer.RowText(0));
         Assert.Equal(4, buffer.CursorX);
-        Assert.Equal(4, state.Scroll);                                // two flags (4 runes) scrolled off
+        Assert.Equal(8, state.Scroll);                                // two flags (8 chars) scrolled off
     }
 
     [Fact]

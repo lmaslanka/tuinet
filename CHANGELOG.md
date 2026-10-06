@@ -54,6 +54,25 @@ The first release.
 - Suspend and resume (Unix): `Terminal.Suspend()` and `TerminalOptions.SuspendOnCtrlZ` stop the app
   the way Ctrl+Z stops a shell command; `fg` resumes with a full repaint. `kill -TSTP` suspends cleanly
   and the app recovers from `kill -STOP`.
+- Multi-line text editing: `TextArea` / `TextAreaState` with soft wrap at word boundaries (or sideways scroll),
+  line numbers, a placeholder, ↑/↓ and PageUp/PageDown by screen row keeping the column, and click, drag and
+  wheel. The text is a gap buffer with a lazily shifted line index, and frames only measure visible lines: a
+  100,000-line text renders in 60 µs at 200×60 with zero allocations.
+- Selection and undo/redo in both text editors, from a shared core (`EditableText`): Shift+movement and mouse
+  drags select, `Selection` feeds `Terminal.CopyToClipboard`, typing replaces the selection, and Ctrl+Z / Ctrl+Y
+  (also Ctrl+/ and Ctrl+Shift+Z) undo and redo a word of typing at a time, restoring replaced selections.
+  `TextInputState` offsets (`Caret`, `Scroll`, `Length`) are now UTF-16 chars, not runes; `Runes` and
+  `DisplayRune` are gone (use `Text`).
+- `CellBuffer.Erase` is vectorized: erasing a 200×60 area went from 156 µs to 21 µs, which every widget that
+  erases its area (`TextInput`, `Button`, `TextArea`) benefits from.
+- `Popup`: a drop shadow (restyles the cells underneath, keeping their glyphs), a fill and a `Block` in one call,
+  with `Frame`/`Inner`/`Outer` to size and hit-test it. `Rect.PlaceNear(anchor, size)` places a popup by an anchor
+  (below, else above, else the roomier side; a 0×0 anchor is a point) and `Rect.Centered(Size)`. `Dropdown` uses
+  both and takes `PopupShadow`.
+- `Tabs` / `TabsState`: a one-row tab bar with dividers that scrolls to keep the selected tab visible, with `‹` `›`
+  when the titles don't fit. It draws only the tabs, so it fits in a block's border. `Next`/`Previous` wrap;
+  `HandleMouse` selects on click and scrolls on the arrows and wheel; `TabAt` hit-tests.
+- `CellBuffer.SetStyle` and `SetLink` no longer throw for an area entirely to the right of the buffer.
 - `TestTty` for driving a `Terminal` in tests.
 - Native AOT and trimming compatible.
 

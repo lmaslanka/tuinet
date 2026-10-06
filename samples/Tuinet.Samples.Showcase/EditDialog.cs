@@ -10,7 +10,10 @@ public enum DialogResult
     Closed,
 }
 
-/// <summary>Edits one <see cref="Item"/>: three text boxes, two dropdowns, two checkboxes, Save / Close.</summary>
+/// <summary>
+/// Edits one <see cref="Item"/>: two text boxes, a multi-line description, two dropdowns, two checkboxes, Save / Close.
+/// Ctrl+C / Ctrl+X copy or cut the selection in a text field.
+/// </summary>
 public sealed class EditDialog
 {
     public const int Name = 0;
@@ -28,7 +31,8 @@ public sealed class EditDialog
     private readonly Rect[] _targets = new Rect[FocusCount];   // where each control was last drawn, for clicks
     private TextInputState _name;
     private TextInputState _owner;
-    private TextInputState _description;
+    private TextAreaState _description;
+    private string? _copy;
     private DropdownState _kind;
     private DropdownState _priority;
     private bool _enabled;
@@ -41,7 +45,7 @@ public sealed class EditDialog
         _item = item;
         _name = new TextInputState(item.Name);
         _owner = new TextInputState(item.Owner);
-        _description = new TextInputState(item.Description);
+        _description = new TextAreaState(item.Description);
         _kind = new DropdownState(item.Kind);
         _priority = new DropdownState(item.Priority);
         _enabled = item.Enabled;
@@ -50,11 +54,22 @@ public sealed class EditDialog
 
     public int Focus { get; private set; }
 
+    /// <summary>Text is selected in the focused field, so Ctrl+C copies it instead of quitting.</summary>
+    public bool HasSelection => FocusedText()?.HasSelection == true;
+
+    /// <summary>Text to put on the clipboard after Ctrl+C or Ctrl+X, taken once.</summary>
+    public string? TakeCopy()
+    {
+        string? text = _copy;
+        _copy = null;
+        return text;
+    }
+
     public DialogResult Handle(Event ev)
     {
         if (ev.Kind == EventKind.Paste && FocusedText() is { } pasteTarget)
         {
-            pasteTarget.Insert(ev.Paste);
+            pasteTarget.Insert(ev.Paste);   // the description keeps line breaks; one-line boxes drop them
             return DialogResult.Open;
         }
 
@@ -98,7 +113,25 @@ public sealed class EditDialog
             return DialogResult.Open;
         }
 
-        if (FocusedText() is { } text)
+        if ((key.IsCtrl('c') || key.IsCtrl('x')) && FocusedText() is { HasSelection: true } selected)
+        {
+            _copy = selected.Selection.ToString();
+            if (key.IsCtrl('x'))
+            {
+                selected.DeleteSelection();
+            }
+
+            return DialogResult.Open;
+        }
+
+        // The description takes Enter (a line break) and ↑/↓; Tab leaves it.
+        if (Focus == Description)
+        {
+            _description.Handle(key);
+            return DialogResult.Open;
+        }
+
+        if (FocusedText() is TextInputState text)
         {
             if (key.Is(KeyCode.Enter) || key.Is(KeyCode.Down))
             {
@@ -165,6 +198,22 @@ public sealed class EditDialog
             return DialogResult.Open;
         }
 
+        // Drags select in the field the press landed in; the wheel scrolls the description.
+        if (mouse.Kind is MouseKind.Drag or MouseKind.Up || mouse.IsWheel)
+        {
+            switch (FocusedText())
+            {
+                case TextInputState input:
+                    input.HandleMouse(mouse);
+                    break;
+                case TextAreaState area:
+                    area.HandleMouse(mouse, wheelRows: 1);
+                    break;
+            }
+
+            return DialogResult.Open;
+        }
+
         int field = mouse.IsClick ? Array.FindIndex(_targets, mouse.IsIn) : -1;
         if (field < 0)
         {
@@ -174,8 +223,11 @@ public sealed class EditDialog
         Move(field - Focus);
         switch (field)
         {
-            case Name or Owner or Description:
-                FocusedText()!.HandleMouse(mouse);
+            case Name or Owner:
+                ((TextInputState)FocusedText()!).HandleMouse(mouse);
+                break;
+            case Description:
+                _description.HandleMouse(mouse);
                 break;
             case Kind:
                 _kind.Open();
@@ -200,28 +252,32 @@ public sealed class EditDialog
 
     public void Render(CellBuffer buffer)
     {
-        Rect dialog = buffer.Area.Centered(64, 20);
-        buffer.Render(new Clear(Theme.Dialog), dialog);
-
         Span<char> title = stackalloc char[24];
         title.TryWrite($" EDIT ITEM · {_item.Number:D2} ", out int titleLength);
-        var frame = new Block
+        var popup = new Popup
         {
-            BorderType = BorderType.Rounded,
-            BorderStyle = Theme.Accent(Theme.Amber),
-            Title = title[..titleLength],
-            TitleStyle = Theme.Heading(Theme.Amber),
-            Footer = " tab next · ctrl+s save · esc close ",
-            FooterAlignment = Alignment.Right,
-            Style = Theme.Dialog,
+            Block = new Block
+            {
+                BorderType = BorderType.Rounded,
+                BorderStyle = Theme.Accent(Theme.Amber),
+                Title = title[..titleLength],
+                TitleStyle = Theme.Heading(Theme.Amber),
+                Footer = " tab next · ctrl+s save · esc close ",
+                FooterAlignment = Alignment.Right,
+                Style = Theme.Dialog,
+            },
+            Shadow = true,
+            ShadowStyle = Theme.Shadow,
+            Padding = 1,
         };
-        buffer.Render(frame, dialog);
-        Rect inner = frame.Inner(dialog).Inset(2, 1);
+        Rect dialog = buffer.Area.Centered(popup.Outer(58, 18));
+        buffer.Render(popup, dialog);
+        Rect inner = popup.Inner(dialog);
 
         Span<Rect> rows = stackalloc Rect[8];
         Layout.Vertical(inner,
         [
-            Constraint.Length(3), Constraint.Length(3), Constraint.Length(3), Constraint.Length(3),
+            Constraint.Length(3), Constraint.Length(3), Constraint.Length(5), Constraint.Length(3),
             Constraint.Length(1), Constraint.Length(1), Constraint.Length(1), Constraint.Length(1),
         ], rows);
 
@@ -230,7 +286,7 @@ public sealed class EditDialog
         _targets[Description] = rows[2];
         RenderText(buffer, rows[0], " name ", ref _name, Name, _nameMissing ? "required" : null);
         RenderText(buffer, rows[1], " owner ", ref _owner, Owner, null);
-        RenderText(buffer, rows[2], " description ", ref _description, Description, null);
+        RenderDescription(buffer, rows[2]);
 
         Span<Rect> pickers = stackalloc Rect[2];
         Layout.Horizontal(rows[3], [Constraint.Fill(), Constraint.Fill()], pickers, spacing: 2);
@@ -266,7 +322,7 @@ public sealed class EditDialog
         priority.RenderPopup(new Rect(pickers[1].X, pickers[1].Bottom - 1, pickers[1].Width, 1), buffer, ref _priority);
     }
 
-    private TextInputState? FocusedText() => Focus switch
+    private EditableText? FocusedText() => Focus switch
     {
         Name => _name,
         Owner => _owner,
@@ -321,7 +377,28 @@ public sealed class EditDialog
     {
         Block outline = Outline(label, field, error);
         buffer.Render(outline, box);
-        buffer.Render(new TextInput { Focused = Focus == field, Style = Theme.Body, Placeholder = "…", PlaceholderStyle = Theme.Faded }, outline.Inner(box).Inset(1, 0), ref state);
+        buffer.Render(new TextInput
+        {
+            Focused = Focus == field,
+            Style = Theme.Body,
+            SelectionStyle = new Style(Theme.Bg, Theme.Blue),
+            Placeholder = "…",
+            PlaceholderStyle = Theme.Faded,
+        }, outline.Inner(box).Inset(1, 0), ref state);
+    }
+
+    private void RenderDescription(CellBuffer buffer, Rect box)
+    {
+        Block outline = Outline(" description ", Description, default);
+        buffer.Render(outline, box);
+        buffer.Render(new TextArea
+        {
+            Focused = Focus == Description,
+            Style = Theme.Body,
+            SelectionStyle = new Style(Theme.Bg, Theme.Blue),
+            Placeholder = "…",
+            PlaceholderStyle = Theme.Faded,
+        }, outline.Inner(box).Inset(1, 0), ref _description);
     }
 
     private Rect RenderPickerBox(CellBuffer buffer, Rect box, ReadOnlySpan<char> label, int field)
@@ -351,6 +428,8 @@ public sealed class EditDialog
         PopupBordered = true,
         PopupBorder = BorderType.Rounded,
         PopupBorderStyle = new Style(Theme.Blue, Theme.Raised),
+        PopupShadow = true,
+        PopupShadowStyle = Theme.Shadow,
         SelectedStyle = new Style(Theme.Bg, Theme.Blue, Attr.Bold),
     };
 

@@ -156,7 +156,8 @@ public sealed class CellBuffer
     {
         int id = url.IsEmpty ? 0 : Links.Intern(url);
         Rect r = area.Intersect(Area);
-        for (int y = r.Y; y < r.Bottom; y++)
+        int rows = r.IsEmpty ? 0 : r.Height;   // an area right of the buffer clips to zero width at x = Width
+        for (int y = r.Y; y < r.Y + rows; y++)
         {
             // Whole glyphs only: a wide glyph cut by the area's edge is linked as a whole.
             Span<Cell> row = RowSpan(y);
@@ -210,22 +211,7 @@ public sealed class CellBuffer
     /// Blank the glyphs in <paramref name="area"/>, layering <paramref name="style"/>: default colors keep
     /// the colors already there (so erasing an input row on a panel keeps the panel background).
     /// </summary>
-    public void Erase(Rect area, Style style = default)
-    {
-        Rect r = area.Intersect(Area);
-        for (int y = r.Y; y < r.Bottom; y++)
-        {
-            Span<Cell> row = RowSpan(y);
-            FixLeft(row, r.X);
-            Span<Cell> cells = row.Slice(r.X, r.Width);
-            for (int i = 0; i < cells.Length; i++)
-            {
-                cells[i] = Cell.Blank(Layer(style, cells[i].Style));
-            }
-
-            FixRight(row, r.Right);
-        }
-    }
+    public void Erase(Rect area, Style style = default) => SetRune(area, Cell.Space, style);
 
     /// <summary>Layer <paramref name="style"/> over every cell in <paramref name="area"/>, keeping glyphs.</summary>
     public void SetStyle(Rect area, Style style)
@@ -248,8 +234,13 @@ public sealed class CellBuffer
             keep &= ~BgBytes;
         }
 
-        var set = Unsafe.BitCast<Cell, Vector128<byte>>(new Cell(default, style, 0, CellFlags.None));
         Rect r = area.Intersect(Area);
+        if (r.IsEmpty)
+        {
+            return;
+        }
+
+        var set = Unsafe.BitCast<Cell, Vector128<byte>>(new Cell(default, style, 0, CellFlags.None));
         for (int y = r.Y; y < r.Bottom; y++)
         {
             Span<Vector128<byte>> row = MemoryMarshal.Cast<Cell, Vector128<byte>>(RowSpan(y).Slice(r.X, r.Width));

@@ -155,6 +155,58 @@ public class ShowcaseTests
     }
 
     [Fact]
+    public void Description_is_multi_line()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Tab);
+        Key(app, KeyCode.Tab);                                  // description
+        Key(app, KeyCode.End);
+        Key(app, KeyCode.Enter);                                // a line break, not the next field
+        Type(app, "second line");
+        app.Handle(Event.FromPaste("\r\npasted"), 0);
+        Assert.Equal(EditDialog.Description, app.Edit!.Focus);
+        string screen = Render(app).ToString();
+        Assert.Contains("second line", screen);
+        Assert.Contains("pasted", screen);
+
+        Key(app, KeyCode.Char, 's', Modifiers.Ctrl);
+        Assert.Equal("typed intent, schema checks and invariant gates before anything runs\nsecond line\npasted", app.Items[0].Description);
+    }
+
+    [Fact]
+    public void Ctrl_c_copies_a_selection_and_ctrl_x_cuts_it()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        Key(app, KeyCode.Left, Modifiers.Ctrl | Modifiers.Shift);   // select "intent"
+        Assert.True(app.Handle(Event.FromChar('c', Modifiers.Ctrl), 0));
+        Assert.Equal("intent", app.TakeCopy());
+
+        Assert.True(app.Handle(Event.FromChar('x', Modifiers.Ctrl), 0));
+        Assert.Equal("intent", app.TakeCopy());
+        Key(app, KeyCode.Char, 's', Modifiers.Ctrl);
+        Assert.Equal("parse & validate", app.Items[0].Name);   // trimmed on save
+
+        Key(app, KeyCode.Enter);
+        Assert.False(app.Handle(Event.FromChar('c', Modifiers.Ctrl), 0));   // nothing selected: quits
+    }
+
+    [Fact]
+    public void Dragging_in_a_text_box_selects()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        (int x, int y) = Find(Render(app), "ada");
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Down, MouseButton.Left, x, y, Modifiers.None)), 0);
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Drag, MouseButton.Left, x + 2, y, Modifiers.None)), 0);
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Up, MouseButton.Left, x + 2, y, Modifiers.None)), 0);
+        Assert.Equal(EditDialog.Owner, app.Edit!.Focus);
+        Assert.True(app.Handle(Event.FromChar('c', Modifiers.Ctrl), 0));
+        Assert.Equal("ad", app.TakeCopy());
+    }
+
+    [Fact]
     public void Progress_dialog_animates_and_finishes()
     {
         var app = new ShowcaseApp();
@@ -185,6 +237,109 @@ public class ShowcaseTests
         Assert.False(app.IsAnimating(60_000));
         app.Handle(Event.FromChar('r'), 60_000);
         Assert.True(app.IsAnimating(60_001));
+    }
+
+    [Fact]
+    public void Tabs_sit_in_the_panel_border()
+    {
+        CellBuffer screen = Render(new ShowcaseApp());
+        Assert.StartsWith("  ╭─ List ─ Stats ───", screen.RowText(4));
+        Assert.Contains("─ ITEMS · 20 ─╮", screen.RowText(4));
+    }
+
+    [Fact]
+    public void Brackets_and_alt_digits_switch_pages_and_keep_the_selection()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'j', 'j', ']');
+        Assert.Equal(ShowcaseApp.StatsPage, app.Page);
+        string stats = Render(app).ToString();
+        Assert.Contains("BY KIND", stats);
+        Assert.DoesNotContain("▲ #  name", stats);
+        Assert.Contains("SELECTED · 03", stats);                // the details panel stays
+
+        Press(app, ']');                                         // wraps
+        Assert.Equal(ShowcaseApp.ListPage, app.Page);
+        Press(app, '[');
+        Assert.Equal(ShowcaseApp.StatsPage, app.Page);
+        Key(app, KeyCode.Char, '1', Modifiers.Alt);
+        Assert.Equal(ShowcaseApp.ListPage, app.Page);
+        Key(app, KeyCode.Char, '9', Modifiers.Alt);              // no ninth page
+        Assert.Equal(ShowcaseApp.ListPage, app.Page);
+        Assert.Equal(2, app.Selected);
+        Assert.Contains("▲ #  name", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Clicking_a_tab_switches_pages()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "Stats");
+        Click(app, x + 1, y);
+        Assert.Equal(ShowcaseApp.StatsPage, app.Page);
+        (x, y) = Find(Render(app), "List");
+        Click(app, x, y);
+        Assert.Equal(ShowcaseApp.ListPage, app.Page);
+    }
+
+    [Fact]
+    public void Stats_page_counts_the_items_and_shows_the_frame_cost()
+    {
+        var app = new ShowcaseApp();
+        app.RecordFrame(1234, TimeSpan.FromMicroseconds(56));
+        Press(app, ']');
+        string screen = Render(app).ToString();
+        foreach (string row in (string[])[@"● feature +4 ", @"▲ critical +5 ", @"■ enabled +17 of 20", @"■ notify +7 of 20",
+            @"→ written +1234 B", @"→ render \+ diff \+ write +56 µs"])
+        {
+            Assert.Matches(row, screen);
+        }
+    }
+
+    [Fact]
+    public void List_keys_and_clicks_do_nothing_on_the_stats_page()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "05  ");             // a row of the list
+        Press(app, ']', 'j', 'j', ' ');
+        Render(app);
+        Click(app, x, y);                                        // where the row was
+        Assert.Equal(0, app.Selected);
+        Assert.True(app.Items[0].Enabled);
+        Key(app, KeyCode.Enter);
+        Assert.Null(app.Edit);
+    }
+
+    [Fact]
+    public void Dialogs_cast_a_shadow()
+    {
+        var app = new ShowcaseApp();
+        Key(app, KeyCode.Enter);
+        CellBuffer screen = Render(app);                     // 110×34: the 64×22 box (+ shadow) starts at (22, 5)
+        Color shadow = Color.Hex(0x05070B);
+        Assert.Equal('╮', screen[85, 5].Rune.Value);
+        Assert.NotEqual(shadow, screen[86, 5].Style.Bg);     // offset down by one
+        Assert.Equal(shadow, screen[86, 6].Style.Bg);
+        Assert.Equal(shadow, screen[87, 26].Style.Bg);
+        Assert.Equal(shadow, screen[24, 27].Style.Bg);
+        Assert.NotEqual(shadow, screen[88, 6].Style.Bg);
+    }
+
+    [Fact]
+    public void A_click_outside_closes_the_progress_dialog_but_not_the_edit_dialog()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('p'), 0);
+        (int x, int y) = Find(Render(app), "PIPELINE");
+        Click(app, x, y);
+        Assert.True(app.ProgressOpen);
+        Click(app, 0, 0);
+        Assert.False(app.ProgressOpen);
+
+        Key(app, KeyCode.Enter);
+        Render(app);
+        Click(app, 0, 0);
+        Assert.NotNull(app.Edit);
     }
 
     [Fact]

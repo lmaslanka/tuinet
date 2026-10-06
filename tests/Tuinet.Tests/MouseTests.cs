@@ -258,15 +258,15 @@ public class MouseTests
     [Fact]
     public void Text_input_click_accounts_for_scroll_and_clusters()
     {
-        var state = new TextInputState("🇵🇱🇵🇱🇵🇱🇵🇱");                       // 4 flags, 2 runes and 2 columns each
+        var state = new TextInputState("🇵🇱🇵🇱🇵🇱🇵🇱");                       // 4 flags, 4 chars and 2 columns each
         var buffer = new CellBuffer(5, 1);
         buffer.Render(new TextInput { Focused = true }, buffer.Area, ref state);
-        Assert.Equal(4, state.Scroll);                                  // shows flags 3 and 4
+        Assert.Equal(8, state.Scroll);                                  // shows flags 3 and 4
 
         state.HandleMouse(Click(1, 0));
-        Assert.Equal(4, state.Caret);
+        Assert.Equal(8, state.Caret);
         state.HandleMouse(Click(2, 0));
-        Assert.Equal(6, state.Caret);
+        Assert.Equal(12, state.Caret);
     }
 
     [Fact]

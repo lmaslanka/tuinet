@@ -155,6 +155,11 @@ public readonly ref struct Dropdown<TSource> : IStatefulWidget<DropdownState>
     public BorderType PopupBorder { get; init; }
     public Style PopupBorderStyle { get; init; }
 
+    /// <summary>Draw a drop shadow under the open list (see <see cref="Popup.Shadow"/>).</summary>
+    public bool PopupShadow { get; init; }
+
+    public Style PopupShadowStyle { get; init; } = new(Color.Default, Color.Black, Attr.Dim);
+
     /// <summary>Most rows the open list shows before it scrolls.</summary>
     public int MaxVisible { get; init; } = 8;
 
@@ -190,21 +195,23 @@ public readonly ref struct Dropdown<TSource> : IStatefulWidget<DropdownState>
             return;
         }
 
+        // Placed by the box alone, so the list lines up with the field; the shadow hangs off it (clipped).
         int border = PopupBordered ? 2 : 0;
-        int height = Math.Min(_source.Count, Math.Max(1, MaxVisible)) + border;
-        int below = buffer.Height - anchor.Bottom;
-        int y = below >= height || below >= anchor.Y ? anchor.Bottom : Math.Max(0, anchor.Y - height);
-        var popup = new Rect(anchor.X, y, anchor.Width, Math.Min(height, Math.Max(below, anchor.Y)));
-        state.RenderedPopup(popup);
-
-        buffer.Render(new Clear(PopupStyle), popup);
-        Rect inner = popup;
-        if (border > 0)
+        int shadow = PopupShadow ? 1 : 0;
+        int rows = Math.Min(_source.Count, Math.Max(1, MaxVisible));
+        Rect box = buffer.Area.PlaceNear(anchor, new Size(anchor.Width, rows + border));
+        var popup = new Popup
         {
-            var block = new Block { BorderType = PopupBorder, BorderStyle = PopupBorderStyle };
-            buffer.Render(block, popup);
-            inner = block.Inner(popup);
-        }
+            Block = PopupBordered
+                ? new Block { BorderType = PopupBorder, BorderStyle = PopupBorderStyle, Style = PopupStyle }
+                : new Block { Borders = Borders.None, Style = PopupStyle },
+            Shadow = PopupShadow,
+            ShadowStyle = PopupShadowStyle,
+        };
+        var area = new Rect(box.X, box.Y, box.Width + 2 * shadow, box.Height + shadow);
+        state.RenderedPopup(box);
+        buffer.Render(popup, area);
+        Rect inner = popup.Inner(area);
 
         buffer.Render(new ListView<TSource>(_source) { SelectedStyle = SelectedStyle }, inner, ref state.List);
     }

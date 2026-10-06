@@ -6,7 +6,7 @@ records the exit code and the tty modes before and after, with HOME pointed at a
 read the screen back with `capture-pane`; waits poll the screen, so slow machines don't make them flaky.
 
   showcase  navigation, edit + save, progress animation, mouse (click, wheel, scrollbar drag, header sort),
-            window title, clean exit; at 110x34 and 80x24
+            tabs (key and click), window title, clean exit; at 110x34 and 80x24
   inline    the inline sample under an interactive bash: logs printed above the live band end up in order
             in the history (also on a short terminal, where they scroll), the band leaves one summary line,
             the shell continues right after it, Ctrl+C cancels, terminal modes are restored
@@ -192,6 +192,16 @@ def showcase(tmux, binary, width, height):
     check(ok, f"{label}: esc closes the progress dialog", s)
 
     showcase_mouse(tmux, n, label, height)
+
+    tmux.type(n, "]")
+    ok, s = tmux.wait(n, lambda t: "BY KIND" in t and "#  name" not in t)
+    check(ok, f"{label}: ] switches to the stats page", s)
+    if height >= 30:                                    # the whole page fits
+        check(re.search(r"→ written +[1-9][0-9]* B", s) is not None, f"{label}: stats show the previous frame's bytes", s)
+    tmux.mouse(n, *tmux.find(n, "List"))
+    ok, s = tmux.wait(n, lambda t: "#  name" in t and "BY KIND" not in t)   # still sorted by name, from above
+    check(ok, f"{label}: mouse: clicking the List tab switches back", s)
+
     tmux.type(n, "q")
     app.finish(label)
 

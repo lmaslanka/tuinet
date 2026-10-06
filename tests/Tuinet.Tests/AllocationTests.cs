@@ -6,6 +6,7 @@ namespace Tuinet.Tests;
 public class AllocationTests
 {
     private static readonly string[] Items = [.. Enumerable.Range(0, 200).Select(i => $"item {i}")];
+    private static readonly string[] Pages = [.. Enumerable.Range(0, 12).Select(i => $"page {i}")];
     private static readonly TableColumn[] Columns =
     [
         new("name", Constraint.Fill()),
@@ -21,16 +22,17 @@ public class AllocationTests
         var list = new ListState();
         var table = new ListState();
         var input = new TextInputState("hello");
+        var tabs = new TabsState();
 
         for (int i = 0; i < 50; i++)
         {
-            Frame(terminal, i, ref list, ref table, input);
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
         }
 
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 1000; i++)
         {
-            Frame(terminal, i, ref list, ref table, input);
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
         }
 
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
@@ -46,20 +48,59 @@ public class AllocationTests
         var list = new ListState();
         var table = new ListState();
         var input = new TextInputState("hello");
+        var tabs = new TabsState();
         for (int i = 0; i < 50; i++)
         {
-            Frame(terminal, i, ref list, ref table, input);
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
             terminal.PrintAbove("downloaded part 17 of 200 · 1.2 MB/s");
         }
 
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 1000; i++)
         {
-            Frame(terminal, i, ref list, ref table, input);
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
             terminal.PrintAbove("downloaded part 17 of 200 · 1.2 MB/s");
         }
 
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
+    public void Text_area_frames_and_caret_keys_allocate_nothing()
+    {
+        var tty = new NullTty(120, 40);
+        using var terminal = new Terminal(tty);
+        var notes = new TextAreaState(string.Join('\n', Enumerable.Range(0, 2000).Select(i => $"line {i} 👨‍👩‍👧 世界 with enough words to wrap around the edge")));
+        KeyEvent[] keys =
+        [
+            new(KeyCode.Down), new(KeyCode.Down, default, Modifiers.Shift), new(KeyCode.Right, default, Modifiers.Ctrl),
+            new(KeyCode.End), new(KeyCode.Up), new(KeyCode.PageDown), new(KeyCode.Left, default, Modifiers.Shift),
+        ];
+
+        for (int i = 0; i < 50; i++)
+        {
+            notes.Handle(keys[i % keys.Length]);
+            TextAreaFrame(terminal, notes);
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            notes.Handle(keys[i % keys.Length]);
+            TextAreaFrame(terminal, notes);
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Assert.True(notes.CaretLine > 100);
+    }
+
+    private static void TextAreaFrame(Terminal terminal, TextAreaState notes)
+    {
+        CellBuffer frame = terminal.BeginFrame();
+        var box = new Block { Title = "notes", BorderType = BorderType.Rounded };
+        frame.Render(box, frame.Area);
+        frame.Render(new TextArea { Focused = true, LineNumbers = true }, box.Inner(frame.Area), ref notes);
+        terminal.Present();
     }
 
     [Fact]
@@ -87,7 +128,7 @@ public class AllocationTests
         Assert.Equal(10_000, keys);
     }
 
-    private static void Frame(Terminal terminal, int tick, ref ListState list, ref ListState table, TextInputState input)
+    private static void Frame(Terminal terminal, int tick, ref ListState list, ref ListState table, ref TabsState tabs, TextInputState input)
     {
         CellBuffer frame = terminal.BeginFrame();
         Span<Rect> rows = stackalloc Rect[3];
@@ -113,6 +154,22 @@ public class AllocationTests
             SortColumn = 1,
             Scrollbar = ScrollbarMode.Always,
         }, panes[1], ref table);
+
+        // A tab bar too narrow for its titles (scrolls to follow the selection), and a shadowed popup on top.
+        tabs.Selected = tick % Pages.Length;
+        var bar = new Tabs(Pages) { SelectedStyle = new Style(Color.Black, Color.White), DividerStyle = new Style(Color.Blue, Color.Default) };
+        frame.Render(bar, new Rect(2, rows[0].Y, 40, 1), ref tabs);
+        bar.HandleMouse(new MouseEvent(MouseKind.Down, MouseButton.Left, 10, rows[0].Y, Modifiers.None), ref tabs);
+        var popup = new Popup
+        {
+            Block = new Block { Title = "popup", BorderType = BorderType.Rounded, Style = new Style(Color.Default, Color.Rgb(20, 24, 32)) },
+            Shadow = true,
+            Padding = 1,
+        };
+        Rect dialog = frame.Area.Centered(popup.Outer(30, 3));
+        frame.Render(popup, dialog);
+        Rect inner = popup.Inner(dialog);
+        frame.SetString(inner.X, inner.Y, "inside");
 
         // Styled text: a builder with a formatted number, markup, and a styled paragraph.
         var status = new StyledTextBuilder(stackalloc char[48], stackalloc StyledRun[6]);

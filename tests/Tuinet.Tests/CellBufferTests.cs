@@ -215,6 +215,23 @@ public class CellBufferTests
     }
 
     [Fact]
+    public void Area_methods_ignore_areas_off_the_buffer()
+    {
+        // Right of the buffer, the clip is zero wide at x = Width but still has rows.
+        var buffer = new CellBuffer(4, 3);
+        foreach (Rect area in (Rect[])[new(4, 0, 2, 2), new(9, 1, 2, 2), new(0, 3, 2, 2), new(-5, 0, 2, 2)])
+        {
+            buffer.SetStyle(area, new Style(Color.Red, Color.Blue));
+            buffer.SetLink(area, "https://example.com");
+            buffer.Fill(area, new Style(Color.Red, Color.Blue));
+            buffer.Erase(area, new Style(Color.Red, Color.Blue));
+        }
+
+        Assert.Equal(new CellBuffer(4, 3).ToString(), buffer.ToString());
+        Assert.Equal(default, buffer[3, 0].Style);
+    }
+
+    [Fact]
     public void Resize_changes_dimensions_and_clears()
     {
         var buffer = new CellBuffer(4, 2);

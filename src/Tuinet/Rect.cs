@@ -55,6 +55,31 @@ public readonly struct Rect : IEquatable<Rect>
         return new Rect(X + (Width - width) / 2, Y + (Height - height) / 2, width, height);
     }
 
+    /// <summary>A rect of <paramref name="size"/> centered in this one, clamped to fit.</summary>
+    public Rect Centered(Size size) => Centered(size.Width, size.Height);
+
+    /// <summary>
+    /// Where to open a popup of <paramref name="size"/> next to <paramref name="anchor"/> inside these bounds
+    /// (usually the screen): below it if it fits, else above if it fits there, else on the side with more room,
+    /// cut to fit. It starts at the anchor's left edge, moved left to stay inside. A 0×0 anchor is a point,
+    /// e.g. the mouse pointer for a context menu.
+    /// </summary>
+    public Rect PlaceNear(Rect anchor, Size size)
+    {
+        int width = Math.Clamp(size.Width, 0, Width);
+        int height = Math.Max(0, size.Height);
+        int x = Math.Max(X, Math.Min(anchor.X, Right - width));
+        int below = Math.Clamp(Bottom - anchor.Bottom, 0, Height);
+        int above = Math.Clamp(anchor.Y - Y, 0, Height);
+        if (height <= below || height > above && below >= above)
+        {
+            return new Rect(x, Bottom - below, width, Math.Min(height, below));
+        }
+
+        height = Math.Min(height, above);
+        return new Rect(x, Y + above - height, width, height);
+    }
+
     /// <summary>The <paramref name="index"/>-th one-row slice, or empty if out of range.</summary>
     public Rect Row(int index) =>
         (uint)index < (uint)Height ? new Rect(X, Y + index, Width, 1) : new Rect(X, Y, 0, 0);

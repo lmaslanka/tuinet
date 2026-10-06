@@ -1,5 +1,5 @@
-// Showcase: a 20-item list, an edit dialog (text boxes, dropdowns, checkboxes, buttons) and an
-// animated progress dialog. Nothing is saved to disk. The window title follows the selection, 'y' copies the
+// Showcase: a tabbed panel (a 20-item list, stats), an edit dialog (text boxes, dropdowns, checkboxes,
+// buttons) and an animated progress dialog, both drawn as shadowed popups. Nothing is saved to disk. The window title follows the selection, 'y' copies the
 // selected item's name to the clipboard, and keys use the kitty keyboard protocol where the terminal has it.
 using System.Diagnostics;
 using Tuinet;
@@ -22,8 +22,10 @@ while (running)
     long now = clock.ElapsedMilliseconds;
     title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
     terminal.SetTitle(title.AsSpan(0, titleLength));   // sent only when it changes
+    long frameStart = Stopwatch.GetTimestamp();
     app.Render(terminal.BeginFrame(), now);
     terminal.Present();
+    app.RecordFrame(terminal.LastFrameBytes, Stopwatch.GetElapsedTime(frameStart));   // shown on the stats page
 
     // Sleep until input, or wake ~30 times a second while the progress dialog animates.
     if (!terminal.Poll(out Event ev, app.IsAnimating(now) ? 33 : Timeout.Infinite))

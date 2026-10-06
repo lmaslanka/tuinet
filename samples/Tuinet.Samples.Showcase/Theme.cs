@@ -26,6 +26,9 @@ internal static class Theme
     public static readonly Style Faded = new(Faint, default);
     public static readonly Style Strong = new(Text, default, Attr.Bold);
 
+    /// <summary>Under popup shadows: what's beneath stays readable, pushed back.</summary>
+    public static readonly Style Shadow = new(Faint, Color.Hex(0x05070B));
+
     /// <summary>Selected list row: lifted background, keeps each column's own color.</summary>
     public static readonly Style RowSelected = new(default, Raised, Attr.Bold);
 

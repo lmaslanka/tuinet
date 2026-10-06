@@ -599,6 +599,28 @@ Tuinet.Widgets.DropdownState.Open() -> void
 Tuinet.Widgets.DropdownState.Popup.get -> Tuinet.Rect
 Tuinet.Widgets.DropdownState.Selected.get -> int
 Tuinet.Widgets.DropdownState.Selected.set -> void
+Tuinet.Widgets.EditableText
+Tuinet.Widgets.EditableText.Anchor.get -> int
+Tuinet.Widgets.EditableText.CanRedo.get -> bool
+Tuinet.Widgets.EditableText.CanUndo.get -> bool
+Tuinet.Widgets.EditableText.Caret.get -> int
+Tuinet.Widgets.EditableText.Clear() -> void
+Tuinet.Widgets.EditableText.DeleteSelection() -> bool
+Tuinet.Widgets.EditableText.HasSelection.get -> bool
+Tuinet.Widgets.EditableText.Insert(System.ReadOnlySpan<char> text) -> void
+Tuinet.Widgets.EditableText.Insert(System.Text.Rune rune) -> void
+Tuinet.Widgets.EditableText.IsEmpty.get -> bool
+Tuinet.Widgets.EditableText.Length.get -> int
+Tuinet.Widgets.EditableText.MoveCaret(int offset, bool extend = false) -> void
+Tuinet.Widgets.EditableText.Redo() -> bool
+Tuinet.Widgets.EditableText.Select(int anchor, int caret) -> void
+Tuinet.Widgets.EditableText.SelectAll() -> void
+Tuinet.Widgets.EditableText.Selection.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.EditableText.SelectionEnd.get -> int
+Tuinet.Widgets.EditableText.SelectionStart.get -> int
+Tuinet.Widgets.EditableText.Set(System.ReadOnlySpan<char> text) -> void
+Tuinet.Widgets.EditableText.Text.get -> string!
+Tuinet.Widgets.EditableText.Undo() -> bool
 Tuinet.Widgets.IListSource
 Tuinet.Widgets.IListSource.Count.get -> int
 Tuinet.Widgets.IListSource.RenderItem(int index, Tuinet.Rect area, Tuinet.CellBuffer! buffer, bool selected) -> void
@@ -752,6 +774,39 @@ Tuinet.Widgets.TableColumn.TableColumn() -> void
 Tuinet.Widgets.TableColumn.TableColumn(string! Header, Tuinet.Constraint Width, Tuinet.Widgets.Alignment Alignment = Tuinet.Widgets.Alignment.Left, Tuinet.Overflow Overflow = Tuinet.Overflow.Ellipsis) -> void
 Tuinet.Widgets.TableColumn.Width.get -> Tuinet.Constraint
 Tuinet.Widgets.TableColumn.Width.init -> void
+Tuinet.Widgets.TextArea
+Tuinet.Widgets.TextArea.CursorShape.get -> Tuinet.CursorShape
+Tuinet.Widgets.TextArea.CursorShape.init -> void
+Tuinet.Widgets.TextArea.Focused.get -> bool
+Tuinet.Widgets.TextArea.Focused.init -> void
+Tuinet.Widgets.TextArea.LineNumbers.get -> bool
+Tuinet.Widgets.TextArea.LineNumbers.init -> void
+Tuinet.Widgets.TextArea.LineNumberStyle.get -> Tuinet.Style
+Tuinet.Widgets.TextArea.LineNumberStyle.init -> void
+Tuinet.Widgets.TextArea.Placeholder.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TextArea.Placeholder.init -> void
+Tuinet.Widgets.TextArea.PlaceholderStyle.get -> Tuinet.Style
+Tuinet.Widgets.TextArea.PlaceholderStyle.init -> void
+Tuinet.Widgets.TextArea.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.TextAreaState! state) -> void
+Tuinet.Widgets.TextArea.SelectionStyle.get -> Tuinet.Style
+Tuinet.Widgets.TextArea.SelectionStyle.init -> void
+Tuinet.Widgets.TextArea.Style.get -> Tuinet.Style
+Tuinet.Widgets.TextArea.Style.init -> void
+Tuinet.Widgets.TextArea.TextArea() -> void
+Tuinet.Widgets.TextAreaState
+Tuinet.Widgets.TextAreaState.Area.get -> Tuinet.Rect
+Tuinet.Widgets.TextAreaState.CaretColumn.get -> int
+Tuinet.Widgets.TextAreaState.CaretLine.get -> int
+Tuinet.Widgets.TextAreaState.Handle(Tuinet.KeyEvent key) -> bool
+Tuinet.Widgets.TextAreaState.HandleMouse(Tuinet.MouseEvent ev, int wheelRows = 3) -> bool
+Tuinet.Widgets.TextAreaState.Line(int index) -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TextAreaState.LineCount.get -> int
+Tuinet.Widgets.TextAreaState.LineOf(int offset) -> int
+Tuinet.Widgets.TextAreaState.LineStart(int line) -> int
+Tuinet.Widgets.TextAreaState.SoftWrap.get -> bool
+Tuinet.Widgets.TextAreaState.SoftWrap.set -> void
+Tuinet.Widgets.TextAreaState.TextAreaState(string? text = null) -> void
+Tuinet.Widgets.TextAreaState.TopLine.get -> int
 Tuinet.Widgets.TextInput
 Tuinet.Widgets.TextInput.CursorShape.get -> Tuinet.CursorShape
 Tuinet.Widgets.TextInput.CursorShape.init -> void
@@ -762,26 +817,18 @@ Tuinet.Widgets.TextInput.Placeholder.init -> void
 Tuinet.Widgets.TextInput.PlaceholderStyle.get -> Tuinet.Style
 Tuinet.Widgets.TextInput.PlaceholderStyle.init -> void
 Tuinet.Widgets.TextInput.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.TextInputState! state) -> void
+Tuinet.Widgets.TextInput.SelectionStyle.get -> Tuinet.Style
+Tuinet.Widgets.TextInput.SelectionStyle.init -> void
 Tuinet.Widgets.TextInput.Style.get -> Tuinet.Style
 Tuinet.Widgets.TextInput.Style.init -> void
 Tuinet.Widgets.TextInput.TextInput() -> void
 Tuinet.Widgets.TextInputState
 Tuinet.Widgets.TextInputState.Area.get -> Tuinet.Rect
-Tuinet.Widgets.TextInputState.Caret.get -> int
-Tuinet.Widgets.TextInputState.Clear() -> void
-Tuinet.Widgets.TextInputState.DisplayRune(int index) -> System.Text.Rune
 Tuinet.Widgets.TextInputState.Handle(Tuinet.KeyEvent key) -> bool
 Tuinet.Widgets.TextInputState.HandleMouse(Tuinet.MouseEvent ev) -> bool
-Tuinet.Widgets.TextInputState.Insert(System.ReadOnlySpan<char> text) -> void
-Tuinet.Widgets.TextInputState.Insert(System.Text.Rune rune) -> void
-Tuinet.Widgets.TextInputState.IsEmpty.get -> bool
-Tuinet.Widgets.TextInputState.Length.get -> int
 Tuinet.Widgets.TextInputState.Mask.get -> char?
 Tuinet.Widgets.TextInputState.Mask.set -> void
-Tuinet.Widgets.TextInputState.Runes.get -> System.ReadOnlySpan<System.Text.Rune>
 Tuinet.Widgets.TextInputState.Scroll.get -> int
-Tuinet.Widgets.TextInputState.Set(System.ReadOnlySpan<char> text) -> void
-Tuinet.Widgets.TextInputState.Text.get -> string!
 Tuinet.Widgets.TextInputState.TextInputState(string? text = null, char? mask = null) -> void
 Tuinet.Widgets.TextItems
 Tuinet.Widgets.TextItems.Count.get -> int
@@ -807,3 +854,54 @@ Tuinet.Widgets.TextWrap.Word = 1 -> Tuinet.Widgets.TextWrap
 ~override Tuinet.StyledRun.ToString() -> string
 ~override Tuinet.Widgets.TableColumn.Equals(object obj) -> bool
 ~override Tuinet.Widgets.TableColumn.ToString() -> string
+Tuinet.Rect.Centered(Tuinet.Size size) -> Tuinet.Rect
+Tuinet.Rect.PlaceNear(Tuinet.Rect anchor, Tuinet.Size size) -> Tuinet.Rect
+Tuinet.Widgets.Dropdown<TSource>.PopupShadow.get -> bool
+Tuinet.Widgets.Dropdown<TSource>.PopupShadow.init -> void
+Tuinet.Widgets.Dropdown<TSource>.PopupShadowStyle.get -> Tuinet.Style
+Tuinet.Widgets.Dropdown<TSource>.PopupShadowStyle.init -> void
+Tuinet.Widgets.Popup
+Tuinet.Widgets.Popup.Block.get -> Tuinet.Widgets.Block
+Tuinet.Widgets.Popup.Block.init -> void
+Tuinet.Widgets.Popup.Frame(Tuinet.Rect area) -> Tuinet.Rect
+Tuinet.Widgets.Popup.Inner(Tuinet.Rect area) -> Tuinet.Rect
+Tuinet.Widgets.Popup.Outer(int contentWidth, int contentHeight) -> Tuinet.Size
+Tuinet.Widgets.Popup.Padding.get -> int
+Tuinet.Widgets.Popup.Padding.init -> void
+Tuinet.Widgets.Popup.Popup() -> void
+Tuinet.Widgets.Popup.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Popup.Shadow.get -> bool
+Tuinet.Widgets.Popup.Shadow.init -> void
+Tuinet.Widgets.Popup.ShadowStyle.get -> Tuinet.Style
+Tuinet.Widgets.Popup.ShadowStyle.init -> void
+Tuinet.Widgets.Tabs
+Tuinet.Widgets.Tabs.ArrowStyle.get -> Tuinet.Style
+Tuinet.Widgets.Tabs.ArrowStyle.init -> void
+Tuinet.Widgets.Tabs.Divider.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.Tabs.Divider.init -> void
+Tuinet.Widgets.Tabs.DividerStyle.get -> Tuinet.Style
+Tuinet.Widgets.Tabs.DividerStyle.init -> void
+Tuinet.Widgets.Tabs.HandleMouse(Tuinet.MouseEvent ev, ref Tuinet.Widgets.TabsState state) -> bool
+Tuinet.Widgets.Tabs.Padding.get -> int
+Tuinet.Widgets.Tabs.Padding.init -> void
+Tuinet.Widgets.Tabs.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.TabsState state) -> void
+Tuinet.Widgets.Tabs.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Tabs.SelectedStyle.init -> void
+Tuinet.Widgets.TabsState
+Tuinet.Widgets.TabsState.Area.get -> Tuinet.Rect
+Tuinet.Widgets.TabsState.Handle(Tuinet.KeyEvent key, int count) -> bool
+Tuinet.Widgets.TabsState.Next(int count) -> void
+Tuinet.Widgets.TabsState.Offset.get -> int
+Tuinet.Widgets.TabsState.Offset.set -> void
+Tuinet.Widgets.TabsState.Previous(int count) -> void
+Tuinet.Widgets.TabsState.Selected.get -> int
+Tuinet.Widgets.TabsState.Selected.set -> void
+Tuinet.Widgets.TabsState.Select(int index, int count) -> void
+Tuinet.Widgets.TabsState.TabsState(int selected = 0) -> void
+Tuinet.Widgets.TabsState.TabsState() -> void
+Tuinet.Widgets.Tabs.Style.get -> Tuinet.Style
+Tuinet.Widgets.Tabs.Style.init -> void
+Tuinet.Widgets.Tabs.TabAt(int x, int y, in Tuinet.Widgets.TabsState state) -> int
+Tuinet.Widgets.Tabs.Tabs(System.ReadOnlySpan<string!> titles) -> void
+Tuinet.Widgets.Tabs.Tabs() -> void
+Tuinet.Widgets.Tabs.Width.get -> int

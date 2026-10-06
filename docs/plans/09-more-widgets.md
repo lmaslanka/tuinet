@@ -1,29 +1,27 @@
-# 09 · Common widgets: tabs, tree, charts, popup, menu
+# 09 · Common widgets (overview)
 
-**Type:** missing · **Effort:** M each · **Priority:** 5
+Split into one plan per widget. All of them follow the house style: `readonly ref struct` widgets,
+app-owned state, visible-only rendering, 0 B per steady-state frame, and hit-testing recomputed from the last
+render instead of a retained tree.
 
-All follow the house style: `readonly ref struct`, app-owned state, visible-only rendering, 0 B per frame.
+| Plan | Widget | Effort | Depends on |
+|---|---|---|---|
+| [09a](09a-popup.md) | Popup + `Rect.PlaceNear` placement | S | — |
+| [09b](09b-tabs.md) | Tabs | S–M | — |
+| [09c](09c-sparkline-barchart.md) | Sparkline and bar chart | M | 09b (Stats page) |
+| [09d](09d-menu-fuzzy-palette.md) | Menu, `Fuzzy` scorer, command palette pattern | M | 09a, 09b |
+| [09e](09e-tree-view.md) | Tree view | M–L | 09b (Groups page) |
 
-## Tabs
-`Tabs` over a span of titles + `TabsState` (selected). Divider, selected/unselected styles, overflow with
-scroll arrows, `Next/Previous`, mouse hit-test (plan 05).
+Order: 09a → 09b → 09c → 09d → 09e. The first two are the building blocks the others use.
 
-## Tree view
-`TreeView<TSource>` with `ITreeSource` (child count, label, `IsExpanded` from state) flattened lazily to
-visible rows; `TreeState` holds expanded set (app-owned), selection and scroll (reuse `ListState`).
-Guide lines (`├─ └─ │`), expand/collapse keys, lazy children for file trees.
+## How the Showcase grows
+Every control and feature must be visible somewhere in the Showcase:
 
-## Sparkline and bar chart
-`Sparkline` over `ReadOnlySpan<double>` using the eight block heights; `BarChart` with labels, values,
-horizontal/vertical, max scaling. Useful for dashboards (the Stress sample's latency).
+- **09a:** the edit and progress dialogs and the dropdown lists get shadowed `Popup`s.
+- **09b:** a tab bar in the list panel's border, with **List · Stats** (numbers only at first).
+- **09c:** the Stats page gets bar charts per kind and priority, and live sparklines of bytes and time per
+  frame. The Stress sample gets a frame-time sparkline.
+- **09d:** a right-click or `m` opens a context menu on a row; Ctrl+P opens a command palette over every action.
+- **09e:** a **Groups** tab with a kind → priority → item tree, kept in sync with the List selection.
 
-## Popup / modal helper
-`Popup` = `Rect.Centered` + `Clear` + `Block` in one call, plus an optional shadow; returns the inner area.
-The Showcase dialogs repeat this pattern.
-
-## Menu / command palette
-`Menu` (vertical list with shortcuts and separators) and a `CommandPalette` sample pattern: `TextInput` +
-fuzzy-filtered `ListView` (fuzzy scorer allocation-free over spans).
-
-## Tests / verification
-Widget tests per component in `WidgetTests`, AllocationTests frame including each, a "gallery" sample (see plan 17).
+Plan 17's gallery sample is still separate and can reuse these pages.

@@ -31,7 +31,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
-  - Widgets: blocks, paragraphs, virtualized lists and tables, scrollbars, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
+  - Widgets: blocks, paragraphs, virtualized lists and tables, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars and spinners.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
   - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
@@ -391,6 +391,90 @@ switch (focus)
 Alt+B/F/D and Delete. It also does masking (`mask: '•'` for passwords) and paste (`Insert(string)`).
 For a complete form with validation, see [`EditDialog.cs`](https://github.com/lmaslanka/tuinet/blob/main/samples/Tuinet.Samples.Showcase/EditDialog.cs).
 
+#### Multi-line text
+
+`TextArea` edits multi-line text: descriptions, commit messages, notes. Long lines wrap at word boundaries
+(or scroll sideways with `SoftWrap = false`), and it can show line numbers.
+
+```csharp
+var notes = new TextAreaState("first line\nsecond line");    // state, kept across frames
+
+frame.Render(new TextArea { Focused = focus == 4, LineNumbers = true, Placeholder = "notes…" }, notesArea, ref notes);
+
+// input
+switch (ev.Kind)
+{
+    case EventKind.Key when ev.Key.IsCtrl('c') && notes.HasSelection: term.CopyToClipboard(notes.Selection); break;
+    case EventKind.Key when focus == 4: notes.Handle(ev.Key); break;    // Enter is a line break; Tab is yours
+    case EventKind.Mouse: notes.HandleMouse(ev.Mouse); break;           // click, drag to select, wheel
+    case EventKind.Paste: notes.Insert(ev.Paste); break;                // keeps line breaks
+}
+```
+
+Both editors share one editing core (`EditableText`), so both have:
+
+- **Selection.** Shift with any movement key selects. `Selection` is the selected text, ready for
+  `CopyToClipboard`; `DeleteSelection()` cuts. Typing or pasting replaces it. Dragging the mouse selects.
+- **Undo and redo.** Ctrl+Z (or Ctrl+/, which also works when `SuspendOnCtrlZ` takes Ctrl+Z) and Ctrl+Y
+  (or Ctrl+Shift+Z). Runs of typing undo a word at a time; undo restores the selection an edit replaced.
+  The last 1000 steps are kept. `Set` and `Clear` start a new history.
+- **Grapheme clusters.** The caret moves and deletes by cluster, and by word with Ctrl or Alt
+  (←/→, Backspace, Delete). Offsets (`Caret`, `SelectionStart`, …) are UTF-16 indexes into `Text`.
+
+On top of that, the text area has ↑/↓ and PageUp/PageDown by screen row (keeping the column), Home/End for the
+line (Ctrl+Home/End for the text) and Ctrl+A to select all. The text lives
+in a gap buffer with a line index, and a frame only measures the lines on screen, so a 100,000-line text draws
+as fast as a short one. It allocates only when the text or the undo history outgrows its buffers.
+
+### Popups and dialogs
+
+`Popup` draws a box over whatever is already on screen: an optional drop shadow, a fill and a `Block`, in one
+call. The area you give it includes the shadow, and `Outer` turns a content size into that area, so centering
+on the content works:
+
+```csharp
+var popup = new Popup
+{
+    Block = new Block { Title = " confirm ", BorderType = BorderType.Rounded, Style = new Style(Color.Default, Color.Hex(0x111722)) },
+    Shadow = true,       // darkens the cells below and right of the box, keeping their glyphs
+    Padding = 1,         // one blank row and two blank columns inside the border
+};
+Rect dialog = frame.Area.Centered(popup.Outer(40, 3));   // 40×3 of content
+frame.Render(popup, dialog);
+frame.SetString(popup.Inner(dialog).X, popup.Inner(dialog).Y, "Delete 3 files?");
+
+// input: click outside to close
+if (ev.Mouse.IsClick && !ev.Mouse.IsIn(popup.Frame(dialog))) open = false;
+```
+
+`frame.Area.PlaceNear(anchor, size)` places a popup next to something instead: below it if it fits, else
+above, else on the side with more room, moved left to stay on screen. Pass a 0×0 anchor for a point, such
+as the mouse pointer for a context menu. `Dropdown` lists use the same rule and take `PopupShadow = true`.
+
+### Tabs
+
+```csharp
+string[] pages = ["Files", "Search", "Settings"];
+var tabs = new TabsState();                                  // state, kept across frames
+
+var bar = new Tabs(pages)
+{
+    SelectedStyle = new Style(Color.Black, Color.Cyan, Attr.Bold),
+    DividerStyle = new Style(Color.BrightBlack, default),   // '│' between titles
+};
+frame.Render(bar, new Rect(area.X + 2, area.Y, area.Width - 4, 1), ref tabs);   // e.g. in a block's top border
+
+// input
+if (ev.Kind == EventKind.Key && ev.Key.IsChar(']')) tabs.Next(pages.Length);   // wraps
+if (ev.Kind == EventKind.Mouse) bar.HandleMouse(ev.Mouse, ref tabs);           // click a title, ‹ ›, wheel
+```
+
+The bar draws only the tabs and leaves the rest of the row alone, so it can sit in a `Block`'s border.
+When the titles don't fit, it scrolls to keep the selected one visible and shows `‹` `›` where tabs are hidden.
+`TabsState.Handle` takes ←/→ and Home/End for when the bar itself has focus. Shortcuts that switch tabs from
+anywhere are yours: the showcase uses `[`/`]` and Alt+1…9, because terminals don't report Ctrl+Tab without the
+kitty keyboard protocol.
+
 ### Progress and animation
 
 ```csharp
@@ -461,12 +545,16 @@ checkboxes), keep the `Rect` you rendered into and test it with `ev.Mouse.IsClic
 | `table.HeaderColumnAt(x, y, state)` | Column whose header is at a cell, or -1 (e.g. click to sort) |
 | `Scrollbar.PositionAt(area, x, y, content, viewport)` | Scroll position for a click or drag on a scrollbar you drew |
 | `DropdownState.HandleMouse(ev, count)` | Click opens; click an item to pick it; wheel scrolls the list; click elsewhere cancels |
-| `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included) |
+| `tabs.HandleMouse(ev, ref state)` | Click selects a tab; click on `‹` `›` or the wheel scrolls the bar |
+| `tabs.TabAt(x, y, state)` | Tab drawn at a cell, or -1 |
+| `popup.Frame(area)` | The box without its shadow, for click-outside tests |
+| `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included); Shift+click or drag selects |
+| `TextAreaState.HandleMouse(ev)` | The same on wrapped rows, plus the wheel scrolls and a drag past the edge scrolls |
 | `MouseEvent.IsClick` / `IsWheel` / `WheelDelta` / `IsIn(rect)` / `IsClickIn(rect)` | Conveniences |
 
 Widgets act on the press (`MouseKind.Down`), as most terminal apps do. The showcase uses all of these:
-click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, and click every control
-in the edit dialog.
+click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, click a tab,
+click every control in the edit dialog, and click outside the progress dialog to close it.
 
 | `TerminalOptions` | Default | |
 |---|---|---|
@@ -639,13 +727,16 @@ public void Key_in_frame_out()
 | `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol, optional scrollbar; click, wheel and scrollbar drag |
 | `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow, optional scrollbar; click, wheel, scrollbar drag and header hit-testing |
 | `Scrollbar` | | Vertical or horizontal, eighth-block thumb ends, `PositionAt` for clicks and drags |
-| `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor; click to place the caret |
-| `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below; click to open and pick |
+| `TextInput` | `TextInputState` | Single-line editing, emacs keys, selection, undo/redo, masking, horizontal scroll, real terminal cursor; click or drag |
+| `TextArea` | `TextAreaState` | Multi-line editing: soft wrap or sideways scroll, line numbers, selection, undo/redo, placeholder; click, drag and wheel; only visible lines are measured |
+| `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below, optional shadow; click to open and pick |
+| `Tabs` | `TabsState` | One-row tab bar, dividers, scrolls with `‹` `›` when the titles don't fit, fits in a block border; click and wheel |
+| `Popup` | | Shadow + fill + `Block` over existing content; `Outer` sizes it from its content, `Rect.PlaceNear` places it by an anchor |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
 | `Button` | | Padded label with idle and focused styles |
 | `ProgressBar` | | Eighth-block precision, custom fill/empty glyphs (segmented meters) |
 | `Spinner` | | Time-based frames: `Line`, `Dots`, `Arc` |
-| `Clear` | | Blanks an area, for drawing popups over content |
+| `Clear` | | Blanks an area (`Popup` does this for you) |
 
 ## ⚡ Performance
 
@@ -662,6 +753,8 @@ public void Key_in_frame_out()
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
+| `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 60 / 39 µs | |
+| Caret down / a keystroke in that text area, then its frame | 61 / 78 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 
 Compared with the original kernel this library grew out of, unchanged and sparse frames are about **9× faster**, and full repaints are **3.3× faster**.
@@ -675,7 +768,7 @@ Tests guard these properties too:
 
 | Test | Guards |
 |---|---|
-| `AllocationTests` | 1,000 frames with widgets and 10,000 key polls allocate 0 bytes |
+| `AllocationTests` | 1,000 frames with widgets, 1,000 text area frames with caret keys, and 10,000 key polls allocate 0 bytes |
 | `RendererFuzzTests` | Random frames, replayed through a VT emulator, must reproduce the buffer exactly: every glyph, color and attribute, plus the cursor |
 | `TerminalTests` | Exact bytes for a one-cell change; control characters in text never reach the terminal |
 
@@ -752,7 +845,7 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Paragraph, ListView, Table, Scrollbar, TextInput, Dropdown, Checkbox, Button, ProgressBar
+  Widgets/                       Block, Popup, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty
