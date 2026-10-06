@@ -100,7 +100,9 @@ public sealed class ShowcaseApp
             return;
         }
 
-        if (!_list.HandleMouse(mouse, _items.Length) || !mouse.IsClick)
+        // Only clicks on rows count toward a double-click, not ones on the scrollbar.
+        bool onRow = mouse.IsClick && _list.RowAt(mouse.X, mouse.Y, _items.Length) >= 0;
+        if (!_list.HandleMouse(mouse, _items.Length) || !onRow)
         {
             return;
         }
@@ -188,7 +190,7 @@ public sealed class ShowcaseApp
 
     /// <summary>The item table for an area <paramref name="width"/> wide; render and header clicks use the same one.</summary>
     private Table<ItemRows> ItemTable(int width) =>
-        new(new ItemRows(_items), ItemColumns.AsSpan(0, FittingColumns(width - 1)))   // 1 for the highlight symbol
+        new(new ItemRows(_items), ItemColumns.AsSpan(0, FittingColumns(width - 2)))   // the highlight symbol and the scrollbar
         {
             HeaderStyle = Theme.Heading(Theme.Muted),
             HeaderSeparator = true,
@@ -199,6 +201,9 @@ public sealed class ShowcaseApp
             SelectedStyle = Theme.RowSelected,
             HighlightSymbol = "▌",
             HighlightSymbolStyle = Theme.Accent(Theme.Blue),
+            Scrollbar = ScrollbarMode.Auto,
+            ScrollbarThumbStyle = Theme.Accent(Theme.Muted),
+            ScrollbarTrackStyle = Theme.Faded,
         };
 
     private void RenderDetails(CellBuffer buffer, Rect area)

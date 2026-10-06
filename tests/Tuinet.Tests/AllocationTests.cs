@@ -100,7 +100,7 @@ public class AllocationTests
         Span<Rect> panes = stackalloc Rect[2];
         Layout.Horizontal(rows[1], [Constraint.Fill(), Constraint.Fill()], panes);
         list.Selected = tick % Items.Length;
-        frame.Render(new ListView<TextItems>(new TextItems(Items)) { SelectedStyle = new Style(Color.Black, Color.White) }, panes[0], ref list);
+        frame.Render(new ListView<TextItems>(new TextItems(Items)) { SelectedStyle = new Style(Color.Black, Color.White), Scrollbar = ScrollbarMode.Always }, panes[0], ref list);
         table.Selected = tick % Items.Length;
         frame.Render(new Table<Files>(new Files(Items), Columns)
         {
@@ -111,6 +111,7 @@ public class AllocationTests
             SelectedStyle = new Style(Color.Black, Color.White),
             HighlightSymbol = "> ",
             SortColumn = 1,
+            Scrollbar = ScrollbarMode.Always,
         }, panes[1], ref table);
 
         // Styled text: a builder with a formatted number, markup, and a styled paragraph.
@@ -119,7 +120,7 @@ public class AllocationTests
         status.Append(tick, new Style(Color.Green, Color.Default, Attr.Bold));
         frame.SetText(60, rows[2].Y, status.Build(), 20);
         frame.SetMarkup(80, rows[2].Y, "[b fg=#F5A623]q[/] quit  [u]?[/] help", default, 20);
-        frame.Render(new Paragraph(status.Build()) { Wrap = TextWrap.Word }, new Rect(100, rows[2].Y, 10, 1));
+        frame.Render(new Paragraph(status.Build()) { Wrap = TextWrap.Word, Scrollbar = ScrollbarMode.Auto }, new Rect(100, rows[2].Y, 10, 1));
 
         // Grapheme clusters are interned on first sight; after warm-up they cost nothing.
         frame.SetString(40, rows[2].Y, "👨‍👩‍👧 e\u0301 🇵🇱 ❤️ 👍🏽", default, 20);

@@ -16,6 +16,9 @@ public class RenderBenchmarks
     private CellBuffer _same = null!;
     private CellBuffer _oneCell = null!;
     private CellBuffer _scrolled = null!;
+    private CellBuffer _plain = null!;
+    private CellBuffer _dialog = null!;
+    private CellBuffer _short = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -26,7 +29,31 @@ public class RenderBenchmarks
         _oneCell = Screen(0);
         _oneCell.SetRune(100, 30, new System.Text.Rune('#'));
         _scrolled = Screen(0, shift: 1);
+        _plain = Background();
+        _dialog = Background();
+        Rect box = _dialog.Area.Centered(80, 24);
+        var dialogStyle = new Style(Color.Rgb(230, 230, 230), Color.Rgb(40, 44, 52));
+        _dialog.Fill(box, dialogStyle);
+        _dialog.Render(new Tuinet.Widgets.Block { BorderType = Tuinet.Widgets.BorderType.Rounded, Title = " dialog " }, box);
+        for (int y = box.Y + 2; y < box.Bottom - 2; y++)
+        {
+            _dialog.SetString(box.X + 3, y, "a line of dialog text, then blank to the border", dialogStyle);
+        }
+
+        _short = Screen(0);
+        for (int y = 0; y < H; y++)
+        {
+            _short.Fill(new Rect(30, y, W - 30, 1), _short[0, y].Style);   // every row keeps 30 columns of text
+        }
     }
+
+    /// <summary>A centered 80×24 dialog closes over a themed (non-default) background.</summary>
+    [Benchmark(Description = "dialog closed")]
+    public int DialogClosed() => Render(_plain, _dialog);
+
+    /// <summary>Every row gets shorter: text, then blanks in the row's background to the right edge.</summary>
+    [Benchmark(Description = "rows shortened")]
+    public int RowsShortened() => Render(_short, _a);
 
     [Benchmark(Description = "no change")]
     public int NoChange() => Render(_same, _a);
@@ -47,6 +74,14 @@ public class RenderBenchmarks
         _renderer.AfterClear();
         _renderer.Render(current, previous, _out);
         return _out.Length;
+    }
+
+    /// <summary>A themed screen: blank cells with a dark background, as apps that paint their own background have.</summary>
+    internal static CellBuffer Background()
+    {
+        var buffer = new CellBuffer(W, H);
+        buffer.Fill(buffer.Area, new Style(Color.Rgb(200, 200, 200), Color.Rgb(20, 24, 28)));
+        return buffer;
     }
 
     /// <summary>Text on every row; colors vary per row (a gradient) so every row needs its own SGR.</summary>

@@ -134,6 +134,67 @@ public class RendererFuzzTests
         Assert.True(screen.LineMoves > 50, $"{screen.LineMoves} IL/DL");
     }
 
+    [Theory]
+    [InlineData(21, true, false)]
+    [InlineData(22, true, false)]
+    [InlineData(23, true, false)]
+    [InlineData(24, true, false)]
+    [InlineData(25, true, true)]
+    [InlineData(26, true, true)]
+    [InlineData(21, false, false)]
+    public void Screen_matches_while_dialogs_close_and_rows_shorten(int seed, bool eraseSequences, bool legacyTerminal)
+    {
+        var random = new Random(seed);
+        var tty = new TestTty(40, 12);
+        using var terminal = new Terminal(tty, new TerminalOptions { EraseSequences = eraseSequences });
+        var screen = new VtEmulator(40, 12, legacyTerminal);
+        screen.Feed(tty.Written);
+        var model = new CellBuffer(40, 12);
+        for (int frame = 0; frame < 300; frame++)
+        {
+            switch (random.Next(5))
+            {
+                case 0:
+                    // A whole themed screen: every row is blanks in one background.
+                    model.Fill(model.Area, Styles[random.Next(Styles.Length)]);
+                    break;
+                case 1:
+                    // A dialog opens (a filled box with text) or closes (its area goes back to blanks).
+                    var box = new Rect(random.Next(-3, 35), random.Next(-1, 10), random.Next(3, 30), random.Next(1, 6));
+                    model.Fill(box, Styles[random.Next(Styles.Length)]);
+                    if (random.Next(2) == 0)
+                    {
+                        model.SetString(box.X + 1, box.Y, Words[random.Next(Words.Length)], Styles[random.Next(Styles.Length)]);
+                    }
+
+                    break;
+                case 2:
+                    // A row gets shorter: blank from some column to the right edge.
+                    int y = random.Next(model.Height);
+                    int x = random.Next(model.Width);
+                    model.Fill(new Rect(x, y, model.Width - x, 1), random.Next(2) == 0 ? model[Math.Max(0, x - 1), y].Style : Styles[random.Next(Styles.Length)]);
+                    break;
+                default:
+                    for (int i = random.Next(1, 6); i > 0; i--)
+                    {
+                        Mutate(model, random);
+                    }
+
+                    break;
+            }
+
+            CellBuffer buffer = terminal.BeginFrame();
+            Copy(model, buffer);
+            tty.ClearWritten();
+            terminal.Present();
+            screen.Feed(tty.Written);
+            screen.AssertMatches(buffer, $"seed {seed} frame {frame}");
+        }
+
+        Assert.True(eraseSequences ? screen.LineErases > 50 && screen.ErasedCells > 0 : screen.LineErases == 0,
+            $"{screen.LineErases} EL/ECH, {screen.ErasedCells} cells by ECH");
+    }
+
     [Fact]
     public void Screen_matches_after_resize()
     {

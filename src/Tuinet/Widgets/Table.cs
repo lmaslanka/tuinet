@@ -108,13 +108,29 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
     /// <summary>Show '▼' instead of '▲' on <see cref="SortColumn"/>.</summary>
     public bool SortDescending { get; init; }
 
+    /// <summary>Draw a scrollbar beside the body rows; columns are laid out one column narrower while it shows.</summary>
+    public ScrollbarMode Scrollbar { get; init; }
+
+    public Style ScrollbarThumbStyle { get; init; }
+    public Style ScrollbarTrackStyle { get; init; }
+
     public void Render(Rect area, CellBuffer buffer, ref ListState state)
     {
         area = area.Intersect(buffer.Area);
         int headerRows = HeaderSeparator ? 2 : 1;
         int count = _source.RowCount;
         int header = Math.Min(area.Height, headerRows);
-        state.Follow(count, area, new Rect(area.X, area.Y + header, area.Width, area.Height - header));
+        int bodyHeight = area.Height - header;
+        Rect bar = default;
+        if (bodyHeight > 0 && area.Width > 0 && Scrollbar.Shows(count, bodyHeight))
+        {
+            bar = new Rect(area.Right - 1, area.Y + header, 1, bodyHeight);
+        }
+
+        var content = new Rect(area.X, area.Y, area.Width - bar.Width, area.Height);
+        state.Follow(count, area, new Rect(content.X, content.Y + header, content.Width, bodyHeight), bar);
+        RenderScrollbar(buffer, area, bar, count, state);
+        area = content;
         int n = _columns.Length;
         if (area.IsEmpty || n == 0)
         {
@@ -175,6 +191,7 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
     public int HeaderColumnAt(int x, int y, in ListState state)
     {
         Rect area = state.Area;
+        area = new Rect(area.X, area.Y, area.Width - state.ScrollbarArea.Width, area.Height);
         int n = _columns.Length;
         if (area.IsEmpty || n == 0 || y != area.Y || !area.Contains(x, y))
         {
@@ -193,6 +210,27 @@ public readonly ref struct Table<TSource> : IStatefulWidget<ListState>
         }
 
         return -1;
+    }
+
+    /// <summary>The scrollbar in <paramref name="bar"/>, with the header (and its rule) carried on above it.</summary>
+    private void RenderScrollbar(CellBuffer buffer, Rect area, Rect bar, int count, in ListState state)
+    {
+        if (bar.IsEmpty)
+        {
+            return;
+        }
+
+        buffer.SetStyle(new Rect(bar.X, area.Y, 1, 1), HeaderStyle);
+        if (bar.Y > area.Y + 1)
+        {
+            buffer.SetRune(bar.X, area.Y + 1, new Rune('─'), SeparatorStyle);
+        }
+
+        buffer.Render(new Scrollbar(count, state.Viewport, state.Offset)
+        {
+            ThumbStyle = ScrollbarThumbStyle,
+            TrackStyle = ScrollbarTrackStyle,
+        }, bar);
     }
 
     private void LayoutColumns(Rect area, int indent, Span<Rect> cells)

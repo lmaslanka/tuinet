@@ -25,12 +25,13 @@ Zero allocations per frame · one `write` per frame · Native AOT
 - **Fast by design.**
   - Unchanged rows are skipped with a vectorized memcmp.
   - Gaps inside a row are jumped with relative cursor moves.
+  - Runs of blanks are erased (to the end of the row, or n cells) instead of written as spaces.
   - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
   - Style changes are sent as minimal deltas.
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
-  - Widgets: blocks, paragraphs, virtualized lists and tables, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
+  - Widgets: blocks, paragraphs, virtualized lists and tables, scrollbars, text inputs, dropdowns, checkboxes, buttons, progress bars and spinners.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
   - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
@@ -262,6 +263,39 @@ own (the mouse wheel, or `state.Scroll(rows, count)`) and leave the selection of
 
 For plain strings, use the built-in `TextItems` source: `new ListView<TextItems>(new TextItems(names))`.
 
+### Scrollbars
+
+`ListView`, `Table` and `Paragraph` draw a scrollbar in their rightmost column with
+`Scrollbar = ScrollbarMode.Auto` (only while the content is longer than the view) or `Always`. The
+content gets one column less while it shows. The thumb's ends use eighth-blocks, so it moves in
+eighths of a cell.
+
+```csharp
+frame.Render(new ListView<Files>(new Files(files))
+{
+    Scrollbar = ScrollbarMode.Auto,
+    ScrollbarThumbStyle = new Style(Color.BrightBlack, default),
+    ScrollbarTrackStyle = new Style(Color.Hex(0x3A4252), default),   // '│' track
+}, area, ref state);
+```
+
+For lists and tables, `state.HandleMouse` also scrolls when you click or drag the scrollbar, and the
+drag keeps going when the pointer leaves it. For anything else, render a `Scrollbar` yourself and map
+the pointer back with `Scrollbar.PositionAt`:
+
+```csharp
+var bar = new Rect(area.Right - 1, area.Y, 1, area.Height);
+frame.Render(new Scrollbar(content: lines, viewport: area.Height, position: scroll), bar);
+
+// input: a press on the bar starts a drag that lasts until the button comes up
+if (ev.Mouse.IsClickIn(bar)) dragging = true;
+if (ev.Mouse.Kind == MouseKind.Up) dragging = false;
+if (dragging) scroll = Scrollbar.PositionAt(bar, ev.Mouse.X, ev.Mouse.Y, lines, area.Height);
+```
+
+`Orientation = Direction.Horizontal` draws it along a row instead. A custom `ThumbChar` (or
+`Smooth = false`) moves the thumb in whole cells.
+
 ### Tables
 
 `Table` is a virtualized list with a header and columns. Column widths are layout constraints.
@@ -420,15 +454,16 @@ checkboxes), keep the `Rect` you rendered into and test it with `ev.Mouse.IsClic
 
 | Call | Does |
 |---|---|
-| `ListState.HandleMouse(ev, count)` | Click selects the row under the pointer, wheel scrolls (lists and tables) |
+| `ListState.HandleMouse(ev, count)` | Click selects the row under the pointer, wheel scrolls, click or drag on the scrollbar scrolls there (lists and tables) |
 | `ListState.RowAt(x, y, count)` | Item drawn at a cell, or -1 |
 | `table.HeaderColumnAt(x, y, state)` | Column whose header is at a cell, or -1 (e.g. click to sort) |
+| `Scrollbar.PositionAt(area, x, y, content, viewport)` | Scroll position for a click or drag on a scrollbar you drew |
 | `DropdownState.HandleMouse(ev, count)` | Click opens; click an item to pick it; wheel scrolls the list; click elsewhere cancels |
 | `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included) |
 | `MouseEvent.IsClick` / `IsWheel` / `WheelDelta` / `IsIn(rect)` / `IsClickIn(rect)` | Conveniences |
 
 Widgets act on the press (`MouseKind.Down`), as most terminal apps do. The showcase uses all of these:
-click rows, double-click to edit, wheel-scroll the table, click a header to sort, and click every control
+click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, and click every control
 in the edit dialog.
 
 | `TerminalOptions` | Default | |
@@ -439,6 +474,7 @@ in the edit dialog.
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
 | `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
+| `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
 | `Inline` | null | A band of `InlineOptions.Height` rows under the prompt instead of the alternate screen (see below) |
 
@@ -558,9 +594,10 @@ public void Key_in_frame_out()
 | Widget | State | What it does |
 |---|---|---|
 | `Block` | | Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, `Inner(area)` |
-| `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; `LineCount` for scrollbars |
-| `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol; click and wheel |
-| `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow; click, wheel and header hit-testing |
+| `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; optional scrollbar; `LineCount` |
+| `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol, optional scrollbar; click, wheel and scrollbar drag |
+| `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow, optional scrollbar; click, wheel, scrollbar drag and header hit-testing |
+| `Scrollbar` | | Vertical or horizontal, eighth-block thumb ends, `PositionAt` for clicks and drags |
 | `TextInput` | `TextInputState` | Single-line editing, emacs keys, masking, horizontal scroll, real terminal cursor; click to place the caret |
 | `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below; click to open and pick |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
@@ -577,14 +614,16 @@ public void Key_in_frame_out()
 |---|---:|---:|
 | Frame with no changes | 4.5 µs | 0 |
 | One cell changed | 4.7 µs | 59 |
-| Full repaint, a different truecolor style on every row | 34 µs | 13.3 KB |
+| Full repaint, a different truecolor style on every row | 37 µs | 13.3 KB |
 | Scroll by one row, every row different | 7.7 µs | 271 |
-| App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 485 |
-| App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 22 µs | 497 |
+| An 80×24 dialog closes over a themed background | 9.1 µs | 313 |
+| Every row gets shorter (text, then blanks to the right edge) | 14 µs | 698 |
+| App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
+| App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 
-Compared with the original kernel this library grew out of, unchanged and sparse frames are about **9× faster**, and full repaints are **3.6× faster**.
+Compared with the original kernel this library grew out of, unchanged and sparse frames are about **9× faster**, and full repaints are **3.3× faster**.
 
 ```sh
 dotnet run -c Release --project bench/Tuinet.Benchmarks -- --filter '*'   # BenchmarkDotNet suite
@@ -672,7 +711,7 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Paragraph, ListView, Table, TextInput, Dropdown, Checkbox, Button, ProgressBar
+  Widgets/                       Block, Paragraph, ListView, Table, Scrollbar, TextInput, Dropdown, Checkbox, Button, ProgressBar
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty

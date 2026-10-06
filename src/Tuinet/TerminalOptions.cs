@@ -67,6 +67,13 @@ public sealed record TerminalOptions
     public bool ScrollRegions { get; init; } = true;
 
     /// <summary>
+    /// Clear runs of blank cells with erase sequences (EL to the end of a row, ECH inside it) instead of writing
+    /// spaces, when that is fewer bytes. Erased cells take the current background color (BCE), which modern
+    /// terminals support; turn off for one that doesn't.
+    /// </summary>
+    public bool EraseSequences { get; init; } = true;
+
+    /// <summary>
     /// Handle Ctrl+Z inside <see cref="Terminal.Poll"/> by calling <see cref="Terminal.Suspend"/>, so the app can
     /// be backgrounded like a shell command. Off by default: Ctrl+Z is a normal key. Where suspending isn't
     /// supported (Windows) the key is delivered as usual.

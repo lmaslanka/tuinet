@@ -295,16 +295,59 @@
             jumped (CUF) or re-emitted (whichever is fewer bytes), and style changes are SGR deltas.
             When a band of rows moved up or down (a scrolling list), the terminal moves them itself
             (scroll margins + delete/insert line) and only the rows that are really new get painted.
+            Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
             </summary>
         </member>
         <member name="F:Tuinet.Renderer.MinScrollRows">
             <summary>A dirty band must be at least this tall, and this many rows must match after a shift.</summary>
+        </member>
+        <member name="P:Tuinet.Renderer.Top">
+            <summary>
+            Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
+            All cursor addressing and scroll margins are offset by it.
+            </summary>
+        </member>
+        <member name="P:Tuinet.Renderer.CursorRow">
+            <summary>Row (buffer coordinates) the terminal cursor is on, or -1 if unknown.</summary>
+        </member>
+        <member name="P:Tuinet.Renderer.ParkCursor">
+            <summary>
+            Inline mode: after a frame with no visible cursor, leave the cursor at the start of row 0. A terminal that
+            reflows on resize keeps it on that row's first line, so the cursor position reports where the band starts.
+            </summary>
         </member>
         <member name="M:Tuinet.Renderer.AfterClear">
             <summary>The screen was just cleared with SGR reset: pen is default, cursor position unknown.</summary>
         </member>
         <member name="M:Tuinet.Renderer.Forget">
             <summary>Something outside the renderer touched the terminal; assume nothing.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.Open(Tuinet.VtBuffer)">
+            <summary>Start writing to <paramref name="output"/>; inline operations and <see cref="M:Tuinet.Renderer.Frame(Tuinet.CellBuffer,Tuinet.CellBuffer)"/> share one synchronized update.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.Frame(Tuinet.CellBuffer,Tuinet.CellBuffer)">
+            <summary>Diff <paramref name="current"/> against <paramref name="previous"/> and end the synchronized update.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.Close">
+            <summary>End the synchronized update started by inline operations without rendering a frame.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.EraseBelow(System.Int32)">
+            <summary>Erase from buffer row <paramref name="y"/> to the end of the screen, with the default background.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.ScrollScreen(System.Int32,System.Int32)">
+            <summary>
+            Scroll the whole screen up <paramref name="lines"/> lines (into the scrollback) with line feeds on its
+            last row, <paramref name="screenHeight"/> - 1. The new rows are blank. Leaves the cursor on the last row.
+            </summary>
+        </member>
+        <member name="M:Tuinet.Renderer.PrintRow(System.ReadOnlySpan{Tuinet.Cell},System.Int32)">
+            <summary>Draw <paramref name="row"/> on buffer row <paramref name="y"/>, which must be blank on screen.</summary>
+        </member>
+        <member name="M:Tuinet.Renderer.LineAfter(System.Int32)">
+            <summary>
+            Put the cursor at the start of the line after buffer row <paramref name="y"/> (scrolling at the bottom),
+            or at the start of row 0 when <paramref name="y"/> is negative.
+            </summary>
         </member>
         <member name="M:Tuinet.Renderer.BlankRow">
             <summary>What delete/insert line leaves behind when the pen is reset: default-styled spaces.</summary>
@@ -330,6 +373,21 @@
             Rows whose glyphs could merge with a neighbour on the terminal (CellBuffer tracks it per row) take
             <see cref="T:Tuinet.Renderer.JoinChecks"/>; all others take <see cref="T:Tuinet.Renderer.NoJoinChecks"/>, which the JIT compiles to the
             plain loop with no cluster logic at all.
+            </summary>
+        </member>
+        <member name="M:Tuinet.Renderer.IsErasable(Tuinet.Cell@)">
+            <summary>
+            A blank whose look is just its background: erase sequences fill cells with the background and nothing
+            else, so a blank that is underlined, struck through or reversed must be written as a space.
+            </summary>
+        </member>
+        <member name="M:Tuinet.Renderer.TryErase(System.ReadOnlySpan{Tuinet.Cell},System.ReadOnlySpan{Tuinet.Cell},System.Int32,System.Int32,System.Int32,System.Boolean@,System.Int32@,System.Int32@)">
+            <summary>
+            Erase the run of blanks with one background that starts at dirty cell <paramref name="x"/>, if that is
+            fewer bytes than writing them: EL (<c>CSI K</c>, 3 bytes) when the run reaches the end of the row, ECH
+            (<c>CSI n X</c>) inside it, counting the jump past the erased cells (ECH doesn't move the cursor).
+            Erased cells take the pen's background (BCE). Returns where to continue, or <paramref name="x"/> to
+            write the blanks as spaces after all.
             </summary>
         </member>
         <member name="M:Tuinet.Renderer.EmitComplex(Tuinet.Cell@,System.Int32,System.Int32,System.Text.Rune,System.Boolean@,System.Int32@)">
@@ -376,6 +434,15 @@
         </member>
         <member name="P:Tuinet.VtParser.IsIncomplete">
             <summary>True while a partial escape or UTF-8 sequence is buffered (a paste in progress is not "incomplete").</summary>
+        </member>
+        <member name="P:Tuinet.VtParser.ExpectCursorReport">
+            <summary>
+            Set after sending a cursor position query (<c>CSI 6n</c>): the next <c>CSI row;col R</c> is the reply,
+            not F3 with modifiers (xterm sends those as <c>CSI 1;mod R</c>). Cleared by the reply.
+            </summary>
+        </member>
+        <member name="M:Tuinet.VtParser.TryTakeCursorReport(System.Int32@,System.Int32@)">
+            <summary>The reply to a cursor position query, 0-based, once it has arrived.</summary>
         </member>
         <member name="M:Tuinet.VtParser.FlushIncomplete">
             <summary>The input went quiet mid-sequence: resolve what is buffered (a lone ESC is the Escape key).</summary>
@@ -628,7 +695,8 @@
         </member>
         <member name="T:Tuinet.Terminal">
             <summary>
-            An immediate-mode terminal session: alternate screen, raw input, double-buffered output.
+            An immediate-mode terminal session: the alternate screen (or, with <see cref="P:Tuinet.TerminalOptions.Inline"/>, a
+            band under the prompt), raw input, double-buffered output.
             <para>
             Single-threaded: call <see cref="M:Tuinet.Terminal.Poll(Tuinet.Event@,System.Int32)"/>, <see cref="M:Tuinet.Terminal.BeginFrame"/> and <see cref="M:Tuinet.Terminal.Present"/>
             from one thread. <see cref="M:Tuinet.Terminal.Post(System.Object)"/> may be called from any thread to wake the loop.
@@ -667,6 +735,13 @@
         <member name="M:Tuinet.Terminal.Present">
             <summary>Diff the frame against what is on screen and write the difference in one write.</summary>
         </member>
+        <member name="M:Tuinet.Terminal.PrintAbove(Tuinet.StyledText)">
+            <summary>
+            Inline mode: print <paramref name="text"/> above the band, as ordinary terminal output that stays in the
+            scrollback (logs over a progress bar). Long lines wrap; a trailing newline is ignored. The band moves
+            down (the screen scrolls once it reaches the bottom) and is repainted, all in one write.
+            </summary>
+        </member>
         <member name="M:Tuinet.Terminal.Invalidate">
             <summary>Repaint everything on the next <see cref="M:Tuinet.Terminal.Present"/> (e.g. after another program drew on the screen).</summary>
         </member>
@@ -692,6 +767,18 @@
         <member name="M:Tuinet.Terminal.Resume">
             <summary>Back from a stop: the screen is the shell's, so enter again and repaint everything.</summary>
         </member>
+        <member name="M:Tuinet.Terminal.PlaceBand(System.Int32)">
+            <summary>
+            Inline: put the band at screen row <paramref name="top"/>, scrolling the screen up if it doesn't fit
+            below, and erase it (and everything under it).
+            </summary>
+        </member>
+        <member name="M:Tuinet.Terminal.QueryCursor(System.Int32@,System.Int32@)">
+            <summary>
+            Ask the terminal where the cursor is (<c>CSI 6n</c>) and wait for the reply. Input that arrives
+            meanwhile is kept for <see cref="M:Tuinet.Terminal.Poll(Tuinet.Event@,System.Int32)"/>.
+            </summary>
+        </member>
         <member name="F:Tuinet.ColorMode.TrueColor">
             <summary>24-bit RGB (<c>38;2;r;g;b</c>).</summary>
         </member>
@@ -703,6 +790,24 @@
         </member>
         <member name="F:Tuinet.ColorMode.None">
             <summary>No colors (attributes such as bold and reverse still apply).</summary>
+        </member>
+        <member name="T:Tuinet.InlineOptions">
+            <summary>
+            Inline mode: instead of the alternate screen, draw a live band of <see cref="P:Tuinet.InlineOptions.Height"/> rows under the
+            shell prompt. The band stays in the terminal (and its scrollback) after exit.
+            </summary>
+        </member>
+        <member name="P:Tuinet.InlineOptions.Height">
+            <summary>Rows of the band (fewer if the terminal is shorter).</summary>
+        </member>
+        <member name="P:Tuinet.InlineOptions.CursorReportTimeoutMs">
+            <summary>
+            How long to wait for the terminal to report the cursor position, which says where the band starts.
+            Without a reply the band goes at the bottom of the screen.
+            </summary>
+        </member>
+        <member name="P:Tuinet.TerminalOptions.Inline">
+            <summary>Draw in a band under the prompt instead of on the alternate screen (null: full screen).</summary>
         </member>
         <member name="P:Tuinet.TerminalOptions.Mouse">
             <summary>Report mouse clicks, drags and wheel as <see cref="F:Tuinet.EventKind.Mouse"/> (SGR 1006).</summary>
@@ -726,6 +831,13 @@
             <summary>
             When a band of full-width rows scrolls, let the terminal move them (scroll margins plus
             insert/delete line) instead of repainting every row. Turn off for a terminal that mishandles them.
+            </summary>
+        </member>
+        <member name="P:Tuinet.TerminalOptions.EraseSequences">
+            <summary>
+            Clear runs of blank cells with erase sequences (EL to the end of a row, ECH inside it) instead of writing
+            spaces, when that is fewer bytes. Erased cells take the current background color (BCE), which modern
+            terminals support; turn off for one that doesn't.
             </summary>
         </member>
         <member name="P:Tuinet.TerminalOptions.SuspendOnCtrlZ">

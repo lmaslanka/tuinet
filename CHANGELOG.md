@@ -28,6 +28,10 @@ The first release.
 - Safety: control characters in text never reach the terminal; the terminal is restored on exit, on an
   unhandled exception and on SIGINT/SIGTERM/SIGHUP.
 - Backends: Linux and macOS (termios, `poll(2)`, `SIGWINCH`) and Windows 10+ (console VT mode).
+- Fewer bytes for blanks: runs of blank cells are cleared with EL (to the end of the row) or ECH (n cells)
+  instead of spaces when that is shorter; erased cells keep their background (BCE). A dialog closing over a
+  themed screen goes from 2.2 KB to 313 bytes, and list and table scroll frames shrink by 53–71%.
+  `TerminalOptions.EraseSequences` turns it off.
 - Inline mode: `TerminalOptions.Inline = new InlineOptions(height)` draws in a band under the shell prompt
   instead of on the alternate screen; the band stays in the scrollback after exit. `Terminal.PrintAbove`
   prints log lines above the band. The band is placed with a cursor position query and follows resizes.
@@ -35,6 +39,10 @@ The first release.
   `ListState.RowAt`, `Table.HeaderColumnAt` (click a header to sort), `DropdownState.HandleMouse` and
   `TextInputState.HandleMouse` (click places the caret), plus `MouseEvent.IsClick`, `IsWheel`,
   `WheelDelta`, `IsIn` and `IsClickIn`. Hit-testing uses where each widget was drawn on the last frame.
+- Scrollbars: `ListView`, `Table` and `Paragraph` take `Scrollbar = ScrollbarMode.Auto` (or `Always`) and
+  draw one in their rightmost column, with eighth-block thumb ends. `ListState.HandleMouse` scrolls on a click
+  or drag on it. The standalone `Scrollbar` widget (vertical or horizontal) and `Scrollbar.PositionAt` cover
+  everything else.
 - Suspend and resume (Unix): `Terminal.Suspend()` and `TerminalOptions.SuspendOnCtrlZ` stop the app
   the way Ctrl+Z stops a shell command; `fg` resumes with a full repaint. `kill -TSTP` suspends cleanly
   and the app recovers from `kill -STOP`.

@@ -5,8 +5,8 @@ Each app runs in a detached tmux session (private server, no user config) inside
 records the exit code and the tty modes before and after, with HOME pointed at an empty directory. Checks
 read the screen back with `capture-pane`; waits poll the screen, so slow machines don't make them flaky.
 
-  showcase  navigation, edit + save, progress animation, mouse (click, wheel, header sort), clean exit;
-            at 110x34 and 80x24
+  showcase  navigation, edit + save, progress animation, mouse (click, wheel, scrollbar drag, header sort),
+            clean exit; at 110x34 and 80x24
   inline    the inline sample under an interactive bash: logs printed above the live band end up in order
             in the history (also on a short terminal, where they scroll), the band leaves one summary line,
             the shell continues right after it, Ctrl+C cancels, terminal modes are restored
@@ -72,6 +72,11 @@ class Tmux:
         seq = f"\x1b[<{button};{x + 1};{y + 1}M"
         if button < 64:
             seq += f"\x1b[<{button};{x + 1};{y + 1}m"
+        self.run("send-keys", "-t", name, "-l", seq)
+
+    def drag(self, name, x0, y0, x1, y1):
+        """An SGR left-button press at (x0, y0), a drag to (x1, y1) and the release there."""
+        seq = f"\x1b[<0;{x0 + 1};{y0 + 1}M\x1b[<32;{x1 + 1};{y1 + 1}M\x1b[<0;{x1 + 1};{y1 + 1}m"
         self.run("send-keys", "-t", name, "-l", seq)
 
     def find(self, name, text):
@@ -199,6 +204,16 @@ def showcase_mouse(tmux, n, label, height):
         check(ok, f"{label}: mouse: the wheel scrolls the table and keeps the selection", s)
         tmux.mouse(n, *top, button=64)
         tmux.wait(n, lambda t: "01  parse" in t)
+
+        # The scrollbar runs down the table's rightmost column, just inside the box's padding.
+        bar = tmux.screen(n).split("\n")[top[1]].rfind("│") - 2
+        last = tmux.find(n, "12  diff")
+        tmux.drag(n, bar, top[1], bar, last[1])
+        ok, s = tmux.wait(n, lambda t: "01  parse" not in t and "20  telemetry" in t and "SELECTED · 05" in t)
+        check(ok, f"{label}: mouse: dragging the scrollbar scrolls to the end and keeps the selection", s)
+        tmux.drag(n, bar, last[1], bar, top[1])
+        ok, s = tmux.wait(n, lambda t: "01  parse" in t)
+        check(ok, f"{label}: mouse: dragging it back scrolls to the top", s)
 
     header = tmux.find(n, "name  ")
     tmux.mouse(n, *header)

@@ -10,6 +10,7 @@ namespace Tuinet;
 /// jumped (CUF) or re-emitted (whichever is fewer bytes), and style changes are SGR deltas.
 /// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
 /// (scroll margins + delete/insert line) and only the rows that are really new get painted.
+/// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
 /// </summary>
 internal sealed class Renderer
 {
@@ -26,6 +27,7 @@ internal sealed class Renderer
 
     private readonly ColorMode _mode;
     private readonly bool _scrollRegions;
+    private readonly bool _erase;
     private VtBuffer _out = null!;
     private Cell[] _blank = [];
     private bool _started;
@@ -38,10 +40,11 @@ internal sealed class Renderer
     private bool _penKnown;
     private bool _cursorShown;
 
-    public Renderer(ColorMode mode, bool scrollRegions = true)
+    public Renderer(ColorMode mode, bool scrollRegions = true, bool eraseSequences = true)
     {
         _mode = mode;
         _scrollRegions = scrollRegions;
+        _erase = eraseSequences;
     }
 
     public ColorMode Mode => _mode;
@@ -437,6 +440,7 @@ internal sealed class Renderer
 
         int forceUntil = -1;
         bool positioned = false;
+        int spacesUntil = -1;   // blanks up to here were already judged cheaper to write than to erase
 
         // The cell just emitted, to keep the next one from joining it into one cluster on the terminal.
         Rune previous = default;
@@ -482,6 +486,21 @@ internal sealed class Renderer
             }
 
             ref readonly Cell cell = ref cur[x];
+            // Erasing pays off only for runs of 4+ blanks. Most dirty cells aren't spaces: test that first, then the
+            // 4th cell, so neither glyphs nor the single spaces between words get as far as TryErase.
+            if (_erase && cell.RawRune.Value == ' ' && x + 3 < width && x > spacesUntil
+                && IsErasable(in cur[x + 3]) && IsErasable(in cell))
+            {
+                int end = TryErase(cur, prev, x, last, y, ref positioned, ref forceUntil, ref spacesUntil);
+                if (end > x)
+                {
+                    x = end;
+                    previous = default;
+                    previousComplex = false;
+                    continue;
+                }
+            }
+
             bool contiguous = positioned;
             if (!positioned)
             {
@@ -515,6 +534,84 @@ internal sealed class Renderer
             x += advance;
         }
     }
+
+    /// <summary>
+    /// A blank whose look is just its background: erase sequences fill cells with the background and nothing
+    /// else, so a blank that is underlined, struck through or reversed must be written as a space.
+    /// </summary>
+    private static bool IsErasable(in Cell cell) =>
+        cell.RawRune.Value == ' ' && cell.Width == 1 && !cell.IsGrapheme
+        && (cell.Style.Attrs & (Attr.Underline | Attr.Reverse | Attr.Strike)) == 0;
+
+    /// <summary>
+    /// Erase the run of blanks with one background that starts at dirty cell <paramref name="x"/>, if that is
+    /// fewer bytes than writing them: EL (<c>CSI K</c>, 3 bytes) when the run reaches the end of the row, ECH
+    /// (<c>CSI n X</c>) inside it, counting the jump past the erased cells (ECH doesn't move the cursor).
+    /// Erased cells take the pen's background (BCE). Returns where to continue, or <paramref name="x"/> to
+    /// write the blanks as spaces after all.
+    /// </summary>
+    private int TryErase(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int x, int last, int y,
+        ref bool positioned, ref int forceUntil, ref int spacesUntil)
+    {
+        int width = cur.Length;
+        Style style = cur[x].Style;
+        int end = x + 1;
+        int changed = x;   // the run's last cell that differs from the screen
+        while (end < width && IsErasable(in cur[end]) && cur[end].Style.Bg.Equals(style.Bg))
+        {
+            if (end <= forceUntil || (end <= last && !cur[end].Equals(prev[end])))
+            {
+                changed = end;
+            }
+
+            end++;
+        }
+
+        // Writing the run as spaces stops at its last changed cell.
+        int spaces = changed - x + 1;
+        bool toEnd = end == width;
+        int count = toEnd ? width - x : spaces;
+        bool more = !toEnd && (last > changed || forceUntil > changed);
+        int cost = toEnd ? 3 : 3 + Digits(count) + (more ? 3 + Digits(count) : 0);
+        if (cost >= spaces)
+        {
+            spacesUntil = changed;
+            return x;
+        }
+
+        if (!positioned)
+        {
+            MoveTo(x, y);
+        }
+
+        _out.Reserve(80);
+        if (!_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode)))
+        {
+            SetPen(style);
+        }
+
+        if (toEnd)
+        {
+            _out.Bytes("\u001b[K"u8);
+            positioned = false;
+            return width;
+        }
+
+        _out.Bytes("\u001b["u8);
+        _out.Int(count);
+        _out.Byte((byte)'X');
+
+        // A wide glyph on screen across the run's right edge is erased whole: repaint the cell after the run.
+        if (prev[x + count - 1].Width == 2)
+        {
+            forceUntil = Math.Max(forceUntil, x + count);
+        }
+
+        positioned = false;   // the cursor is still at x
+        return x + count;
+    }
+
+    private static int Digits(int n) => n < 10 ? 1 : n < 100 ? 2 : n < 1000 ? 3 : 4;
 
     /// <summary>
     /// Emit a cell that is a cluster, or that could join the cell drawn just before it into one cluster

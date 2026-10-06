@@ -17,6 +17,8 @@ public interface IListSource
 public struct ListState
 {
     private Rect _body;
+    private Rect _scrollbar;
+    private bool _dragging;
     private int _renderedOffset;
     private int _followed;   // Selected + 1 when render last scrolled to it; 0 before the first render
 
@@ -57,14 +59,29 @@ public struct ListState
     }
 
     /// <summary>
-    /// A click on a row selects it; the wheel over the list scrolls it by <paramref name="wheelRows"/> per notch.
-    /// Returns whether the event was used (false for events elsewhere), so the caller can route it on.
+    /// A click on a row selects it; the wheel over the list scrolls it by <paramref name="wheelRows"/> per notch;
+    /// a click or drag on the scrollbar scrolls to that point. Returns whether the event was used (false for
+    /// events elsewhere), so the caller can route it on.
     /// </summary>
     public bool HandleMouse(MouseEvent ev, int count, int wheelRows = 3)
     {
         if (ev.IsWheel && ev.IsIn(Area))
         {
             Scroll(ev.WheelDelta * wheelRows, count);
+            return true;
+        }
+
+        // A drag that starts on the scrollbar keeps scrolling when the pointer leaves it.
+        if (ev.IsClick && ev.IsIn(_scrollbar) || _dragging && ev.Kind == MouseKind.Drag)
+        {
+            _dragging = true;
+            Offset = Scrollbar.PositionAt(_scrollbar, ev.X, ev.Y, count, Viewport);
+            return true;
+        }
+
+        if (_dragging && ev.Kind == MouseKind.Up)
+        {
+            _dragging = false;
             return true;
         }
 
@@ -81,8 +98,14 @@ public struct ListState
     /// <summary>Make the next render scroll to <see cref="Selected"/> even if it hasn't changed.</summary>
     internal void Reveal() => _followed = 0;
 
-    /// <summary>Called by render: <paramref name="area"/> is the whole widget, <paramref name="body"/> its item rows.</summary>
-    internal void Follow(int count, Rect area, Rect body)
+    /// <summary>Where the scrollbar was drawn at the last render, or empty.</summary>
+    internal readonly Rect ScrollbarArea => _scrollbar;
+
+    /// <summary>
+    /// Called by render: <paramref name="area"/> is the whole widget, <paramref name="body"/> its item rows and
+    /// <paramref name="scrollbar"/> the scrollbar beside them (empty for none).
+    /// </summary>
+    internal void Follow(int count, Rect area, Rect body, Rect scrollbar = default)
     {
         int height = body.Height;
         if (Selected >= count)
@@ -107,6 +130,7 @@ public struct ListState
         Offset = Math.Clamp(Offset, 0, Math.Max(0, count - height));
         Area = area;
         _body = body;
+        _scrollbar = scrollbar;
         _renderedOffset = Offset;
     }
 }
@@ -128,11 +152,27 @@ public readonly ref struct ListView<TSource> : IStatefulWidget<ListState>
     /// <summary>Layered over <see cref="SelectedStyle"/> for the highlight symbol.</summary>
     public Style HighlightSymbolStyle { get; init; }
 
+    /// <summary>Draw a scrollbar in the rightmost column; items are one column narrower while it shows.</summary>
+    public ScrollbarMode Scrollbar { get; init; }
+
+    public Style ScrollbarThumbStyle { get; init; }
+    public Style ScrollbarTrackStyle { get; init; }
+
     public void Render(Rect area, CellBuffer buffer, ref ListState state)
     {
         area = area.Intersect(buffer.Area);
         int count = _source.Count;
-        state.Follow(count, area, area);
+        Rect body = area;
+        Rect bar = default;
+        if (Scrollbar.Shows(count, area.Height) && !area.IsEmpty)
+        {
+            body = new Rect(area.X, area.Y, area.Width - 1, area.Height);
+            bar = new Rect(area.Right - 1, area.Y, 1, area.Height);
+        }
+
+        state.Follow(count, area, body, bar);
+        RenderScrollbar(buffer, bar, count, state);
+        area = body;
         if (area.IsEmpty || count == 0)
         {
             return;
@@ -158,6 +198,18 @@ public readonly ref struct ListView<TSource> : IStatefulWidget<ListState>
                     buffer.SetString(line.X, line.Y, HighlightSymbol, SelectedStyle.Patch(HighlightSymbolStyle), line.Width);
                 }
             }
+        }
+    }
+
+    private void RenderScrollbar(CellBuffer buffer, Rect bar, int count, in ListState state)
+    {
+        if (!bar.IsEmpty)
+        {
+            buffer.Render(new Scrollbar(count, state.Viewport, state.Offset)
+            {
+                ThumbStyle = ScrollbarThumbStyle,
+                TrackStyle = ScrollbarTrackStyle,
+            }, bar);
         }
     }
 }

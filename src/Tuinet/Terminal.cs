@@ -56,7 +56,10 @@ public sealed class Terminal : IDisposable
         _ownsTty = ownsTty;
         _options = options;
         _inline = options.Inline;
-        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions) { ParkCursor = _inline is not null };
+        _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions, options.EraseSequences)
+        {
+            ParkCursor = _inline is not null,
+        };
 
         _screen = Clamp(tty.Size);
         _reportedScreen = _screen;

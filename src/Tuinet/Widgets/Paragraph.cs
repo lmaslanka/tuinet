@@ -41,12 +41,25 @@ public readonly ref struct Paragraph : IWidget
     /// <summary>Visual lines to skip from the top.</summary>
     public int Scroll { get; init; }
 
+    /// <summary>
+    /// Draw a scrollbar in the rightmost column; text wraps one column narrower while it shows. Measuring the
+    /// text costs a pass over it per frame. Clicks map to a <see cref="Scroll"/> with
+    /// <see cref="Widgets.Scrollbar.PositionAt"/> over that column.
+    /// </summary>
+    public ScrollbarMode Scrollbar { get; init; }
+
+    public Style ScrollbarThumbStyle { get; init; }
+    public Style ScrollbarTrackStyle { get; init; }
+
     /// <summary>Number of visual lines <paramref name="text"/> takes at <paramref name="width"/>.</summary>
-    public static int LineCount(ReadOnlySpan<char> text, int width, TextWrap wrap)
+    public static int LineCount(ReadOnlySpan<char> text, int width, TextWrap wrap) => LineCount(text, width, wrap, int.MaxValue);
+
+    /// <summary>Visual lines, counting no further than <paramref name="limit"/>.</summary>
+    private static int LineCount(ReadOnlySpan<char> text, int width, TextWrap wrap, int limit)
     {
         int count = 0;
         var lines = new LineEnumerator(text, width, wrap);
-        while (lines.MoveNext())
+        while (count < limit && lines.MoveNext())
         {
             count++;
         }
@@ -60,6 +73,23 @@ public readonly ref struct Paragraph : IWidget
         if (area.IsEmpty)
         {
             return;
+        }
+
+        // Auto first checks the full width, stopping one line past the height, so text that fits costs little.
+        if (Scrollbar == ScrollbarMode.Always
+            || (Scrollbar == ScrollbarMode.Auto && LineCount(Text, area.Width, Wrap, area.Height + 1) > area.Height))
+        {
+            var bar = new Rect(area.Right - 1, area.Y, 1, area.Height);
+            area = new Rect(area.X, area.Y, area.Width - 1, area.Height);
+            buffer.Render(new Scrollbar(LineCount(Text, area.Width, Wrap), area.Height, Scroll)
+            {
+                ThumbStyle = ScrollbarThumbStyle,
+                TrackStyle = ScrollbarTrackStyle,
+            }, bar);
+            if (area.IsEmpty)
+            {
+                return;
+            }
         }
 
         int row = -Scroll;

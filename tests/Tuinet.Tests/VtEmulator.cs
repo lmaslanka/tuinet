@@ -31,6 +31,11 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
     /// <summary>With allowScroll: rows scrolled off the top by line feeds on the last row, oldest first.</summary>
     public List<string> Scrollback { get; } = [];
 
+    /// <summary>EL/ECH sequences replayed so far, and the cells ECH erased.</summary>
+    public int LineErases { get; private set; }
+
+    public int ErasedCells { get; private set; }
+
     public int CursorX => _x;
     public int CursorY => _y;
 
@@ -140,7 +145,13 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                     Assert.True(expected.Text == actual.Text, $"glyph '{actual.Text}' != '{expected.Text}' at {where}");
                 }
 
-                Assert.True(expected.Style == actual.Style, $"style {actual.Style} != {expected.Style} at {where}");
+                // A blank that is only its background looks the same whatever its foreground or other
+                // attributes: erase sequences leave exactly that.
+                const Attr visibleOnBlank = Attr.Underline | Attr.Reverse | Attr.Strike;
+                bool plainBlank = expected.Text == " " && actual.Text == " " && !expected.IsGrapheme
+                    && (expected.Style.Attrs & visibleOnBlank) == 0 && (actual.Style.Attrs & visibleOnBlank) == 0;
+                Assert.True(plainBlank ? expected.Style.Bg == actual.Style.Bg : expected.Style == actual.Style,
+                    $"style {actual.Style} != {expected.Style} at {where}");
             }
         }
 
@@ -269,6 +280,16 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 }
 
                 break;
+            case 'K':
+                // EL: erase from the cursor to the end of the line. The cursor doesn't move.
+                Assert.True(param is "" or "0", $"unexpected EL {param}");
+                Erase(_x, _w - _x);
+                break;
+            case 'X':
+                // ECH: erase n cells from the cursor, clipped at the right edge. The cursor doesn't move.
+                Erase(_x, Math.Min(param.Length > 0 ? int.Parse(param) : 1, _w - _x));
+                ErasedCells += Math.Min(param.Length > 0 ? int.Parse(param) : 1, _w - _x);
+                break;
             case 'n':
                 Assert.Equal("6", param);   // cursor position query: the reply is the test's business
                 break;
@@ -368,6 +389,32 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
     }
 
     /// <summary>Move rows [from, to] by <paramref name="delta"/> (-1 up, +1 down).</summary>
+    /// <summary>Erase <paramref name="count"/> cells from column <paramref name="x"/>; a wide glyph cut in half goes whole.</summary>
+    private void Erase(int x, int count)
+    {
+        if (count <= 0)
+        {
+            return;
+        }
+
+        LineErases++;
+        int end = x + count;
+        if (_grid[x, _y].Cont && x > 0)
+        {
+            _grid[x - 1, _y] = (" ", _grid[x - 1, _y].Style, false);
+        }
+
+        if (end < _w && _grid[end, _y].Cont)
+        {
+            _grid[end, _y] = (" ", _grid[end, _y].Style, false);
+        }
+
+        for (int i = x; i < end; i++)
+        {
+            _grid[i, _y] = (" ", new Style(default, _pen.Bg), false);   // BCE: only the background is kept
+        }
+    }
+
     private void MoveRows(int from, int to, int delta)
     {
         if (delta < 0)

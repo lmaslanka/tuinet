@@ -10,6 +10,8 @@ if (args is ["bytes"])
     Console.WriteLine($"one cell             {render.OneCell(),7} bytes");
     Console.WriteLine($"full repaint, styled {render.FullRepaint(),7} bytes");
     Console.WriteLine($"scroll by one row    {render.ScrollOne(),7} bytes");
+    Console.WriteLine($"dialog closed        {render.DialogClosed(),7} bytes");
+    Console.WriteLine($"rows shortened       {render.RowsShortened(),7} bytes");
     var frame = new FrameBenchmarks();
     frame.Setup();
     frame.ListScroll();

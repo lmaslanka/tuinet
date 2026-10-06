@@ -193,7 +193,7 @@ public class ShowcaseTests
         var buffer = new CellBuffer(80, 24);
         new ShowcaseApp().Render(buffer, nowMs: 0);
         string screen = buffer.ToString();
-        Assert.Contains("01  parse & valida…  feature", screen);
+        Assert.Contains("01  parse & valid…  feature", screen);
         Assert.DoesNotContain("priority", screen);
         Assert.DoesNotContain("fea…", screen);
     }
@@ -245,6 +245,26 @@ public class ShowcaseTests
         Assert.DoesNotContain("01  parse", screen);
         Assert.Contains("04  verify", screen);
         Assert.Contains("SELECTED · 01", screen);
+        Assert.Equal(0, app.Selected);
+    }
+
+    [Fact]
+    public void Scrollbar_clicks_scroll_and_never_count_as_a_double_click()
+    {
+        var app = new ShowcaseApp();
+        var buffer = new CellBuffer(80, 24);
+        app.Render(buffer, 0);
+        (int x, int top) = Find(buffer, "feature█");                   // the thumb, beside row 01
+        (_, int bottom) = Find(buffer, "12  diff");
+        Click(app, x + 7, bottom, 1000);
+        app.Render(buffer, 0);
+        Assert.Contains("20  telemetry", buffer.ToString());
+
+        Click(app, x + 7, top, 1100);
+        Click(app, x + 7, top, 1200);
+        app.Render(buffer, 0);
+        Assert.Null(app.Edit);
+        Assert.Contains("01  parse", buffer.ToString());
         Assert.Equal(0, app.Selected);
     }
 
