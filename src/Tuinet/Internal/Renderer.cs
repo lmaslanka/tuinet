@@ -11,6 +11,7 @@ namespace Tuinet;
 /// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
 /// (scroll margins + delete/insert line) and only the rows that are really new get painted.
 /// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
+/// Hyperlinks (OSC 8) open and close around runs of cells with the same link; none stays open between writes.
 /// </summary>
 internal sealed class Renderer
 {
@@ -39,6 +40,12 @@ internal sealed class Renderer
     private Style _penSource;
     private bool _penKnown;
     private bool _cursorShown;
+    private CursorShape _shape;
+    private int _link;   // Links id of the hyperlink open on the terminal, 0 for none
+
+    // The pen's style and link as a cell stores them (see PenMatches): one compare per emitted cell covers both.
+    private ulong _penKey0;
+    private ulong _penKey1 = ulong.MaxValue;
 
     public Renderer(ColorMode mode, bool scrollRegions = true, bool eraseSequences = true)
     {
@@ -68,6 +75,12 @@ internal sealed class Renderer
     /// <summary>Row (buffer coordinates) the terminal cursor is on, or -1 if unknown.</summary>
     public int CursorRow => _cy;
 
+    /// <summary>A frame has set the cursor shape (DECSCUSR): leaving should reset it.</summary>
+    public bool CursorShapeUsed { get; private set; }
+
+    /// <summary>The terminal's cursor shape was reset (on leave): send the frame's shape again.</summary>
+    public void ForgetCursorShape() => _shape = CursorShape.Default;
+
     /// <summary>
     /// Inline mode: after a frame with no visible cursor, leave the cursor at the start of row 0. A terminal that
     /// reflows on resize keeps it on that row's first line, so the cursor position reports where the band starts.
@@ -80,6 +93,7 @@ internal sealed class Renderer
         _pen = default;
         _penSource = default;
         _penKnown = true;
+        UpdatePenKey();
         _cx = -1;
         _cy = -1;
     }
@@ -88,6 +102,7 @@ internal sealed class Renderer
     public void Forget()
     {
         _penKnown = false;
+        UpdatePenKey();
         _cx = -1;
         _cy = -1;
     }
@@ -159,6 +174,7 @@ internal sealed class Renderer
             }
         }
 
+        EndLink();
         _out.Reserve(64);
         PlaceCursor(current);
         if (_started)
@@ -171,6 +187,7 @@ internal sealed class Renderer
     /// <summary>End the synchronized update started by inline operations without rendering a frame.</summary>
     public void Close()
     {
+        EndLink();
         if (_started)
         {
             _out.Reserve(16);
@@ -183,6 +200,7 @@ internal sealed class Renderer
     public void EraseBelow(int y)
     {
         Begin();
+        EndLink();
         _out.Reserve(32);
         SetPen(default);
         MoveTo(0, y);
@@ -196,6 +214,7 @@ internal sealed class Renderer
     public void ScrollScreen(int screenHeight, int lines)
     {
         Begin();
+        EndLink();
         _out.Reserve(32 + lines);
         SetPen(default);
         MoveTo(0, screenHeight - 1 - Top);
@@ -233,6 +252,7 @@ internal sealed class Renderer
     /// </summary>
     public void LineAfter(int y)
     {
+        EndLink();
         _out.Reserve(48);
         SetPen(default);
         MoveTo(0, Math.Max(0, y));
@@ -537,10 +557,10 @@ internal sealed class Renderer
 
     /// <summary>
     /// A blank whose look is just its background: erase sequences fill cells with the background and nothing
-    /// else, so a blank that is underlined, struck through or reversed must be written as a space.
+    /// else, so a blank that is underlined, struck through, reversed or linked must be written as a space.
     /// </summary>
     private static bool IsErasable(in Cell cell) =>
-        cell.RawRune.Value == ' ' && cell.Width == 1 && !cell.IsGrapheme
+        cell.RawRune.Value == ' ' && cell.Tail == Cell.PlainNarrow   // narrow, not a cluster, not linked
         && (cell.Style.Attrs & (Attr.Underline | Attr.Reverse | Attr.Strike)) == 0;
 
     /// <summary>
@@ -584,6 +604,7 @@ internal sealed class Renderer
             MoveTo(x, y);
         }
 
+        EndLink();
         _out.Reserve(80);
         if (!_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode)))
         {
@@ -650,9 +671,9 @@ internal sealed class Renderer
             return Emit(in blank, x);
         }
 
-        if (!_penKnown || !cell.Style.Equals(_penSource))
+        if (!PenMatches(in cell))
         {
-            SetPen(cell.Style);
+            ApplyPen(in cell);
         }
 
         EmitCluster(cell.GraphemeId, x, advance);
@@ -693,7 +714,7 @@ internal sealed class Renderer
         for (int i = from; i < to; i++)
         {
             Cell c = cur[i];
-            if (c.Width != 1 || c.IsGrapheme || c.RawRune.Value >= 0x80 || !c.Style.Equals(_penSource))
+            if (c.Width != 1 || c.IsGrapheme || c.RawRune.Value >= 0x80 || !PenMatches(in c))
             {
                 return false;
             }
@@ -715,9 +736,9 @@ internal sealed class Renderer
             advance = 1;
         }
 
-        if (!_penKnown || !cell.Style.Equals(_penSource))
+        if (!PenMatches(in cell))
         {
-            SetPen(cell.Style);
+            ApplyPen(in cell);
         }
 
         int v = rune.Value;
@@ -787,6 +808,15 @@ internal sealed class Renderer
             return;
         }
 
+        if (current.CursorShape != _shape)
+        {
+            _shape = current.CursorShape;
+            CursorShapeUsed = true;
+            _out.Bytes("\u001b["u8);
+            _out.Int((int)_shape);
+            _out.Bytes(" q"u8);
+        }
+
         if (_cursorShown && _cx == current.CursorX && _cy == current.CursorY)
         {
             return;
@@ -797,6 +827,69 @@ internal sealed class Renderer
         {
             _out.Bytes(ShowCursor);
             _cursorShown = true;
+        }
+    }
+
+    /// <summary>Open hyperlink <paramref name="id"/> (OSC 8; 0 closes the open one). Opening one closes the last.</summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void SetLink(int id)
+    {
+        ReadOnlySpan<byte> url = id == 0 ? default : Links.Bytes(id);
+        _out.Reserve(url.Length + 16);
+        _out.Bytes("\u001b]8;;"u8);
+        _out.Bytes(url);
+        _out.Bytes("\u001b\\"u8);
+        _link = id;
+        UpdatePenKey();
+    }
+
+    /// <summary>
+    /// Does the terminal's pen (style and open link) already draw <paramref name="cell"/>? Bytes 4-13 of a cell are
+    /// its style and the upper bits of bytes 14-15 its link: two masked 8-byte compares against the pen as a cell
+    /// would store it. Never true while the pen is unknown.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    private bool PenMatches(in Cell cell)
+    {
+        ref ulong words = ref Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cell));
+        return (((words & PenMask0) ^ _penKey0) | ((Unsafe.Add(ref words, 1) & PenMask1) ^ _penKey1)) == 0;
+    }
+
+    /// <summary>Bytes 4-7 of a cell (foreground) in its first 8-byte word.</summary>
+    private static ulong PenMask0 => BitConverter.IsLittleEndian ? 0xFFFF_FFFF_0000_0000UL : 0x0000_0000_FFFF_FFFFUL;
+
+    /// <summary>Bytes 8-13 (background, attributes) and the link bits of bytes 14-15 in its second word.</summary>
+    private static ulong PenMask1 => BitConverter.IsLittleEndian ? 0xFCFC_FFFF_FFFF_FFFFUL : 0xFFFF_FFFF_FFFF_FCFCUL;
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private void ApplyPen(in Cell cell)
+    {
+        if (!_penKnown || !cell.Style.Equals(_penSource))
+        {
+            SetPen(cell.Style);
+        }
+
+        if (cell.LinkId != _link)
+        {
+            SetLink(cell.LinkId);
+        }
+    }
+
+    private void UpdatePenKey()
+    {
+        var probe = new Cell(default, _penSource, 0, CellFlags.None);
+        Cell.SetLink(ref probe, _link);
+        ref ulong words = ref Unsafe.As<Cell, ulong>(ref probe);
+        _penKey0 = words & PenMask0;
+        _penKey1 = _penKnown ? Unsafe.Add(ref words, 1) & PenMask1 : ulong.MaxValue;   // MaxValue: no cell matches
+    }
+
+    /// <summary>Close the open hyperlink, so nothing but linked cells is linked (erased cells, a shell after exit).</summary>
+    private void EndLink()
+    {
+        if (_link != 0)
+        {
+            SetLink(0);
         }
     }
 
@@ -861,6 +954,7 @@ internal sealed class Renderer
         _penSource = source;
         if (_penKnown && target.Equals(_pen))
         {
+            UpdatePenKey();
             return;
         }
 
@@ -910,6 +1004,7 @@ internal sealed class Renderer
         _out.Byte((byte)'m');
         _pen = target;
         _penKnown = true;
+        UpdatePenKey();
     }
 
     private void ColorParams(ref bool sep, Color color, bool foreground)

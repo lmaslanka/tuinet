@@ -7,8 +7,8 @@ namespace Tuinet.Tests;
 /// <summary>
 /// Property test for the renderer: random frames are presented through a real <see cref="Terminal"/>,
 /// the emitted bytes are replayed by a minimal VT emulator, and the reconstructed screen must equal
-/// the frame cell for cell (glyph, colors, attributes) and cursor. Catches any bad diff, cursor
-/// move, wide-glyph or SGR-delta decision.
+/// the frame cell for cell (glyph, colors, attributes, hyperlink) and cursor (position and shape). Catches any
+/// bad diff, cursor move, wide-glyph, SGR-delta or OSC 8 decision.
 /// </summary>
 public class RendererFuzzTests
 {
@@ -22,6 +22,8 @@ public class RendererFuzzTests
         new(Color.BrightWhite, default, Attr.Dim | Attr.Bold),
         new(Color.Rgb(10, 20, 30), Color.Rgb(200, 210, 220), Attr.Reverse | Attr.Strike),
     ];
+
+    private static readonly string[] Urls = ["https://a.example/1", "https://b.example/2", "file:///tmp/x y"];
 
     private static readonly string[] Words =
     [
@@ -72,7 +74,7 @@ public class RendererFuzzTests
 
             if (random.Next(4) == 0)
             {
-                model.SetCursor(random.Next(23), random.Next(7));
+                model.SetCursor(random.Next(23), random.Next(7), (CursorShape)random.Next(7));
             }
             else if (random.Next(3) == 0)
             {
@@ -89,6 +91,7 @@ public class RendererFuzzTests
 
         // The band shifts above must have gone through the scroll path (and never without it).
         Assert.True(scrollRegions ? screen.LineMoves > 0 : screen.LineMoves == 0, $"{screen.LineMoves} IL/DL");
+        Assert.True(screen.LinkOpens > 50 && screen.ShapeChanges > 20, $"{screen.LinkOpens} links, {screen.ShapeChanges} shapes");
     }
 
     [Theory]
@@ -229,10 +232,14 @@ public class RendererFuzzTests
         int x = random.Next(-2, buffer.Width);
         int y = random.Next(buffer.Height);
         Style style = Styles[random.Next(Styles.Length)];
-        switch (random.Next(4))
+        switch (random.Next(5))
         {
             case 0:
                 buffer.Fill(new Rect(x, y, random.Next(1, 8), random.Next(1, 3)), style);
+                break;
+            case 1:
+                // Link (or unlink) a span of whatever is there: text, blanks, wide glyphs, clusters.
+                buffer.SetLink(new Rect(x, y, random.Next(1, 10), random.Next(1, 3)), random.Next(4) == 0 ? "" : Urls[random.Next(Urls.Length)]);
                 break;
             default:
                 buffer.SetString(x, y, Words[random.Next(Words.Length)], style);
@@ -288,7 +295,7 @@ public class RendererFuzzTests
 
         if (from.CursorVisible)
         {
-            to.SetCursor(from.CursorX, from.CursorY);
+            to.SetCursor(from.CursorX, from.CursorY, from.CursorShape);
         }
     }
 }

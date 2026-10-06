@@ -15,7 +15,7 @@ notes need multi-line editing (the Showcase edit dialog's "description" is singl
   Backspace/Delete by cluster (plan 01), Enter inserts a newline (Ctrl+Enter/Tab left to the app),
   Ctrl+Z/Ctrl+Y undo/redo, paste inserts multi-line text.
 - Shared editing core with `TextInput` (selection + undo there too).
-- Clipboard copy via OSC 52 when plan 11 lands.
+- Clipboard copy with `Terminal.CopyToClipboard` (OSC 52, plan 11).
 
 ## Files
 `Widgets/TextArea.cs` (new), `Widgets/TextInput.cs` (shared core), Showcase description field, README.

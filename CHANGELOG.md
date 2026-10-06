@@ -43,6 +43,14 @@ The first release.
   draw one in their rightmost column, with eighth-block thumb ends. `ListState.HandleMouse` scrolls on a click
   or drag on it. The standalone `Scrollbar` widget (vertical or horizontal) and `Scrollbar.PositionAt` cover
   everything else.
+- Terminal extras: `Terminal.SetTitle` (OSC 2, the shell's title restored on exit), `Terminal.CopyToClipboard`
+  (OSC 52, works over SSH), cursor shapes (`CellBuffer.SetCursor(x, y, CursorShape)`, DECSCUSR, sent on change and
+  reset on exit; `TextInput` shows a blinking bar) and hyperlinks (`CellBuffer.SetLink`, OSC 8, `Cell.Link`).
+  The title and shape resets are added to the exit sequence only once used.
+- Kitty keyboard protocol (opt-in, `TerminalOptions.KittyKeyboard`): Ctrl+I, Ctrl+M, Ctrl+[ and Ctrl+Shift+letter
+  arrive distinct from Tab, Enter, Esc and Ctrl+letter, and Esc needs no timeout. `KeyReleaseEvents` adds key
+  repeats and releases (`KeyEvent.Kind`); keypad keys map to their keys. `Terminal.KittyKeyboardActive` reports
+  whether the terminal confirmed it.
 - Suspend and resume (Unix): `Terminal.Suspend()` and `TerminalOptions.SuspendOnCtrlZ` stop the app
   the way Ctrl+Z stops a shell command; `fg` resumes with a full repaint. `kill -TSTP` suspends cleanly
   and the app recovers from `kill -STOP`.

@@ -15,6 +15,18 @@ public enum Overflow
     Ellipsis,
 }
 
+/// <summary>Terminal cursor shapes (DECSCUSR). <see cref="Default"/> is whatever the user's terminal is set to.</summary>
+public enum CursorShape : byte
+{
+    Default,
+    BlinkingBlock,
+    Block,
+    BlinkingUnderline,
+    Underline,
+    BlinkingBar,
+    Bar,
+}
+
 /// <summary>
 /// A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
 /// consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.
@@ -60,6 +72,9 @@ public sealed class CellBuffer
 
     public bool CursorVisible => CursorX >= 0;
 
+    /// <summary>Shape of the terminal cursor after this frame is presented.</summary>
+    public CursorShape CursorShape { get; private set; }
+
     public Cell this[int x, int y]
     {
         get
@@ -100,8 +115,12 @@ public sealed class CellBuffer
     /// <summary>Could this glyph join a neighbouring cell on the terminal? (See <see cref="_mayJoin"/>.)</summary>
     private static bool Joinable(Rune rune) => !Graphemes.Simple(rune.Value);
 
-    /// <summary>Show the terminal cursor at (x, y) after this frame. Out-of-range positions hide it.</summary>
-    public void SetCursor(int x, int y)
+    /// <summary>
+    /// Show the terminal cursor at (x, y) after this frame, in <paramref name="shape"/> (e.g. a bar for a text
+    /// caret). Out-of-range positions hide it. The renderer sends the shape only when it changes, and the
+    /// terminal's own shape comes back on exit.
+    /// </summary>
+    public void SetCursor(int x, int y, CursorShape shape = CursorShape.Default)
     {
         if ((uint)x >= (uint)Width || (uint)y >= (uint)Height)
         {
@@ -111,12 +130,45 @@ public sealed class CellBuffer
 
         CursorX = x;
         CursorY = y;
+        CursorShape = shape;
     }
 
     public void HideCursor()
     {
         CursorX = -1;
         CursorY = -1;
+        CursorShape = CursorShape.Default;
+    }
+
+    /// <summary>
+    /// Make the cells in <paramref name="area"/> a hyperlink to <paramref name="url"/> (OSC 8): terminals that
+    /// support it open the URL on click (often Ctrl+click), others show the text as is. Draw the text first: text
+    /// written over a cell later replaces its link, as it does its attributes; <see cref="SetStyle"/> keeps it.
+    /// An empty <paramref name="url"/> removes links. Returns false, removing links instead, for a URL that can't
+    /// be linked: one with control characters, longer than 2048 chars once encoded, or past the 4095th distinct URL
+    /// of the process. Spaces and non-ASCII characters are percent-encoded.
+    /// <code>
+    /// int end = buffer.SetString(x, y, "docs", linkStyle);
+    /// buffer.SetLink(new Rect(x, y, end - x, 1), "https://example.com/docs");
+    /// </code>
+    /// </summary>
+    public bool SetLink(Rect area, ReadOnlySpan<char> url)
+    {
+        int id = url.IsEmpty ? 0 : Links.Intern(url);
+        Rect r = area.Intersect(Area);
+        for (int y = r.Y; y < r.Bottom; y++)
+        {
+            // Whole glyphs only: a wide glyph cut by the area's edge is linked as a whole.
+            Span<Cell> row = RowSpan(y);
+            int start = r.X > 0 && row[r.X].IsContinuation ? r.X - 1 : r.X;
+            int end = r.Right < Width && row[r.Right].IsContinuation ? r.Right + 1 : r.Right;
+            for (int x = start; x < end; x++)
+            {
+                Cell.SetLink(ref row[x], id);
+            }
+        }
+
+        return id != 0 || url.IsEmpty;
     }
 
     /// <summary>Reset every cell to <see cref="Cell.Empty"/> and hide the cursor.</summary>

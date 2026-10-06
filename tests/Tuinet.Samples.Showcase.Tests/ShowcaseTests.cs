@@ -269,6 +269,26 @@ public class ShowcaseTests
     }
 
     [Fact]
+    public void Y_copies_the_selected_name_once()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('j'), 0);
+        app.Handle(Event.FromChar('y'), 0);
+        Assert.Equal("prepare workspace", app.TakeCopy());
+        Assert.Null(app.TakeCopy());
+        Assert.Contains("copied · prepare workspace", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Subtitle_links_to_the_repository()
+    {
+        CellBuffer buffer = Render(new ShowcaseApp());
+        (int x, int y) = Find(buffer, "github ↗");
+        Assert.Equal("https://github.com/lmaslanka/tuinet", buffer[x, y].Link);
+        Assert.Null(buffer[x - 1, y].Link);
+    }
+
+    [Fact]
     public void Header_click_sorts_and_a_second_click_reverses()
     {
         var app = new ShowcaseApp();

@@ -1,4 +1,5 @@
 #nullable enable
+const Tuinet.Terminal.MaxClipboardBytes = 74000 -> int
 const Tuinet.Widgets.Table.ScratchLength = 128 -> int
 override Tuinet.Cell.Equals(object? obj) -> bool
 override Tuinet.Cell.GetHashCode() -> int
@@ -128,6 +129,7 @@ Tuinet.Cell.Cell(System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Styl
 Tuinet.Cell.Equals(Tuinet.Cell other) -> bool
 Tuinet.Cell.IsContinuation.get -> bool
 Tuinet.Cell.IsGrapheme.get -> bool
+Tuinet.Cell.Link.get -> string?
 Tuinet.Cell.Rune.get -> System.Text.Rune
 Tuinet.Cell.Style.get -> Tuinet.Style
 Tuinet.Cell.Text.get -> string!
@@ -137,6 +139,7 @@ Tuinet.CellBuffer
 Tuinet.CellBuffer.Area.get -> Tuinet.Rect
 Tuinet.CellBuffer.CellBuffer(int width, int height) -> void
 Tuinet.CellBuffer.Clear() -> void
+Tuinet.CellBuffer.CursorShape.get -> Tuinet.CursorShape
 Tuinet.CellBuffer.CursorVisible.get -> bool
 Tuinet.CellBuffer.CursorX.get -> int
 Tuinet.CellBuffer.CursorY.get -> int
@@ -149,7 +152,8 @@ Tuinet.CellBuffer.Resize(int width, int height) -> void
 Tuinet.CellBuffer.Row(int y) -> System.ReadOnlySpan<Tuinet.Cell>
 Tuinet.CellBuffer.RowText(int y) -> string!
 Tuinet.CellBuffer.SetCell(int x, int y, Tuinet.Cell cell) -> int
-Tuinet.CellBuffer.SetCursor(int x, int y) -> void
+Tuinet.CellBuffer.SetCursor(int x, int y, Tuinet.CursorShape shape = Tuinet.CursorShape.Default) -> void
+Tuinet.CellBuffer.SetLink(Tuinet.Rect area, System.ReadOnlySpan<char> url) -> bool
 Tuinet.CellBuffer.SetMarkup(int x, int y, System.ReadOnlySpan<char> markup, Tuinet.Style style = default(Tuinet.Style), int maxWidth = 2147483647, Tuinet.Overflow overflow = Tuinet.Overflow.Clip) -> int
 Tuinet.CellBuffer.SetRune(int x, int y, System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Style)) -> int
 Tuinet.CellBuffer.SetRune(Tuinet.Rect area, System.Text.Rune rune, Tuinet.Style style = default(Tuinet.Style)) -> void
@@ -192,6 +196,14 @@ Tuinet.ConstraintKind.Length = 0 -> Tuinet.ConstraintKind
 Tuinet.ConstraintKind.Max = 3 -> Tuinet.ConstraintKind
 Tuinet.ConstraintKind.Min = 2 -> Tuinet.ConstraintKind
 Tuinet.ConstraintKind.Percent = 1 -> Tuinet.ConstraintKind
+Tuinet.CursorShape
+Tuinet.CursorShape.Bar = 6 -> Tuinet.CursorShape
+Tuinet.CursorShape.BlinkingBar = 5 -> Tuinet.CursorShape
+Tuinet.CursorShape.BlinkingBlock = 1 -> Tuinet.CursorShape
+Tuinet.CursorShape.BlinkingUnderline = 3 -> Tuinet.CursorShape
+Tuinet.CursorShape.Block = 2 -> Tuinet.CursorShape
+Tuinet.CursorShape.Default = 0 -> Tuinet.CursorShape
+Tuinet.CursorShape.Underline = 4 -> Tuinet.CursorShape
 Tuinet.Direction
 Tuinet.Direction.Horizontal = 1 -> Tuinet.Direction
 Tuinet.Direction.Vertical = 0 -> Tuinet.Direction
@@ -267,9 +279,14 @@ Tuinet.KeyEvent.Is(Tuinet.KeyCode code, Tuinet.Modifiers modifiers = Tuinet.Modi
 Tuinet.KeyEvent.IsChar(char c) -> bool
 Tuinet.KeyEvent.IsCtrl(char c) -> bool
 Tuinet.KeyEvent.KeyEvent() -> void
-Tuinet.KeyEvent.KeyEvent(Tuinet.KeyCode code, System.Text.Rune rune = default(System.Text.Rune), Tuinet.Modifiers modifiers = Tuinet.Modifiers.None) -> void
+Tuinet.KeyEvent.KeyEvent(Tuinet.KeyCode code, System.Text.Rune rune = default(System.Text.Rune), Tuinet.Modifiers modifiers = Tuinet.Modifiers.None, Tuinet.KeyKind kind = Tuinet.KeyKind.Press) -> void
+Tuinet.KeyEvent.Kind.get -> Tuinet.KeyKind
 Tuinet.KeyEvent.Modifiers.get -> Tuinet.Modifiers
 Tuinet.KeyEvent.Rune.get -> System.Text.Rune
+Tuinet.KeyKind
+Tuinet.KeyKind.Press = 0 -> Tuinet.KeyKind
+Tuinet.KeyKind.Release = 2 -> Tuinet.KeyKind
+Tuinet.KeyKind.Repeat = 1 -> Tuinet.KeyKind
 Tuinet.Layout
 Tuinet.Markup
 Tuinet.Modifiers
@@ -384,16 +401,19 @@ Tuinet.Terminal
 Tuinet.Terminal.BeginFrame() -> Tuinet.CellBuffer!
 Tuinet.Terminal.BytesWritten.get -> long
 Tuinet.Terminal.ColorMode.get -> Tuinet.ColorMode
+Tuinet.Terminal.CopyToClipboard(System.ReadOnlySpan<char> text) -> bool
 Tuinet.Terminal.Dispose() -> void
 Tuinet.Terminal.Frames.get -> long
 Tuinet.Terminal.Height.get -> int
 Tuinet.Terminal.Invalidate() -> void
+Tuinet.Terminal.KittyKeyboardActive.get -> bool
 Tuinet.Terminal.LastFrameBytes.get -> int
 Tuinet.Terminal.Options.get -> Tuinet.TerminalOptions!
 Tuinet.Terminal.Poll(out Tuinet.Event ev, int timeoutMs) -> bool
 Tuinet.Terminal.Post(object! message) -> void
 Tuinet.Terminal.Present() -> void
 Tuinet.Terminal.PrintAbove(Tuinet.StyledText text) -> void
+Tuinet.Terminal.SetTitle(System.ReadOnlySpan<char> title) -> void
 Tuinet.Terminal.Size.get -> Tuinet.Size
 Tuinet.Terminal.Suspend() -> bool
 Tuinet.Terminal.Terminal(Tuinet.ITty! tty, Tuinet.TerminalOptions? options = null) -> void
@@ -413,6 +433,10 @@ Tuinet.TerminalOptions.FocusEvents.get -> bool
 Tuinet.TerminalOptions.FocusEvents.init -> void
 Tuinet.TerminalOptions.Inline.get -> Tuinet.InlineOptions?
 Tuinet.TerminalOptions.Inline.init -> void
+Tuinet.TerminalOptions.KeyReleaseEvents.get -> bool
+Tuinet.TerminalOptions.KeyReleaseEvents.init -> void
+Tuinet.TerminalOptions.KittyKeyboard.get -> bool
+Tuinet.TerminalOptions.KittyKeyboard.init -> void
 Tuinet.TerminalOptions.Mouse.get -> bool
 Tuinet.TerminalOptions.Mouse.init -> void
 Tuinet.TerminalOptions.MouseMotion.get -> bool
@@ -729,6 +753,8 @@ Tuinet.Widgets.TableColumn.TableColumn(string! Header, Tuinet.Constraint Width, 
 Tuinet.Widgets.TableColumn.Width.get -> Tuinet.Constraint
 Tuinet.Widgets.TableColumn.Width.init -> void
 Tuinet.Widgets.TextInput
+Tuinet.Widgets.TextInput.CursorShape.get -> Tuinet.CursorShape
+Tuinet.Widgets.TextInput.CursorShape.init -> void
 Tuinet.Widgets.TextInput.Focused.get -> bool
 Tuinet.Widgets.TextInput.Focused.init -> void
 Tuinet.Widgets.TextInput.Placeholder.get -> System.ReadOnlySpan<char>

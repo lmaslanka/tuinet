@@ -6,7 +6,7 @@ records the exit code and the tty modes before and after, with HOME pointed at a
 read the screen back with `capture-pane`; waits poll the screen, so slow machines don't make them flaky.
 
   showcase  navigation, edit + save, progress animation, mouse (click, wheel, scrollbar drag, header sort),
-            clean exit; at 110x34 and 80x24
+            window title, clean exit; at 110x34 and 80x24
   inline    the inline sample under an interactive bash: logs printed above the live band end up in order
             in the history (also on a short terminal, where they scroll), the band leaves one summary line,
             the shell continues right after it, Ctrl+C cancels, terminal modes are restored
@@ -60,6 +60,10 @@ class Tmux:
 
     def screen(self, name):
         return self.run("capture-pane", "-p", "-t", name)
+
+    def title(self, name):
+        """The pane title, which tmux takes from the app's OSC 2."""
+        return self.run("display-message", "-p", "-t", name, "#{pane_title}").strip()
 
     def keys(self, name, *keys):
         self.run("send-keys", "-t", name, *keys)
@@ -156,9 +160,13 @@ def showcase(tmux, binary, width, height):
     ok, s = tmux.wait(n, lambda t: "ITEMS · 20" in t)
     check(ok and "▲ #  name" in s and "───" in s, f"{label}: table with header, sort arrow and rule", s)
 
+    check(tmux.title(n) == "tuinet showcase · parse & validate intent",
+          f"{label}: the window title names the selected item (got {tmux.title(n)!r})")
+
     tmux.type(n, "G")
     ok, s = tmux.wait(n, lambda t: "SELECTED · 20" in t and "20  telemetry" in t)
     check(ok, f"{label}: G jumps to the last row and keeps it in view", s)
+    check(tmux.title(n) == "tuinet showcase · telemetry export", f"{label}: the title follows the selection")
     tmux.type(n, "g")
     ok, s = tmux.wait(n, lambda t: "SELECTED · 01" in t and "01  parse" in t)
     check(ok, f"{label}: g goes back to the first row", s)

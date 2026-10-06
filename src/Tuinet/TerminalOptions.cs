@@ -54,6 +54,21 @@ public sealed record TerminalOptions
     /// <summary>Report <see cref="EventKind.FocusGained"/> / <see cref="EventKind.FocusLost"/>.</summary>
     public bool FocusEvents { get; init; }
 
+    /// <summary>
+    /// Ask the terminal for the kitty keyboard protocol (kitty, Ghostty, foot, WezTerm, recent Alacritty and iTerm2):
+    /// keys that legacy encoding can't tell apart arrive distinct (Ctrl+I vs Tab, Ctrl+M vs Enter, Ctrl+[ vs Esc,
+    /// Ctrl+Shift+letter), and Esc arrives at once instead of after <see cref="EscapeTimeoutMs"/>. Terminals without
+    /// it ignore the request; <see cref="Terminal.KittyKeyboardActive"/> says whether it took effect.
+    /// </summary>
+    public bool KittyKeyboard { get; init; }
+
+    /// <summary>
+    /// With <see cref="KittyKeyboard"/>: also report key repeats and releases (<see cref="KeyEvent.Kind"/>), e.g. for
+    /// hold-to-move. Releases never match <see cref="KeyEvent.Is"/>, <see cref="KeyEvent.IsChar"/> or
+    /// <see cref="KeyEvent.IsCtrl"/>, but code reading <see cref="KeyEvent.Code"/> directly must check the kind.
+    /// </summary>
+    public bool KeyReleaseEvents { get; init; }
+
     /// <summary>Color depth to emit. <c>null</c>: detect from the environment in <see cref="Terminal.Open"/>, TrueColor otherwise.</summary>
     public ColorMode? ColorMode { get; init; }
 

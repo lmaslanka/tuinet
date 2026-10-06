@@ -36,8 +36,10 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Truecolor with automatic fallback to 256 or 16 colors.
   - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
     it, instead of the alternate screen.
+  - Window title, clipboard copy over SSH (OSC 52), cursor shapes and clickable hyperlinks (OSC 8).
 - **Full input.**
   - Keys with Ctrl/Alt/Shift, F1–F12, PgUp/PgDn.
+  - Opt-in kitty keyboard protocol: Ctrl+I apart from Tab, Esc with no delay, key releases.
   - Mouse (SGR 1006), bracketed paste and focus events.
   - Thread-safe `Post` for background results.
 - **Safe by default.**
@@ -476,9 +478,48 @@ in the edit dialog.
 | `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
 | `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
+| `KittyKeyboard` | off | Kitty keyboard protocol where the terminal has it (see below) |
+| `KeyReleaseEvents` | off | With `KittyKeyboard`: also key repeats and releases (`KeyEvent.Kind`) |
 | `Inline` | null | A band of `InlineOptions.Height` rows under the prompt instead of the alternate screen (see below) |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
+
+**Kitty keyboard.** The keyboard encoding terminals inherited from the 1970s sends some keys as the same
+bytes: Ctrl+I is Tab, Ctrl+M is Enter, Ctrl+[ is Esc, and Ctrl+Shift+A is Ctrl+A. Esc is also the first byte
+of every escape sequence, so a lone Esc waits `EscapeTimeoutMs` in case more is coming. With
+`KittyKeyboard = true`, terminals that support the [kitty keyboard protocol](https://sw.kovidgoyal.net/kitty/keyboard-protocol/)
+(kitty, Ghostty, foot, WezTerm, recent Alacritty and iTerm2) send those keys unambiguously, and Esc arrives at
+once. Other terminals ignore the request and nothing changes. `term.KittyKeyboardActive` turns true once the
+terminal confirms it, during the first polls. `KeyReleaseEvents` adds key repeats and releases
+(`KeyEvent.Kind`), e.g. for hold-to-move. Releases never match `Is`, `IsChar` or `IsCtrl`, so existing key
+bindings don't fire twice.
+
+### Title, clipboard, cursor and links
+
+```csharp
+term.SetTitle(file.Name);                       // OSC 2; only changes are sent, so call it every frame
+term.CopyToClipboard(selection);                // OSC 52: the user's clipboard, even over SSH
+
+frame.SetCursor(x, y, CursorShape.Bar);         // DECSCUSR, sent only when the shape changes
+
+int end = frame.SetString(x, y, "docs", new Style(Color.Blue, default, Attr.Underline));
+frame.SetLink(new Rect(x, y, end - x, 1), "https://example.com/docs");   // OSC 8: Ctrl+click opens it
+```
+
+- **Title.** Control characters are dropped. On exit the terminal's own title comes back (title stack,
+  `CSI 22 t` / `CSI 23 t`).
+- **Clipboard.** Up to `Terminal.MaxClipboardBytes` of UTF-8. Terminals may ignore OSC 52 or ask the user
+  first, and in tmux it needs `set-clipboard on`. There is no reply saying whether it worked. Paste already
+  arrives as a `Paste` event with `BracketedPaste`.
+- **Cursor shape.** Block, underline or bar, blinking or steady. A focused `TextInput` shows a blinking bar
+  (its `CursorShape` property). The user's shape comes back on exit, but only if the app changed it.
+- **Links.** Terminals without OSC 8 show plain text. Text drawn over a linked cell later replaces the link,
+  as it does attributes. `SetStyle` keeps it. URLs with control characters are refused; spaces and non-ASCII
+  are percent-encoded. A process can link up to 4095 distinct URLs, and after that new links show as plain
+  text.
+
+The showcase uses all four: the window title names the selected item, `y` copies its name, the subtitle has a
+link to this repository, and text fields show a bar caret.
 
 ### Suspend (Ctrl+Z)
 
@@ -614,10 +655,10 @@ public void Key_in_frame_out()
 |---|---:|---:|
 | Frame with no changes | 4.5 µs | 0 |
 | One cell changed | 4.7 µs | 59 |
-| Full repaint, a different truecolor style on every row | 37 µs | 13.3 KB |
+| Full repaint, a different truecolor style on every row | 35 µs | 13.3 KB |
 | Scroll by one row, every row different | 7.7 µs | 271 |
-| An 80×24 dialog closes over a themed background | 9.1 µs | 313 |
-| Every row gets shorter (text, then blanks to the right edge) | 14 µs | 698 |
+| An 80×24 dialog closes over a themed background | 8.6 µs | 313 |
+| Every row gets shorter (text, then blanks to the right edge) | 12 µs | 698 |
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |

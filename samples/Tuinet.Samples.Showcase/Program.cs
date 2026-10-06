@@ -1,17 +1,27 @@
 // Showcase: a 20-item list, an edit dialog (text boxes, dropdowns, checkboxes, buttons) and an
-// animated progress dialog. Nothing is saved to disk.
+// animated progress dialog. Nothing is saved to disk. The window title follows the selection, 'y' copies the
+// selected item's name to the clipboard, and keys use the kitty keyboard protocol where the terminal has it.
 using System.Diagnostics;
 using Tuinet;
 using Tuinet.Samples.Showcase;
 
-using var terminal = Terminal.Open(new TerminalOptions { Mouse = true, BracketedPaste = true, SuspendOnCtrlZ = true });
+using var terminal = Terminal.Open(new TerminalOptions
+{
+    Mouse = true,
+    BracketedPaste = true,
+    SuspendOnCtrlZ = true,
+    KittyKeyboard = true,
+});
 var app = new ShowcaseApp();
 var clock = Stopwatch.StartNew();
+var title = new char[96];
 
 bool running = true;
 while (running)
 {
     long now = clock.ElapsedMilliseconds;
+    title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
+    terminal.SetTitle(title.AsSpan(0, titleLength));   // sent only when it changes
     app.Render(terminal.BeginFrame(), now);
     terminal.Present();
 
@@ -24,6 +34,10 @@ while (running)
     do
     {
         running = app.Handle(ev, clock.ElapsedMilliseconds);
+        if (app.TakeCopy() is string text)
+        {
+            terminal.CopyToClipboard(text);
+        }
     }
     while (running && terminal.Poll(out ev, 0));
 }

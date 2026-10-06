@@ -307,7 +307,11 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
 
     public Style PlaceholderStyle { get; init; }
 
+    /// <summary>Shows the terminal cursor at the caret.</summary>
     public bool Focused { get; init; }
+
+    /// <summary>Shape of the caret while <see cref="Focused"/>: a blinking bar, as in GUI text fields.</summary>
+    public CursorShape CursorShape { get; init; } = CursorShape.BlinkingBar;
 
     public void Render(Rect area, CellBuffer buffer, ref TextInputState state)
     {
@@ -378,7 +382,7 @@ public readonly ref struct TextInput : IStatefulWidget<TextInputState>
 
         if (Focused)
         {
-            buffer.SetCursor(Math.Min(caretX, row.Right - 1), row.Y);
+            buffer.SetCursor(Math.Min(caretX, row.Right - 1), row.Y, CursorShape);
         }
     }
 }

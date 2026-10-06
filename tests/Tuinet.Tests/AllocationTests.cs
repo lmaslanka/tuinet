@@ -153,7 +153,7 @@ public class AllocationTests
         }
     }
 
-    private sealed class NullTty(int width, int height) : ITty
+    internal sealed class NullTty(int width, int height) : ITty
     {
         private int _inputPos;
 

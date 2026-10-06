@@ -9,11 +9,15 @@ namespace Tuinet.Tests;
 /// points that extend the last printed cluster join it, and its width can grow to 2) and legacy (every code
 /// point advances by its own width; zero-width ones attach to the previous cell, like xterm). Any cursor move
 /// ends the current cluster. With allowScroll (inline mode), a line feed on the last row scrolls the screen
-/// into <see cref="Scrollback"/>.
+/// into <see cref="Scrollback"/>. Hyperlinks (OSC 8) and the cursor shape (DECSCUSR) are tracked and checked too;
+/// titles (OSC 2) and clipboard writes (OSC 52) are recorded.
 /// </summary>
 internal sealed class VtEmulator(int width, int height, bool legacy = false, bool allowScroll = false)
 {
     private (string Text, Style Style, bool Cont)[,] _grid = Blank(width, height);
+    private string?[,] _links = new string?[width, height];
+    private string? _link;
+    private CursorShape _shape;
     private int _lastX = -1;
     private int _lastY;
     private int _w = width;
@@ -39,6 +43,22 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
     public int CursorX => _x;
     public int CursorY => _y;
 
+    /// <summary>Titles (OSC 2) and clipboard payloads (OSC 52, base64) received, oldest first.</summary>
+    public List<string> Titles { get; } = [];
+
+    public List<string> Clipboard { get; } = [];
+
+    /// <summary>Hyperlinks opened (OSC 8 with a URL) and cursor shape changes (DECSCUSR) replayed so far.</summary>
+    public int LinkOpens { get; private set; }
+
+    public int ShapeChanges { get; private set; }
+
+    /// <summary>The hyperlink open now (OSC 8), or null.</summary>
+    public string? OpenLink => _link;
+
+    /// <summary>The hyperlink of screen cell (<paramref name="x"/>, <paramref name="y"/>), or null.</summary>
+    public string? LinkAt(int x, int y) => _links[x, y];
+
     /// <summary>The glyphs of screen row <paramref name="y"/>.</summary>
     public string RowText(int y)
     {
@@ -59,6 +79,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         _w = w;
         _h = h;
         _grid = Blank(w, h);
+        _links = new string?[w, h];
         _top = 0;
         _bottom = h - 1;
     }
@@ -70,6 +91,21 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         while (i < text.Length)
         {
             char c = text[i];
+            if (c == '\u001b' && text[i + 1] == ']')
+            {
+                // OSC, ended by ST (ESC \) or BEL. Its payload must be printable: a control would end it early.
+                int end = i + 2;
+                while (text[end] != '\u001b' && text[end] != '\u0007')
+                {
+                    Assert.True(text[end] >= 0x20, $"control 0x{(int)text[end]:X2} inside OSC");
+                    end++;
+                }
+
+                Osc(text[(i + 2)..end]);
+                i = text[end] == '\u0007' ? end + 1 : end + 2;
+                continue;
+            }
+
             if (c == '\u001b')
             {
                 Assert.Equal('[', text[i + 1]);
@@ -155,10 +191,25 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
             }
         }
 
+        for (int y = 0; y < buffer.Height; y++)
+        {
+            for (int x = 0; x < _w; x++)
+            {
+                Cell expected = buffer[x, y];
+                if (!expected.IsContinuation)
+                {
+                    Assert.True(expected.Link == _links[x, top + y],
+                        $"{context}: link '{_links[x, top + y]}' != '{expected.Link}' at cell ({x},{y})");
+                }
+            }
+        }
+
+        Assert.Null(_link);   // nothing stays linked between frames
         Assert.Equal(buffer.CursorVisible, _cursorVisible);
         if (buffer.CursorVisible)
         {
             Assert.Equal((buffer.CursorX, buffer.CursorY + top), (_x, _y));
+            Assert.Equal(buffer.CursorShape, _shape);
         }
     }
 
@@ -203,6 +254,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                     }
 
                     _grid[_lastX + 1, _lastY] = ("", style, true);
+                    _links[_lastX + 1, _lastY] = _links[_lastX, _lastY];
                     _x = Math.Min(_lastX + 2, _w - 1);
                 }
 
@@ -245,9 +297,11 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         }
 
         _grid[_x, _y] = (glyph, _pen, false);
+        _links[_x, _y] = _link;
         if (width == 2)
         {
             _grid[_x + 1, _y] = ("", _pen, true);
+            _links[_x + 1, _y] = _link;
         }
 
         // DECAWM off: the cursor stops at the last column.
@@ -268,6 +322,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 break;
             case 'J' when param == "2":
                 _grid = Blank(_w, _h, _pen.Bg);
+                _links = new string?[_w, _h];
                 break;
             case 'J' when param is "" or "0":
                 // Erase below: the rest of the cursor's row and every row under it.
@@ -276,6 +331,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                     for (int x = y == _y ? _x : 0; x < _w; x++)
                     {
                         _grid[x, y] = (" ", new Style(default, _pen.Bg), false);
+                        _links[x, y] = null;
                     }
                 }
 
@@ -327,6 +383,13 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
 
                 _x = 0;
                 break;
+            case 'q':
+                // DECSCUSR: "n q" (the space is an intermediate byte).
+                Assert.EndsWith(" ", param);
+                _shape = (CursorShape)int.Parse(param.AsSpan(0, param.Length - 1));
+                Assert.InRange((int)_shape, 0, 6);
+                ShapeChanges++;
+                break;
             case 'h' or 'l':
                 if (param == "?25")
                 {
@@ -337,6 +400,29 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
             default:
                 Assert.Fail($"unexpected CSI {param}{final}");
                 break;
+        }
+    }
+
+    private void Osc(string payload)
+    {
+        if (payload.StartsWith("8;", StringComparison.Ordinal))
+        {
+            string url = payload[(payload.IndexOf(';', 2) + 1)..];
+            Assert.All(url, c => Assert.InRange(c, '!', '~'));   // URIs are sent as printable ASCII
+            _link = url.Length == 0 ? null : url;
+            LinkOpens += _link is null ? 0 : 1;
+        }
+        else if (payload.StartsWith("2;", StringComparison.Ordinal))
+        {
+            Titles.Add(payload[2..]);
+        }
+        else if (payload.StartsWith("52;c;", StringComparison.Ordinal))
+        {
+            Clipboard.Add(payload[5..]);
+        }
+        else
+        {
+            Assert.Fail($"unexpected OSC {payload}");
         }
     }
 
@@ -412,6 +498,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         for (int i = x; i < end; i++)
         {
             _grid[i, _y] = (" ", new Style(default, _pen.Bg), false);   // BCE: only the background is kept
+            _links[i, _y] = null;
         }
     }
 
@@ -424,6 +511,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 for (int x = 0; x < _w; x++)
                 {
                     _grid[x, y - 1] = _grid[x, y];
+                    _links[x, y - 1] = _links[x, y];
                 }
             }
         }
@@ -434,6 +522,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 for (int x = 0; x < _w; x++)
                 {
                     _grid[x, y + 1] = _grid[x, y];
+                    _links[x, y + 1] = _links[x, y];
                 }
             }
         }
@@ -444,6 +533,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         for (int x = 0; x < _w; x++)
         {
             _grid[x, y] = (" ", new Style(default, _pen.Bg), false);
+            _links[x, y] = null;
         }
     }
 

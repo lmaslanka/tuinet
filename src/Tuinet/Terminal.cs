@@ -1,4 +1,7 @@
+using System.Buffers;
+using System.Buffers.Text;
 using System.Collections.Concurrent;
+using System.Text;
 using Tuinet.Widgets;
 
 namespace Tuinet;
@@ -32,8 +35,10 @@ public sealed class Terminal : IDisposable
     private readonly VtBuffer _out;
     private readonly byte[] _readBuf = new byte[4096];
     private readonly ConcurrentQueue<object> _messages = new();
-    private readonly byte[] _leave;
     private readonly InlineOptions? _inline;
+    private byte[] _leave;
+    private string? _title;
+    private bool _leaveResetsCursorShape;
     private CellBuffer _front;
     private CellBuffer _back;
     private CellBuffer? _print;
@@ -67,15 +72,13 @@ public sealed class Terminal : IDisposable
         _front = new CellBuffer(size.Width, size.Height);
         _back = new CellBuffer(size.Width, size.Height);
         _out = new VtBuffer(size.Width * size.Height * 8 + 4096);
-        _leave = BuildLeave(options);
-
-        if (_ownsTty)
-        {
-            CrashGuard.Register(_tty, _leave);
-        }
-
+        _leave = [];
+        UpdateLeave();
         Enter();
     }
+
+    /// <summary>Longest text <see cref="CopyToClipboard"/> sends, in UTF-8 bytes (terminals cap OSC 52 around here).</summary>
+    public const int MaxClipboardBytes = 74_000;
 
     /// <summary>Open the process's controlling terminal (stdin/stdout, or /dev/tty when redirected).</summary>
     public static Terminal Open(TerminalOptions? options = null)
@@ -112,6 +115,79 @@ public sealed class Terminal : IDisposable
 
     /// <summary>Bytes the last <see cref="Present"/> wrote.</summary>
     public int LastFrameBytes { get; private set; }
+
+    /// <summary>
+    /// With <see cref="TerminalOptions.KittyKeyboard"/>: the terminal confirmed the kitty keyboard protocol. The
+    /// reply arrives with input, so this turns true during the first polls; it stays false on terminals without it.
+    /// </summary>
+    public bool KittyKeyboardActive => _options.KittyKeyboard && _parser.KittyFlags > 0;
+
+    /// <summary>
+    /// Set the window (or tab) title (OSC 2). Control characters are dropped. The terminal's own title comes back on
+    /// exit where it supports the title stack (<c>CSI 22 t</c> / <c>CSI 23 t</c>). Cheap to call every frame: only a
+    /// change is sent.
+    /// </summary>
+    public void SetTitle(ReadOnlySpan<char> title)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (_title is not null && title.SequenceEqual(_title))
+        {
+            return;
+        }
+
+        bool first = _title is null;
+        _title = title.ToString();
+        _out.Clear();
+        if (first)
+        {
+            _out.Reserve(8);
+            _out.Bytes("\u001b[22;0t"u8);
+        }
+
+        WriteTitle();
+        Flush();
+        if (first)
+        {
+            UpdateLeave();
+        }
+    }
+
+    /// <summary>
+    /// Copy <paramref name="text"/> to the system clipboard through the terminal (OSC 52), which also works over SSH.
+    /// Returns false, sending nothing, when it is longer than <see cref="MaxClipboardBytes"/> in UTF-8. Terminals may
+    /// ignore it or ask the user first (it's often off by default, e.g. in tmux without <c>set-clipboard on</c>);
+    /// there is no reply saying whether it worked.
+    /// </summary>
+    public bool CopyToClipboard(ReadOnlySpan<char> text)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        int length = Encoding.UTF8.GetByteCount(text);
+        if (length > MaxClipboardBytes)
+        {
+            return false;
+        }
+
+        byte[] utf8 = ArrayPool<byte>.Shared.Rent(Math.Max(1, length));
+        byte[] base64 = ArrayPool<byte>.Shared.Rent(Base64.GetMaxEncodedToUtf8Length(length));
+        try
+        {
+            Encoding.UTF8.GetBytes(text, utf8);
+            Base64.EncodeToUtf8(utf8.AsSpan(0, length), base64, out _, out int encoded);
+            _out.Clear();
+            _out.Reserve(encoded + 16);
+            _out.Bytes("\u001b]52;c;"u8);
+            _out.Bytes(base64.AsSpan(0, encoded));
+            _out.Bytes("\u001b\\"u8);
+            Flush();
+        }
+        finally
+        {
+            ArrayPool<byte>.Shared.Return(utf8);
+            ArrayPool<byte>.Shared.Return(base64);
+        }
+
+        return true;
+    }
 
     /// <summary>
     /// Start a frame: returns the cleared back buffer to draw into. Nothing reaches the terminal
@@ -160,6 +236,10 @@ public sealed class Terminal : IDisposable
         Flush();
         (_front, _back) = (_back, _front);
         Frames++;
+        if (_renderer.CursorShapeUsed && !_leaveResetsCursorShape)
+        {
+            UpdateLeave();
+        }
     }
 
     /// <summary>
@@ -391,6 +471,7 @@ public sealed class Terminal : IDisposable
     /// <summary>Back from a stop: the screen is the shell's, so enter again and repaint everything.</summary>
     private void Resume()
     {
+        _renderer.ForgetCursorShape();
         Enter();
         Invalidate();
         _resumed = true;
@@ -528,6 +609,19 @@ public sealed class Terminal : IDisposable
             _out.Bytes("\u001b[?1004h"u8);
         }
 
+        if (_options.KittyKeyboard)
+        {
+            // Push our flags (1: disambiguate, 2: event types), then ask what the terminal made of them.
+            _out.Bytes(_options.KeyReleaseEvents ? "\u001b[>3u\u001b[?u"u8 : "\u001b[>1u\u001b[?u"u8);
+        }
+
+        if (_title is not null)
+        {
+            // Back from a suspend, which popped the title: save the shell's again and put ours back.
+            _out.Bytes("\u001b[22;0t"u8);
+            WriteTitle();
+        }
+
         if (_inline is null)
         {
             _renderer.AfterClear();
@@ -549,9 +643,56 @@ public sealed class Terminal : IDisposable
         Flush();
     }
 
-    private static byte[] BuildLeave(TerminalOptions options)
+    /// <summary>
+    /// Rebuild what leaving writes (dispose, suspend, crash): the cursor shape reset and the title restore are in it
+    /// only once the app has used them, so apps that don't pay nothing.
+    /// </summary>
+    private void UpdateLeave()
+    {
+        _leaveResetsCursorShape = _renderer.CursorShapeUsed;
+        _leave = BuildLeave(_options, _leaveResetsCursorShape, _title is not null);
+        if (_ownsTty)
+        {
+            CrashGuard.Register(_tty, _leave);
+        }
+    }
+
+    /// <summary>OSC 2 with <see cref="_title"/>, control characters dropped, into <see cref="_out"/>.</summary>
+    private void WriteTitle()
+    {
+        const int MaxChars = 512;
+        ReadOnlySpan<char> title = _title.AsSpan(0, Math.Min(_title!.Length, MaxChars));
+        _out.Reserve(title.Length * 3 + 16);
+        _out.Bytes("\u001b]2;"u8);
+        foreach (Rune rune in title.EnumerateRunes())
+        {
+            if (rune.Value >= 0x20 && rune.Value is not (>= 0x7F and <= 0x9F) && rune != Rune.ReplacementChar)
+            {
+                _out.Rune(rune);
+            }
+        }
+
+        _out.Bytes("\u001b\\"u8);
+    }
+
+    private static byte[] BuildLeave(TerminalOptions options, bool resetCursorShape, bool restoreTitle)
     {
         var leave = new List<byte>(64);
+        if (options.KittyKeyboard)
+        {
+            leave.AddRange("\u001b[<u"u8);
+        }
+
+        if (resetCursorShape)
+        {
+            leave.AddRange("\u001b[0 q"u8);
+        }
+
+        if (restoreTitle)
+        {
+            leave.AddRange("\u001b[23;0t"u8);
+        }
+
         if (options.Mouse)
         {
             leave.AddRange("\u001b[?1006l\u001b[?1003l\u001b[?1002l"u8);

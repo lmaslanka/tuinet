@@ -17,16 +17,17 @@ internal enum CellFlags : byte
 }
 
 /// <summary>
-/// One terminal cell: glyph, style, display width. Exactly 16 bytes, blittable and canonical,
+/// One terminal cell: glyph, style, display width, hyperlink. Exactly 16 bytes, blittable and canonical,
 /// so the renderer compares whole rows with a vectorized memcmp.
 /// </summary>
 [StructLayout(LayoutKind.Sequential, Size = 16)]
 public readonly struct Cell : IEquatable<Cell>
 {
+    // The width and the flags use the low 2 bits of their bytes; the upper 6 bits of both hold a 12-bit link id.
     private readonly Rune _rune;
     private readonly Style _style;
     private readonly byte _width;
-    private readonly CellFlags _flags;
+    private readonly byte _flags;
 
     /// <summary>A cell holding <paramref name="rune"/>. Zero-width runes (controls, combining marks) become a space.</summary>
     public Cell(Rune rune, Style style = default)
@@ -41,7 +42,7 @@ public readonly struct Cell : IEquatable<Cell>
         _rune = rune;
         _style = style;
         _width = (byte)width;
-        _flags = CellFlags.None;
+        _flags = 0;
     }
 
     internal Cell(Rune rune, Style style, int width, CellFlags flags)
@@ -49,7 +50,7 @@ public readonly struct Cell : IEquatable<Cell>
         _rune = rune;
         _style = style;
         _width = (byte)width;
-        _flags = flags;
+        _flags = (byte)flags;
     }
 
     internal static readonly Rune Space = new(' ');
@@ -78,8 +79,19 @@ public readonly struct Cell : IEquatable<Cell>
         Unsafe.Add(ref Unsafe.As<Cell, byte>(ref cell), WidthOffset) = (byte)width;
     }
 
+    /// <summary>Make <paramref name="cell"/> a hyperlink to <see cref="Links"/> entry <paramref name="id"/> (0: none), in place.</summary>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
+    internal static void SetLink(ref Cell cell, int id)
+    {
+        ref byte width = ref Unsafe.Add(ref Unsafe.As<Cell, byte>(ref cell), WidthOffset);
+        ref byte flags = ref Unsafe.Add(ref width, 1);
+        width = (byte)((width & LowBits) | ((id & 0x3F) << 2));
+        flags = (byte)((flags & LowBits) | ((id >> 6) << 2));
+    }
+
     private const int WidthOffset = 14;
     private const int ColorsOffset = 4;
+    private const int LowBits = 0x03;
 
     /// <summary>Foreground and background of a cell as one 8-byte value (cheap equality on hot paths).</summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -93,7 +105,7 @@ public readonly struct Cell : IEquatable<Cell>
     public string Text => IsGrapheme ? Graphemes.Text(GraphemeId) : _rune.ToString();
 
     /// <summary>Holds a cluster of several code points (combining marks, emoji sequences, flags).</summary>
-    public bool IsGrapheme => (_flags & CellFlags.Grapheme) != 0;
+    public bool IsGrapheme => (_flags & (byte)CellFlags.Grapheme) != 0;
 
     internal int GraphemeId => _rune.Value;
 
@@ -102,13 +114,31 @@ public readonly struct Cell : IEquatable<Cell>
     public Style Style => _style;
 
     /// <summary>Columns this cell's glyph occupies: 1 or 2, or 0 for the right half of a wide glyph.</summary>
-    public int Width => _width;
+    public int Width => _width & LowBits;
 
-    public bool IsContinuation => (_flags & CellFlags.Continuation) != 0;
+    public bool IsContinuation => (_flags & (byte)CellFlags.Continuation) != 0;
 
-    internal CellFlags Flags => _flags;
+    internal CellFlags Flags => (CellFlags)(_flags & LowBits);
 
-    public Cell WithStyle(Style style) => new(_rune, style, _width, _flags);
+    /// <summary>The hyperlink this cell belongs to (OSC 8), or null. See <see cref="CellBuffer.SetLink"/>.</summary>
+    public string? Link => LinkId == 0 ? null : Links.Url(LinkId);
+
+    /// <summary>Id of <see cref="Link"/> in <see cref="Links"/>, or 0.</summary>
+    internal int LinkId => (_width >> 2) | ((_flags >> 2) << 6);
+
+    /// <summary>
+    /// The width and flags bytes as one value, for hot-path tests: it equals <see cref="PlainNarrow"/> for a narrow
+    /// single-code-point glyph with no link.
+    /// </summary>
+    internal ushort Tail
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        get => Unsafe.ReadUnaligned<ushort>(ref Unsafe.Add(ref Unsafe.As<Cell, byte>(ref Unsafe.AsRef(in this)), WidthOffset));
+    }
+
+    internal static ushort PlainNarrow => BitConverter.IsLittleEndian ? (ushort)0x0001 : (ushort)0x0100;
+
+    public Cell WithStyle(Style style) => new(_rune, style, _width, (CellFlags)_flags);
 
     public bool Equals(Cell other)
     {

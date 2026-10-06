@@ -10,6 +10,7 @@ public sealed class ShowcaseApp
     private EditDialog? _edit;
     private ProgressDialog? _progress;
     private string _flash = "";
+    private string? _copy;
     private int _sortColumn;
     private bool _sortDescending;
     private long _lastClickMs = long.MinValue;
@@ -24,6 +25,14 @@ public sealed class ShowcaseApp
 
     /// <summary>Two clicks on the same row within this long open the edit dialog.</summary>
     public const int DoubleClickMs = 400;
+
+    /// <summary>Text to put on the clipboard (the loop sends it with <see cref="Terminal.CopyToClipboard"/>), taken once.</summary>
+    public string? TakeCopy()
+    {
+        string? text = _copy;
+        _copy = null;
+        return text;
+    }
 
     /// <summary>The loop redraws on a timer only while something animates; otherwise it sleeps until input.</summary>
     public bool IsAnimating(long nowMs) => _progress?.IsAnimating(nowMs) == true;
@@ -85,6 +94,12 @@ public sealed class ShowcaseApp
         else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected]);
         else if (key.IsChar('p')) _progress = new ProgressDialog(nowMs);
         else if (key.IsChar(' ')) _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
+        else if (key.IsChar('y'))
+        {
+            _copy = _items[_list.Selected].Name;
+            _flash = $"copied · {_copy}";
+            return true;
+        }
 
         _flash = "";
         return true;
@@ -169,7 +184,16 @@ public sealed class ShowcaseApp
         subtitle.Append("zero allocations per frame", Theme.Dim);
         subtitle.Append(" → ", Theme.Faded);
         subtitle.Append("one write per frame", Theme.Dim);
-        buffer.SetText(row.X, row.Y, subtitle.Build(), row.Width);
+        int end = buffer.SetText(row.X, row.Y, subtitle.Build(), row.Width);
+
+        // A hyperlink (OSC 8): Ctrl+click (or click) opens it in terminals that support links.
+        const string Repo = "github ↗";
+        int x = row.Right - TextWidth.Of(Repo);
+        if (x > end + 1)
+        {
+            buffer.SetString(x, row.Y, Repo, Theme.Accent(Theme.Blue).With(Attr.Underline));
+            buffer.SetLink(new Rect(x, row.Y, row.Right - x, 1), "https://github.com/lmaslanka/tuinet");
+        }
     }
 
     private void RenderList(CellBuffer buffer, Rect box)
@@ -249,7 +273,7 @@ public sealed class ShowcaseApp
     }
 
     private static readonly (string Key, string Action)[] KeyHints =
-        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("p", "progress"), ("q", "quit")];
+        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("y", "copy"), ("p", "progress"), ("q", "quit")];
 
     private static void RenderKeys(CellBuffer buffer, Rect row)
     {

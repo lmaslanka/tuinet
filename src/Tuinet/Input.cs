@@ -42,34 +42,52 @@ public enum Modifiers : byte
     Shift = 4,
 }
 
-/// <summary>A key press. Printable keys are <see cref="KeyCode.Char"/> with <see cref="Rune"/> set; Ctrl+letter is the lowercase letter with <see cref="Modifiers.Ctrl"/>.</summary>
+/// <summary>Whether a key went down, auto-repeated or came up.</summary>
+public enum KeyKind : byte
+{
+    Press,
+
+    /// <summary>Held down and auto-repeating. Only reported with <see cref="TerminalOptions.KeyReleaseEvents"/>; otherwise repeats are presses.</summary>
+    Repeat,
+
+    /// <summary>Let go. Only reported with <see cref="TerminalOptions.KeyReleaseEvents"/>.</summary>
+    Release,
+}
+
+/// <summary>
+/// A key press. Printable keys are <see cref="KeyCode.Char"/> with <see cref="Rune"/> set; Ctrl+letter is the
+/// lowercase letter with <see cref="Modifiers.Ctrl"/>. Releases (<see cref="KeyKind.Release"/>, opt-in) never
+/// match <see cref="IsChar"/>, <see cref="IsCtrl"/> or <see cref="Is"/>, so key bindings don't fire twice.
+/// </summary>
 public readonly struct KeyEvent : IEquatable<KeyEvent>
 {
-    public KeyEvent(KeyCode code, Rune rune = default, Modifiers modifiers = Modifiers.None)
+    public KeyEvent(KeyCode code, Rune rune = default, Modifiers modifiers = Modifiers.None, KeyKind kind = KeyKind.Press)
     {
         Code = code;
         Rune = rune;
         Modifiers = modifiers;
+        Kind = kind;
     }
 
     public KeyCode Code { get; }
     public Rune Rune { get; }
     public Modifiers Modifiers { get; }
+    public KeyKind Kind { get; }
 
     public static KeyEvent Char(char c, Modifiers modifiers = Modifiers.None) => new(KeyCode.Char, new Rune(c), modifiers);
 
     /// <summary>The unmodified character <paramref name="c"/>.</summary>
-    public bool IsChar(char c) => Code == KeyCode.Char && Rune.Value == c && Modifiers == Modifiers.None;
+    public bool IsChar(char c) => Code == KeyCode.Char && Rune.Value == c && Modifiers == Modifiers.None && Kind != KeyKind.Release;
 
     /// <summary>Ctrl + <paramref name="c"/> (case-insensitive).</summary>
     public bool IsCtrl(char c) =>
-        Code == KeyCode.Char && Rune.Value == char.ToLowerInvariant(c) && Modifiers == Modifiers.Ctrl;
+        Code == KeyCode.Char && Rune.Value == char.ToLowerInvariant(c) && Modifiers == Modifiers.Ctrl && Kind != KeyKind.Release;
 
-    public bool Is(KeyCode code, Modifiers modifiers = Modifiers.None) => Code == code && Modifiers == modifiers;
+    public bool Is(KeyCode code, Modifiers modifiers = Modifiers.None) => Code == code && Modifiers == modifiers && Kind != KeyKind.Release;
 
-    public bool Equals(KeyEvent other) => Code == other.Code && Rune == other.Rune && Modifiers == other.Modifiers;
+    public bool Equals(KeyEvent other) => Code == other.Code && Rune == other.Rune && Modifiers == other.Modifiers && Kind == other.Kind;
     public override bool Equals(object? obj) => obj is KeyEvent other && Equals(other);
-    public override int GetHashCode() => HashCode.Combine(Code, Rune, Modifiers);
+    public override int GetHashCode() => HashCode.Combine(Code, Rune, Modifiers, Kind);
     public static bool operator ==(KeyEvent left, KeyEvent right) => left.Equals(right);
     public static bool operator !=(KeyEvent left, KeyEvent right) => !left.Equals(right);
 
@@ -78,7 +96,8 @@ public readonly struct KeyEvent : IEquatable<KeyEvent>
         string mods = (Modifiers.HasFlag(Modifiers.Ctrl) ? "Ctrl+" : "")
             + (Modifiers.HasFlag(Modifiers.Alt) ? "Alt+" : "")
             + (Modifiers.HasFlag(Modifiers.Shift) ? "Shift+" : "");
-        return mods + (Code == KeyCode.Char ? Rune.ToString() : Code.ToString());
+        string key = mods + (Code == KeyCode.Char ? Rune.ToString() : Code.ToString());
+        return Kind == KeyKind.Press ? key : $"{key} ({Kind})";
     }
 }
 

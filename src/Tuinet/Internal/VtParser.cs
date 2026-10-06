@@ -4,8 +4,8 @@ namespace Tuinet;
 
 /// <summary>
 /// Incremental VT input decoder: bytes in, <see cref="Event"/>s out. Handles UTF-8, Ctrl/Alt
-/// combinations, CSI/SS3 keys with xterm modifier parameters, kitty <c>CSI u</c> keys,
-/// SGR (1006) mouse, focus reports and bracketed paste. Allocation-free except for paste text.
+/// combinations, CSI/SS3 keys with xterm modifier parameters, kitty <c>CSI u</c> keys (with repeat and
+/// release events), SGR (1006) mouse, focus reports and bracketed paste. Allocation-free except for paste text.
 /// </summary>
 internal sealed class VtParser
 {
@@ -46,6 +46,12 @@ internal sealed class VtParser
     /// not F3 with modifiers (xterm sends those as <c>CSI 1;mod R</c>). Cleared by the reply.
     /// </summary>
     public bool ExpectCursorReport { get; set; }
+
+    /// <summary>
+    /// The kitty keyboard flags the terminal reported (<c>CSI ? flags u</c>, the reply to <c>CSI ? u</c>), or -1
+    /// before any reply. Terminals without the protocol never reply.
+    /// </summary>
+    public int KittyFlags { get; private set; } = -1;
 
     /// <summary>The reply to a cursor position query, 0-based, once it has arrived.</summary>
     public bool TryTakeCursorReport(out int row, out int column)
@@ -235,7 +241,13 @@ internal sealed class VtParser
         }
 
         Span<int> p = stackalloc int[MaxParams];
-        int count = ParseParams(raw, p);
+        int count = ParseParams(raw, p, out int eventType);
+
+        if (prefix == '?' && final == 'u')
+        {
+            KittyFlags = count >= 1 ? p[0] : 0;
+            return;
+        }
 
         if (prefix == '<')
         {
@@ -253,32 +265,41 @@ internal sealed class VtParser
         }
 
         Modifiers mods = count >= 2 ? DecodeModifiers(p[1]) : Modifiers.None;
+
+        // Kitty keyboard with event types: the modifier parameter carries ":2" (repeat) or ":3" (release).
+        KeyKind kind = eventType switch
+        {
+            2 => KeyKind.Repeat,
+            3 => KeyKind.Release,
+            _ => KeyKind.Press,
+        };
+
         switch (final)
         {
-            case (byte)'A': Key(KeyCode.Up, 0, mods); return;
-            case (byte)'B': Key(KeyCode.Down, 0, mods); return;
-            case (byte)'C': Key(KeyCode.Right, 0, mods); return;
-            case (byte)'D': Key(KeyCode.Left, 0, mods); return;
-            case (byte)'H': Key(KeyCode.Home, 0, mods); return;
-            case (byte)'F': Key(KeyCode.End, 0, mods); return;
-            case (byte)'P': Key(KeyCode.F1, 0, mods); return;
-            case (byte)'Q': Key(KeyCode.F2, 0, mods); return;
+            case (byte)'A': Key(KeyCode.Up, 0, mods, kind); return;
+            case (byte)'B': Key(KeyCode.Down, 0, mods, kind); return;
+            case (byte)'C': Key(KeyCode.Right, 0, mods, kind); return;
+            case (byte)'D': Key(KeyCode.Left, 0, mods, kind); return;
+            case (byte)'H': Key(KeyCode.Home, 0, mods, kind); return;
+            case (byte)'F': Key(KeyCode.End, 0, mods, kind); return;
+            case (byte)'P': Key(KeyCode.F1, 0, mods, kind); return;
+            case (byte)'Q': Key(KeyCode.F2, 0, mods, kind); return;
             case (byte)'R' when ExpectCursorReport && count == 2:
                 ExpectCursorReport = false;
                 _reportRow = Math.Max(0, p[0] - 1);
                 _reportColumn = Math.Max(0, p[1] - 1);
                 return;
-            case (byte)'R': Key(KeyCode.F3, 0, mods); return;
-            case (byte)'S': Key(KeyCode.F4, 0, mods); return;
+            case (byte)'R': Key(KeyCode.F3, 0, mods, kind); return;
+            case (byte)'S': Key(KeyCode.F4, 0, mods, kind); return;
             case (byte)'Z': Key(KeyCode.Tab, 0, mods | Modifiers.Shift); return;
             case (byte)'I' when count == 0: _events.Enqueue(Event.Focus(gained: true)); return;
             case (byte)'O' when count == 0: _events.Enqueue(Event.Focus(gained: false)); return;
-            case (byte)'u' when count >= 1: KittyKey(p[0], mods); return;
-            case (byte)'~' when count >= 1: Tilde(p[0], mods); return;
+            case (byte)'u' when count >= 1: KittyKey(p[0], mods, kind); return;
+            case (byte)'~' when count >= 1: Tilde(p[0], mods, kind); return;
         }
     }
 
-    private void Tilde(int code, Modifiers mods)
+    private void Tilde(int code, Modifiers mods, KeyKind kind)
     {
         KeyCode key;
         switch (code)
@@ -301,22 +322,52 @@ internal sealed class VtParser
                 return;
         }
 
-        Key(key, 0, mods);
+        Key(key, 0, mods, kind);
     }
 
-    private void KittyKey(int codePoint, Modifiers mods)
+    /// <summary>A kitty <c>CSI code u</c> key: a Unicode code point, or a functional key in the private use area.</summary>
+    private void KittyKey(int codePoint, Modifiers mods, KeyKind kind)
     {
         switch (codePoint)
         {
-            case 13: Key(KeyCode.Enter, 0, mods); return;
-            case 27: Key(KeyCode.Escape, 0, mods); return;
-            case 9: Key(KeyCode.Tab, 0, mods); return;
-            case 127: Key(KeyCode.Backspace, 0, mods); return;
+            case 13: Key(KeyCode.Enter, 0, mods, kind); return;
+            case 27: Key(KeyCode.Escape, 0, mods, kind); return;
+            case 9: Key(KeyCode.Tab, 0, mods, kind); return;
+            case 127: Key(KeyCode.Backspace, 0, mods, kind); return;
+        }
+
+        if (codePoint is >= 57344 and <= 63743)
+        {
+            KittyFunctionalKey(codePoint, mods, kind);
+            return;
         }
 
         if (Rune.IsValid(codePoint) && codePoint >= 0x20)
         {
-            Key(KeyCode.Char, codePoint, mods);
+            Key(KeyCode.Char, codePoint, mods, kind);
+        }
+    }
+
+    /// <summary>Keypad keys become the keys they stand for; the rest (F13+, media, lone modifiers) are dropped.</summary>
+    private void KittyFunctionalKey(int codePoint, Modifiers mods, KeyKind kind)
+    {
+        const string KeypadChars = "0123456789./*-+";   // KP_0 (57399) .. KP_ADD (57413)
+        switch (codePoint)
+        {
+            case >= 57399 and <= 57413: Key(KeyCode.Char, KeypadChars[codePoint - 57399], mods, kind); return;
+            case 57414: Key(KeyCode.Enter, 0, mods, kind); return;
+            case 57415: Key(KeyCode.Char, '=', mods, kind); return;
+            case 57416: Key(KeyCode.Char, ',', mods, kind); return;
+            case 57417: Key(KeyCode.Left, 0, mods, kind); return;
+            case 57418: Key(KeyCode.Right, 0, mods, kind); return;
+            case 57419: Key(KeyCode.Up, 0, mods, kind); return;
+            case 57420: Key(KeyCode.Down, 0, mods, kind); return;
+            case 57421: Key(KeyCode.PageUp, 0, mods, kind); return;
+            case 57422: Key(KeyCode.PageDown, 0, mods, kind); return;
+            case 57423: Key(KeyCode.Home, 0, mods, kind); return;
+            case 57424: Key(KeyCode.End, 0, mods, kind); return;
+            case 57425: Key(KeyCode.Insert, 0, mods, kind); return;
+            case 57426: Key(KeyCode.Delete, 0, mods, kind); return;
         }
     }
 
@@ -430,7 +481,7 @@ internal sealed class VtParser
         return n;
     }
 
-    private void Key(KeyCode code, int rune = 0, Modifiers mods = Modifiers.None)
+    private void Key(KeyCode code, int rune = 0, Modifiers mods = Modifiers.None, KeyKind kind = KeyKind.Press)
     {
         if (_alt)
         {
@@ -438,7 +489,7 @@ internal sealed class VtParser
             _alt = false;
         }
 
-        _events.Enqueue(Event.FromKey(new KeyEvent(code, rune == 0 ? default : new Rune(rune), mods)));
+        _events.Enqueue(Event.FromKey(new KeyEvent(code, rune == 0 ? default : new Rune(rune), mods, kind)));
     }
 
     private static Modifiers DecodeModifiers(int param)
@@ -456,9 +507,13 @@ internal sealed class VtParser
         return mods;
     }
 
-    /// <summary>Parse ';'-separated decimal parameters (':' sub-parameters are skipped). Missing values are 1.</summary>
-    private static int ParseParams(ReadOnlySpan<byte> raw, Span<int> dest)
+    /// <summary>
+    /// Parse ';'-separated decimal parameters. Missing values are 1. ':' sub-parameters are skipped, except the
+    /// first one of the second parameter: the kitty keyboard event type (<paramref name="eventType"/>, 1 if absent).
+    /// </summary>
+    private static int ParseParams(ReadOnlySpan<byte> raw, Span<int> dest, out int eventType)
     {
+        eventType = 1;
         if (raw.IsEmpty)
         {
             return 0;
@@ -467,7 +522,7 @@ internal sealed class VtParser
         int count = 0;
         int value = 0;
         bool any = false;
-        bool sub = false;
+        int sub = 0;   // index of the sub-parameter being read; 0 for the parameter itself
         foreach (byte b in raw)
         {
             if (b == ';')
@@ -479,16 +534,27 @@ internal sealed class VtParser
 
                 value = 0;
                 any = false;
-                sub = false;
+                sub = 0;
             }
             else if (b == ':')
             {
-                sub = true;
+                sub++;
+                if (sub == 1 && count == 1)
+                {
+                    eventType = 0;
+                }
             }
-            else if (!sub && b is >= (byte)'0' and <= (byte)'9')
+            else if (b is >= (byte)'0' and <= (byte)'9')
             {
-                value = Math.Min(value * 10 + (b - '0'), 1_000_000);
-                any = true;
+                if (sub == 0)
+                {
+                    value = Math.Min(value * 10 + (b - '0'), 1_000_000);
+                    any = true;
+                }
+                else if (sub == 1 && count == 1)
+                {
+                    eventType = Math.Min(eventType * 10 + (b - '0'), 100);
+                }
             }
         }
 
