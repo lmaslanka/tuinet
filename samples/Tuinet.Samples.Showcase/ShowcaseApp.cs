@@ -2,7 +2,10 @@ using Tuinet.Widgets;
 
 namespace Tuinet.Samples.Showcase;
 
-/// <summary>Main screen: a tabbed panel (the 20-item list, stats) with a details panel, plus the edit and progress dialogs.</summary>
+/// <summary>
+/// Main screen: a tabbed panel (the 20-item list, stats) with a details panel, plus the edit and progress dialogs,
+/// a context menu on the rows and a command palette over every action.
+/// </summary>
 public sealed class ShowcaseApp
 {
     private readonly Item[] _items = Item.Samples();
@@ -20,6 +23,52 @@ public sealed class ShowcaseApp
     private bool _sortDescending;
     private long _lastClickMs = long.MinValue;
     private int _lastClickRow = -1;
+    private long _nowMs;
+    private bool _quit;
+
+    // The context menu: right-click a row, or 'm' for the selected one. Its anchor is null for "under the selected row".
+    private readonly MenuItem[] _menuItems =
+    [
+        new("&Edit", "enter"),
+        new("Disa&ble", "space"),      // relabeled for the selected item before each use
+        new("&Copy name", "y"),
+        MenuItem.Separator,
+        new("Sort by &number"),
+        new("Sort by n&ame"),
+        new("Sort by k&ind"),
+        new("Sort by &priority"),
+        new("Sort by &owner"),
+        MenuItem.Separator,
+        new("&Delete", "del", Enabled: false),   // nothing is deleted in a demo: shows the disabled style
+    ];
+
+    private MenuState _menu;
+    private bool _menuOpen;
+    private Rect? _menuAnchor;
+
+    private readonly CommandPalette _palette;
+
+    public ShowcaseApp()
+    {
+        Command[] commands =
+        [
+            new("Edit item", "enter", app => app.EditSelected()),
+            new("Toggle enabled", "space", app => app.ToggleSelected()),
+            new("Copy name", "y", app => app.CopySelected()),
+            new("Sort by number", "", app => app.SortBy(0)),
+            new("Sort by name", "", app => app.SortBy(1)),
+            new("Sort by kind", "", app => app.SortBy(2)),
+            new("Sort by priority", "", app => app.SortBy(3)),
+            new("Sort by owner", "", app => app.SortBy(4)),
+            new("Show the list", "alt+1", app => app.ShowPage(ListPage)),
+            new("Show the stats", "alt+2", app => app.ShowPage(StatsPage)),
+            new("Next tab", "]", app => app.ShowPage((app.Page + 1) % Pages.Length)),
+            new("Open the context menu", "m", app => app.OpenMenu(null)),
+            new("Open the progress dialog", "p", app => app.OpenProgress()),
+            new("Quit", "q", app => app.Quit()),
+        ];
+        _palette = new CommandPalette(commands);
+    }
 
     public IReadOnlyList<Item> Items => _items;
     public int Selected => _list.Selected;
@@ -30,6 +79,9 @@ public sealed class ShowcaseApp
     private static readonly string[] Pages = ["List", "Stats"];
     public EditDialog? Edit => _edit;
     public bool ProgressOpen => _progress is not null;
+    public bool MenuOpen => _menuOpen;
+    public int MenuSelected => _menu.Selected;
+    public CommandPalette Palette => _palette;
     public int SortColumn => _sortColumn;
     public bool SortDescending => _sortDescending;
 
@@ -92,6 +144,23 @@ public sealed class ShowcaseApp
             return true;
         }
 
+        _nowMs = nowMs;
+        if (_palette.IsOpen)
+        {
+            if (_palette.Handle(ev) is Command command)
+            {
+                _flash = "";
+                command.Run(this);
+            }
+
+            return !_quit;
+        }
+
+        if (_menuOpen && HandleMenu(ev))
+        {
+            return !_quit;
+        }
+
         if (ev.Kind == EventKind.Mouse)
         {
             HandleMouse(ev.Mouse, nowMs);
@@ -111,7 +180,9 @@ public sealed class ShowcaseApp
         }
 
         if (SwitchPage(key)) { }
-        else if (key.IsChar('p')) _progress = new ProgressDialog(nowMs);
+        else if (key.IsChar('p')) OpenProgress();
+        else if (key.IsCtrl('p') || key.IsChar(':')) _palette.Open();
+        else if (key.IsChar('m')) OpenMenu(null);
         else if (Page == ListPage)
         {
             if (key.IsChar('j') || key.Is(KeyCode.Down)) _list.Next(count);
@@ -120,18 +191,93 @@ public sealed class ShowcaseApp
             else if (key.IsChar('G') || key.Is(KeyCode.End)) _list.Last(count);
             else if (key.Is(KeyCode.PageDown)) _list.PageDown(count);
             else if (key.Is(KeyCode.PageUp)) _list.PageUp(count);
-            else if (key.Is(KeyCode.Enter) || key.IsChar('e')) _edit = new EditDialog(_items[_list.Selected]);
-            else if (key.IsChar(' ')) _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
+            else if (key.Is(KeyCode.Enter) || key.IsChar('e')) EditSelected();
+            else if (key.IsChar(' ')) ToggleSelected();
             else if (key.IsChar('y'))
             {
-                _copy = _items[_list.Selected].Name;
-                _flash = $"copied · {_copy}";
+                CopySelected();
                 return true;
             }
         }
 
         _flash = "";
         return true;
+    }
+
+    /// <summary>
+    /// The open context menu gets every key, and the mouse over it. Returns false only for a click outside it: that
+    /// closes the menu and goes on to whatever is under the pointer (a right-click on another row reopens it there).
+    /// </summary>
+    private bool HandleMenu(Event ev)
+    {
+        ReadOnlySpan<MenuItem> items = MenuItems();
+        MenuResult result = ev.Kind switch
+        {
+            EventKind.Key => _menu.Handle(ev.Key, items),
+            EventKind.Mouse => _menu.HandleMouse(ev.Mouse, items),
+            _ => MenuResult.Unhandled,
+        };
+
+        if (result == MenuResult.Activated)
+        {
+            _menuOpen = false;
+            _flash = "";
+            RunMenuItem(_menu.Selected);
+        }
+        else if (result == MenuResult.Cancelled)
+        {
+            _menuOpen = false;
+            return ev.Kind != EventKind.Mouse;
+        }
+
+        return true;
+    }
+
+    private void RunMenuItem(int index)
+    {
+        switch (index)
+        {
+            case 0: EditSelected(); break;
+            case 1: ToggleSelected(); break;
+            case 2: CopySelected(); break;
+            case >= 4 and <= 8: SortBy(index - 4); break;
+        }
+    }
+
+    /// <summary>The menu items, with the toggle labeled for the selected item: a struct copy, no allocation.</summary>
+    private ReadOnlySpan<MenuItem> MenuItems()
+    {
+        _menuItems[1] = _menuItems[1] with { Label = _items[_list.Selected].Enabled ? "Disa&ble" : "Ena&ble" };
+        return _menuItems;
+    }
+
+    // Actions, shared by the keys, the context menu and the command palette.
+    internal void EditSelected() => _edit = new EditDialog(_items[_list.Selected]);
+
+    internal void ToggleSelected() => _items[_list.Selected].Enabled = !_items[_list.Selected].Enabled;
+
+    internal void CopySelected()
+    {
+        _copy = _items[_list.Selected].Name;
+        _flash = $"copied · {_copy}";
+    }
+
+    /// <summary>Sort by <paramref name="column"/>; again reverses, like a header click.</summary>
+    internal void SortBy(int column) => Sort(column, column == _sortColumn ? !_sortDescending : false);
+
+    internal void ShowPage(int page) => _tabs.Select(page, Pages.Length);
+
+    internal void OpenProgress() => _progress = new ProgressDialog(_nowMs);
+
+    internal void Quit() => _quit = true;
+
+    /// <summary>Open the context menu at <paramref name="anchor"/>, or under the selected row for null.</summary>
+    internal void OpenMenu(Rect? anchor)
+    {
+        ShowPage(ListPage);
+        _menuAnchor = anchor;
+        _menu.Reset(MenuItems());
+        _menuOpen = true;
     }
 
     /// <summary>] and [ step through the tabs (wrapping); Alt+1…9 jump to one.</summary>
@@ -164,6 +310,18 @@ public sealed class ShowcaseApp
         if (PageTabs().HandleMouse(mouse, ref _tabs) || Page != ListPage)
         {
             return;   // the list isn't drawn on other pages, so it must not hit-test its last position
+        }
+
+        if (mouse.Kind == MouseKind.Down && mouse.Button == MouseButton.Right)
+        {
+            int clicked = _list.RowAt(mouse.X, mouse.Y, _items.Length);
+            if (clicked >= 0)
+            {
+                _list.Selected = clicked;
+                OpenMenu(new Rect(mouse.X, mouse.Y, 0, 0));   // a point: the menu opens at the pointer
+            }
+
+            return;
         }
 
         int column = mouse.IsClick ? ItemTable(_list.Area.Width).HeaderColumnAt(mouse.X, mouse.Y, _list) : -1;
@@ -230,8 +388,41 @@ public sealed class ShowcaseApp
         RenderDetails(buffer, columns[1]);
         RenderKeys(buffer, rows[3]);
 
+        if (_menuOpen)
+        {
+            RenderMenu(buffer);
+        }
+
+        _palette.Render(buffer);
         _edit?.Render(buffer);
         _progress?.Render(buffer, nowMs);
+    }
+
+    private void RenderMenu(CellBuffer buffer)
+    {
+        ReadOnlySpan<MenuItem> items = MenuItems();
+        Rect box = buffer.Area.PlaceNear(_menuAnchor ?? SelectedRowAnchor(), Menu.Measure(items));
+        buffer.Render(new Menu(items)
+        {
+            Popup = new Popup
+            {
+                Block = new Block { BorderType = BorderType.Rounded, BorderStyle = Theme.Accent(Theme.Blue), Style = Theme.Dialog },
+                Shadow = true,
+                ShadowStyle = Theme.Shadow,
+            },
+            SelectedStyle = Theme.RowSelected,
+            ShortcutStyle = Theme.Dim,
+            DisabledStyle = Theme.Faded,
+            MnemonicStyle = new Style(Theme.Amber, default, Attr.Underline),
+        }, box, ref _menu);
+    }
+
+    /// <summary>Under the selected row's name, as the table last drew it (below its header and separator).</summary>
+    private Rect SelectedRowAnchor()
+    {
+        const int HeaderRows = 2;
+        int y = _list.Area.Y + HeaderRows + _list.Selected - _list.Offset;
+        return new Rect(_list.Area.X + 7, y, 0, 1);
     }
 
     private static void RenderSubtitle(CellBuffer buffer, Rect row)
@@ -473,7 +664,7 @@ public sealed class ShowcaseApp
     }
 
     private static readonly (string Key, string Action)[] KeyHints =
-        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("y", "copy"), ("[ ]", "tabs"), ("p", "progress"), ("q", "quit")];
+        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("m", "menu"), ("[ ]", "tabs"), ("ctrl+p", "commands"), ("q", "quit")];
 
     private static void RenderKeys(CellBuffer buffer, Rect row)
     {

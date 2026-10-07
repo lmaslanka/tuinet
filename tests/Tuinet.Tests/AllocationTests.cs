@@ -106,6 +106,70 @@ public class AllocationTests
     }
 
     [Fact]
+    public void Open_menu_frames_keys_and_mouse_allocate_nothing()
+    {
+        var tty = new NullTty(120, 40);
+        using var terminal = new Terminal(tty);
+        MenuItem[] items =
+        [
+            new("&Edit", "Enter"), new("&Toggle", "Space"), MenuItem.Separator, new("Sort by &name"), new("Sort by k&ind"),
+            MenuItem.Separator, new("&Delete", "Del", Enabled: false),
+        ];
+        var menu = new MenuState();
+        menu.Reset(items);
+        KeyEvent[] keys = [new(KeyCode.Down), new(KeyCode.Down), KeyEvent.Char('k'), new(KeyCode.End), KeyEvent.Char('n')];
+
+        void Step(int i)
+        {
+            menu.Handle(keys[i % keys.Length], items);
+            menu.HandleMouse(new MouseEvent(MouseKind.Move, MouseButton.None, 22, 11 + i % 7, Modifiers.None), items);
+            CellBuffer frame = terminal.BeginFrame();
+            frame.Fill(frame.Area, new Style(Color.Default, Color.Rgb(13, 17, 23)));
+            items[1] = items[1] with { Enabled = i % 2 == 0 };
+            Rect box = frame.Area.PlaceNear(new Rect(20, 10, 0, 0), Menu.Measure(items));
+            frame.Render(new Menu(items) { Popup = new Popup { Shadow = true, Block = new Block { BorderType = BorderType.Rounded } } }, box, ref menu);
+            terminal.Present();
+        }
+
+        for (int i = 0; i < 50; i++)
+        {
+            Step(i);
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            Step(i);
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
+    public void Fuzzy_scoring_allocates_nothing()
+    {
+        string[] names = [.. Enumerable.Range(0, 500).Select(i => $"command number {i} · toggle the thing")];
+        Span<int> matched = stackalloc int[8];
+        int total = 0;
+        foreach (string name in names)
+        {
+            total += Fuzzy.Score("tgl", name, matched);
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int round = 0; round < 20; round++)
+        {
+            foreach (string name in names)
+            {
+                total += Fuzzy.Score("nTh", name) + Fuzzy.Score("tgl", name, matched);
+            }
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Assert.True(total > 0);
+    }
+
+    [Fact]
     public void Polling_keys_allocates_nothing()
     {
         var tty = new NullTty(80, 24);

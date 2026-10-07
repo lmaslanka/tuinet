@@ -951,3 +951,52 @@ Tuinet.Widgets.Sparkline.Sparkline(System.ReadOnlySpan<double> values, System.Re
 Tuinet.Widgets.Sparkline.Sparkline() -> void
 Tuinet.Widgets.Sparkline.Style.get -> Tuinet.Style
 Tuinet.Widgets.Sparkline.Style.init -> void
+~override Tuinet.Widgets.MenuItem.Equals(object obj) -> bool
+override Tuinet.Widgets.MenuItem.GetHashCode() -> int
+~override Tuinet.Widgets.MenuItem.ToString() -> string
+static Tuinet.Fuzzy.Score(System.ReadOnlySpan<char> pattern, System.ReadOnlySpan<char> text) -> int
+static Tuinet.Fuzzy.Score(System.ReadOnlySpan<char> pattern, System.ReadOnlySpan<char> text, System.Span<int> matched) -> int
+static Tuinet.Widgets.MenuItem.operator !=(Tuinet.Widgets.MenuItem left, Tuinet.Widgets.MenuItem right) -> bool
+static Tuinet.Widgets.MenuItem.operator ==(Tuinet.Widgets.MenuItem left, Tuinet.Widgets.MenuItem right) -> bool
+static Tuinet.Widgets.MenuItem.Separator.get -> Tuinet.Widgets.MenuItem
+static Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> Tuinet.Size
+Tuinet.Fuzzy
+Tuinet.Widgets.EditableText.CopyTo(int start, System.Span<char> destination) -> int
+Tuinet.Widgets.Menu
+Tuinet.Widgets.Menu.DisabledStyle.get -> Tuinet.Style
+Tuinet.Widgets.Menu.DisabledStyle.init -> void
+Tuinet.Widgets.MenuItem
+Tuinet.Widgets.MenuItem.Deconstruct(out string! Label, out string! Shortcut, out bool Enabled) -> void
+Tuinet.Widgets.MenuItem.Enabled.get -> bool
+Tuinet.Widgets.MenuItem.Enabled.init -> void
+Tuinet.Widgets.MenuItem.Equals(Tuinet.Widgets.MenuItem other) -> bool
+Tuinet.Widgets.MenuItem.IsSeparator.get -> bool
+Tuinet.Widgets.MenuItem.Label.get -> string!
+Tuinet.Widgets.MenuItem.Label.init -> void
+Tuinet.Widgets.MenuItem.MenuItem(string! Label, string! Shortcut = "", bool Enabled = true) -> void
+Tuinet.Widgets.MenuItem.MenuItem() -> void
+Tuinet.Widgets.MenuItem.Shortcut.get -> string!
+Tuinet.Widgets.MenuItem.Shortcut.init -> void
+Tuinet.Widgets.Menu.Menu(System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> void
+Tuinet.Widgets.Menu.Menu() -> void
+Tuinet.Widgets.Menu.MnemonicStyle.get -> Tuinet.Style
+Tuinet.Widgets.Menu.MnemonicStyle.init -> void
+Tuinet.Widgets.Menu.Popup.get -> Tuinet.Widgets.Popup
+Tuinet.Widgets.Menu.Popup.init -> void
+Tuinet.Widgets.Menu.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.MenuState state) -> void
+Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuResult.Activated = 2 -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuResult.Cancelled = 3 -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuResult.Handled = 1 -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuResult.Unhandled = 0 -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.Menu.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.Menu.SelectedStyle.init -> void
+Tuinet.Widgets.Menu.ShortcutStyle.get -> Tuinet.Style
+Tuinet.Widgets.Menu.ShortcutStyle.init -> void
+Tuinet.Widgets.MenuState
+Tuinet.Widgets.MenuState.Area.get -> Tuinet.Rect
+Tuinet.Widgets.MenuState.HandleMouse(Tuinet.MouseEvent ev, System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuState.Handle(Tuinet.KeyEvent key, System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> Tuinet.Widgets.MenuResult
+Tuinet.Widgets.MenuState.MenuState() -> void
+Tuinet.Widgets.MenuState.Reset(System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> void
+Tuinet.Widgets.MenuState.Selected.get -> int

@@ -1,6 +1,8 @@
-// Showcase: a tabbed panel (a 20-item list, stats), an edit dialog (text boxes, dropdowns, checkboxes,
-// buttons) and an animated progress dialog, both drawn as shadowed popups. Nothing is saved to disk. The window title follows the selection, 'y' copies the
-// selected item's name to the clipboard, and keys use the kitty keyboard protocol where the terminal has it.
+// Showcase: a tabbed panel (a 20-item list, stats charts), an edit dialog (text boxes, dropdowns, checkboxes,
+// buttons) and an animated progress dialog, both drawn as shadowed popups, a context menu (right-click or 'm')
+// and a command palette (Ctrl+P) over every action. Nothing is saved to disk. The window title follows the
+// selection, 'y' copies the selected item's name to the clipboard, and keys use the kitty keyboard protocol
+// where the terminal has it.
 using System.Diagnostics;
 using Tuinet;
 using Tuinet.Samples.Showcase;
@@ -8,6 +10,7 @@ using Tuinet.Samples.Showcase;
 using var terminal = Terminal.Open(new TerminalOptions
 {
     Mouse = true,
+    MouseMotion = true,   // the context menu highlights the item under the pointer
     BracketedPaste = true,
     SuspendOnCtrlZ = true,
     KittyKeyboard = true,

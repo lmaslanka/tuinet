@@ -100,7 +100,7 @@ while (true)
 To see what the library can do, run the samples:
 
 ```sh
-./run           # the showcase in the screenshots: list, stats charts, edit form, progress dialog
+./run           # the showcase in the screenshots: list, stats charts, menu, palette, edit form, progress dialog
 ./run inline    # inline mode: a download with live progress bars under the prompt
 ./run stress    # latency harness: hold j on 100k items, or press n for full-screen noise
 ```
@@ -475,6 +475,37 @@ When the titles don't fit, it scrolls to keep the selected one visible and shows
 anywhere are yours: the showcase uses `[`/`]` and Alt+1…9, because terminals don't report Ctrl+Tab without the
 kitty keyboard protocol.
 
+### Menus and the command palette
+
+```csharp
+// Built once; '&' marks the mnemonic letter. Swap an item with `with` to change it: a struct copy, no allocation.
+MenuItem[] items = [new("&Edit", "enter"), new("&Copy", "y"), MenuItem.Separator, new("&Delete", "del", Enabled: false)];
+var menu = new MenuState();
+
+// open: at the pointer (a 0×0 point) or under a row
+menu.Reset(items);
+Rect box = frame.Area.PlaceNear(new Rect(mouse.X, mouse.Y, 0, 0), Menu.Measure(items));
+
+// render last, so it sits on top
+frame.Render(new Menu(items) { Popup = new Popup { Shadow = true } }, box, ref menu);
+
+// input
+MenuResult result = ev.Kind == EventKind.Key ? menu.Handle(ev.Key, items) : menu.HandleMouse(ev.Mouse, items);
+if (result == MenuResult.Activated) Run(menu.Selected);   // Enter, Space, a click or a mnemonic
+// Cancelled: Esc, or a press outside the menu; the caller can still act on that click
+```
+
+Up/Down (and j/k) skip separators and disabled items and wrap. With `TerminalOptions.MouseMotion`, the item under
+the pointer is highlighted. A menu taller than its area scrolls.
+
+`Fuzzy.Score(pattern, text)` filters a list by what was typed: the pattern's chars must appear in order. It's -1
+for no match, and higher for matches at word starts, camelCase humps and in runs. Case is ignored unless the
+pattern has an uppercase letter. An overload writes the matched positions, for highlighting. Scoring 10,000 command
+names takes about 0.3 ms and allocates nothing, so filter on every keystroke, only when the query changed
+(`TextInputState.CopyTo` reads it without allocating). The showcase's
+[`CommandPalette.cs`](https://github.com/lmaslanka/tuinet/blob/main/samples/Tuinet.Samples.Showcase/CommandPalette.cs)
+puts this together with a `Popup`, a `TextInput` and a `ListView` in about 250 lines.
+
 ### Progress and animation
 
 ```csharp
@@ -755,6 +786,7 @@ public void Key_in_frame_out()
 | `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below, optional shadow; click to open and pick |
 | `Tabs` | `TabsState` | One-row tab bar, dividers, scrolls with `‹` `›` when the titles don't fit, fits in a block border; click and wheel |
 | `Popup` | | Shadow + fill + `Block` over existing content; `Outer` sizes it from its content, `Rect.PlaceNear` places it by an anchor |
+| `Menu` | `MenuState` | Popup action list: mnemonics, right-aligned shortcuts, separators joined to the border, disabled items; keys, click and hover |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
 | `Button` | | Padded label with idle and focused styles |
 | `ProgressBar` | | Eighth-block precision, custom fill/empty glyphs (segmented meters) |
@@ -781,6 +813,7 @@ public void Key_in_frame_out()
 | `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 60 / 39 µs | |
 | Caret down / a keystroke in that text area, then its frame | 61 / 78 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
+| `Fuzzy.Score`, a 3-char pattern against one command name (10,000 names: 0.28 ms) | 28 ns | |
 
 Compared with the original kernel this library grew out of, unchanged and sparse frames are about **9× faster**, and full repaints are **3.3× faster**.
 
@@ -793,7 +826,7 @@ Tests guard these properties too:
 
 | Test | Guards |
 |---|---|
-| `AllocationTests` | 1,000 frames with widgets, 1,000 text area frames with caret keys, and 10,000 key polls allocate 0 bytes |
+| `AllocationTests` | 1,000 frames with widgets and charts, 1,000 text area frames with caret keys, 1,000 open-menu frames with keys and pointer moves, fuzzy scoring, and 10,000 key polls allocate 0 bytes |
 | `RendererFuzzTests` | Random frames, replayed through a VT emulator, must reproduce the buffer exactly: every glyph, color and attribute, plus the cursor |
 | `TerminalTests` | Exact bytes for a one-cell change; control characters in text never reach the terminal |
 
@@ -870,11 +903,11 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Popup, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
+  Widgets/                       Block, Popup, Menu, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty
-samples/Tuinet.Samples.Showcase  list, stats charts, edit form and progress dialog (the screenshots)
+samples/Tuinet.Samples.Showcase  list, stats charts, context menu, command palette, edit form and progress dialog (the screenshots)
 samples/Tuinet.Samples.Inline    inline mode: download progress under the prompt, logs above it
 samples/Tuinet.Samples.Stress    latency and throughput harness
 bench/Tuinet.Benchmarks          BenchmarkDotNet suite

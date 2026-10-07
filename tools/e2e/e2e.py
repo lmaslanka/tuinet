@@ -191,6 +191,7 @@ def showcase(tmux, binary, width, height):
     ok, s = tmux.wait(n, lambda t: "PIPELINE" not in t)
     check(ok, f"{label}: esc closes the progress dialog", s)
 
+    showcase_menu_and_palette(tmux, n, label)
     showcase_mouse(tmux, n, label, height)
 
     tmux.type(n, "]")
@@ -208,6 +209,36 @@ def showcase(tmux, binary, width, height):
 
     tmux.type(n, "q")
     app.finish(label)
+
+
+def showcase_menu_and_palette(tmux, n, label):
+    """The context menu (keys, mnemonics, right-click) and the command palette (fuzzy filter, enter runs)."""
+    tmux.type(n, "m")
+    ok, s = tmux.wait(n, lambda t: "Sort by owner" in t and "Delete" in t)
+    check(ok, f"{label}: m opens the context menu", s)
+    tmux.type(n, "o")
+    ok, s = tmux.wait(n, lambda t: "Sort by owner" not in t and re.search(r"01  .*\n.*14  ", t) is not None)   # ada, then alan
+    check(ok, f"{label}: the o mnemonic sorts by owner and closes the menu", s)
+    pos = tmux.find(n, "05  ")
+    tmux.mouse(n, pos[0] + 4, pos[1], button=2)
+    ok, s = tmux.wait(n, lambda t: "Sort by number" in t)
+    check(ok, f"{label}: mouse: a right-click on a row opens the menu", s)
+    tmux.type(n, "n")
+    ok, s = tmux.wait(n, lambda t: "Sort by number" not in t and "▲ #  name" in t)
+    check(ok, f"{label}: the n mnemonic sorts by number again", s)
+
+    tmux.keys(n, "C-p")
+    ok, s = tmux.wait(n, lambda t: "COMMANDS" in t and "Edit item" in t)
+    check(ok, f"{label}: ctrl+p opens the command palette", s)
+    tmux.type(n, "prog")
+    ok, s = tmux.wait(n, lambda t: "› prog" in t and "Sort by" not in t)
+    check(ok, f"{label}: typing filters the commands", s)
+    tmux.keys(n, "Enter")
+    ok, s = tmux.wait(n, lambda t: "PIPELINE" in t and "COMMANDS" not in t)
+    check(ok, f"{label}: enter runs the best match (the progress dialog)", s)
+    tmux.keys(n, "Escape")
+    ok, s = tmux.wait(n, lambda t: "PIPELINE" not in t)
+    check(ok, f"{label}: esc closes it again", s)
 
 
 def showcase_mouse(tmux, n, label, height):

@@ -77,6 +77,16 @@ The first release.
   copy), and vertical or horizontal bars with eighth-block ends, labels and values formatted on the stack. Both
   allocate nothing per frame. The showcase's stats page charts items per kind and priority and the bytes and time
   of recent frames; the stress sample's status bar ends in a frame-time sparkline.
+- `Menu` / `MenuState` / `MenuItem`: a popup action list with `&` mnemonics, right-aligned shortcuts, separators
+  joined to the border (with tees that match it) and disabled items. Up/Down and j/k skip separators and disabled
+  items and wrap; Enter, Space, a click or a mnemonic activates; Esc or a press outside cancels, and the caller can
+  still act on that click. With `MouseMotion`, the item under the pointer is highlighted. `Menu.Measure` sizes it
+  for `Rect.PlaceNear`; a menu taller than its area scrolls.
+- `Fuzzy.Score`: fzf-style fuzzy matching (word starts, camelCase, runs; smart case), optionally with the matched
+  positions for highlighting. 28 ns per name, 0 B. `TextInputState.CopyTo` / `TextAreaState.CopyTo` read the text
+  without allocating.
+- The showcase gets a context menu on the rows (right-click or `m`) and a command palette (Ctrl+P or `:`) over
+  every action, filtered as you type with the matches highlighted.
 - `CellBuffer.SetStyle` and `SetLink` no longer throw for an area entirely to the right of the buffer.
 - `TestTty` for driving a `Terminal` in tests.
 - Native AOT and trimming compatible.

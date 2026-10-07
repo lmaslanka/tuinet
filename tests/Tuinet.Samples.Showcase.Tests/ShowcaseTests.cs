@@ -560,6 +560,170 @@ public class ShowcaseTests
         Assert.Equal(0, app.Items[0].Kind);
     }
 
+    [Fact]
+    public void Right_click_on_a_row_opens_the_menu_there_and_choosing_sort_sorts()
+    {
+        var app = new ShowcaseApp();
+        (int x, int y) = Find(Render(app), "05  schema");
+        RightClick(app, x + 4, y);
+        Assert.True(app.MenuOpen);
+        Assert.Equal(4, app.Selected);                                   // the clicked row is selected
+        CellBuffer screen = Render(app);
+        Assert.Equal((x + 4, y), Find(screen, "╭──"));                   // the menu's corner at the pointer
+        Assert.Contains("│ Edit              enter │", screen.ToString());
+        (int sx, int sy) = Find(screen, "Sort by owner");
+        Click(app, sx, sy);
+        Assert.False(app.MenuOpen);
+        Assert.Equal(4, app.SortColumn);
+        Assert.Equal("ada", app.Items[0].Owner);
+        Assert.Equal("schema registry", app.Items[app.Selected].Name);   // the selection follows the item
+    }
+
+    [Fact]
+    public void M_opens_the_menu_under_the_selected_row_and_mnemonics_run_items()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'j', 'j', 'm');
+        CellBuffer screen = Render(app);
+        Assert.Equal(Find(screen, "03  run").Y + 1, Find(screen, "╭──").Y);
+        Assert.True(screen[Find(screen, "Sort by k").X + 9, Find(screen, "Sort by k").Y].Style.Attrs.HasFlag(Attr.Underline));   // the 'i' of k&ind
+        Press(app, 'i');
+        Assert.False(app.MenuOpen);
+        Assert.Equal(2, app.SortColumn);
+
+        Press(app, 'm');
+        Key(app, KeyCode.Escape);
+        Assert.False(app.MenuOpen);
+        Assert.Equal(2, app.SortColumn);
+    }
+
+    [Fact]
+    public void Menu_keys_skip_separators_and_the_disabled_delete()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'm');
+        Key(app, KeyCode.Up);                    // wraps past the disabled Delete and the separator
+        Assert.Equal(8, app.MenuSelected);       // Sort by owner
+        Key(app, KeyCode.Down);
+        Assert.Equal(0, app.MenuSelected);
+        Press(app, 'd');                         // Delete's mnemonic does nothing while it's disabled
+        Assert.True(app.MenuOpen);
+        Assert.Contains("Delete", Render(app).ToString());
+    }
+
+    [Fact]
+    public void The_menu_toggle_is_labeled_for_the_selected_item()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'm');
+        Assert.Contains("│ Disable", Render(app).ToString());
+        Press(app, 'b');                         // runs it: the item is now disabled
+        Assert.False(app.Items[0].Enabled);
+        Press(app, 'm');
+        Assert.Contains("│ Enable ", Render(app).ToString());
+    }
+
+    [Fact]
+    public void A_click_outside_the_menu_closes_it_and_still_selects_what_was_clicked()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'm');
+        CellBuffer screen = Render(app);
+        (int x, int y) = Find(screen, "18  advisor");
+        Click(app, x, y);
+        Assert.False(app.MenuOpen);
+        Assert.Equal(17, app.Selected);
+    }
+
+    [Fact]
+    public void Ctrl_p_then_typing_prog_and_enter_opens_the_progress_dialog()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('p', Modifiers.Ctrl), 0);
+        Assert.True(app.Palette.IsOpen);
+        Assert.Contains("COMMANDS", Render(app).ToString());
+        Type(app, "prog");
+        Assert.Equal("Open the progress dialog", app.Palette.Match(0).Name);
+        Key(app, KeyCode.Enter);
+        Assert.False(app.Palette.IsOpen);
+        Assert.True(app.ProgressOpen);
+    }
+
+    [Fact]
+    public void Typing_in_the_palette_filters_best_first_and_highlights_the_matches()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ':');
+        Assert.Equal(14, app.Palette.MatchCount);   // an empty query lists every command, in order
+        Assert.Equal("Edit item", app.Palette.Match(0).Name);
+        Type(app, "sk");
+        Assert.Equal("Sort by kind", app.Palette.Match(0).Name);
+        CellBuffer screen = Render(app);
+        (int x, int y) = Find(screen, "Sort by kind");
+        Assert.Equal(Color.Hex(0xF5A623), screen[x, y].Style.Fg);       // S
+        Assert.Equal(Color.Hex(0xF5A623), screen[x + 8, y].Style.Fg);   // k
+        Assert.NotEqual(Color.Hex(0xF5A623), screen[x + 1, y].Style.Fg);
+        Type(app, "zzz");
+        Assert.Equal(0, app.Palette.MatchCount);
+        Assert.Contains("no matching commands", Render(app).ToString());
+        Key(app, KeyCode.Escape);
+        Assert.False(app.Palette.IsOpen);
+    }
+
+    [Fact]
+    public void Clicking_a_palette_row_runs_it_and_quit_quits()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ':');
+        (int x, int y) = Find(Render(app), "Show the stats");
+        Click(app, x, y);
+        Assert.False(app.Palette.IsOpen);
+        Assert.Equal(ShowcaseApp.StatsPage, app.Page);
+
+        Press(app, ':');
+        Type(app, "quit");
+        Assert.False(app.Handle(Event.FromKey(KeyCode.Enter), 0));
+    }
+
+    [Fact]
+    public void Open_menu_and_palette_frames_and_refiltering_allocate_nothing()
+    {
+        var app = new ShowcaseApp();
+        var buffer = new CellBuffer(110, 34);
+        Press(app, 'm');
+
+        void MenuStep(int i)
+        {
+            Key(app, i % 3 == 0 ? KeyCode.Up : KeyCode.Down);
+            app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Move, MouseButton.None, 30, 12 + i % 5, Modifiers.None)), 0);
+            app.Render(buffer, 0);
+        }
+
+        for (int i = 0; i < 50; i++) MenuStep(i);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 500; i++) MenuStep(i);
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+
+        Key(app, KeyCode.Escape);
+        Press(app, ':');
+
+        // Type a char and undo it: the query changes, and the list is filtered again, on every key.
+        void PaletteStep(int i)
+        {
+            if (i % 2 == 0) app.Handle(Event.FromChar("rbn"[i % 3]), 0);   // not Press: its params array allocates
+            else Key(app, KeyCode.Char, 'z', Modifiers.Ctrl);
+            app.Render(buffer, 0);
+        }
+
+        for (int i = 0; i < 50; i++) PaletteStep(i);
+        before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 500; i++) PaletteStep(i);
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Assert.True(app.Palette.IsOpen);
+        Assert.Equal("", app.Palette.Query);
+        Assert.Equal(14, app.Palette.MatchCount);
+    }
+
     /// <summary>Cell of the first occurrence of <paramref name="text"/> (the screen is one column per char here).</summary>
     private static (int X, int Y) Find(CellBuffer buffer, string text)
     {
@@ -579,6 +743,12 @@ public class ShowcaseTests
     {
         app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Down, MouseButton.Left, x, y, Modifiers.None)), now);
         app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Up, MouseButton.Left, x, y, Modifiers.None)), now);
+    }
+
+    private static void RightClick(ShowcaseApp app, int x, int y)
+    {
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Down, MouseButton.Right, x, y, Modifiers.None)), 0);
+        app.Handle(Event.FromMouse(new MouseEvent(MouseKind.Up, MouseButton.Right, x, y, Modifiers.None)), 0);
     }
 
     private static CellBuffer Render(ShowcaseApp app, long now = 0)

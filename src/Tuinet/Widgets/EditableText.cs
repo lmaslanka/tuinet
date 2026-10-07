@@ -380,8 +380,11 @@ public abstract class EditableText
         return _chars.AsSpan(physical, end - start);
     }
 
-    /// <summary>Copy the text from <paramref name="start"/> into <paramref name="destination"/>; returns the chars copied.</summary>
-    internal int CopyTo(int start, Span<char> destination)
+    /// <summary>
+    /// Copy the text from <paramref name="start"/> into <paramref name="destination"/>, as much as fits; returns the
+    /// chars copied. Unlike <see cref="Text"/>, never allocates: e.g. to filter a list on every keystroke.
+    /// </summary>
+    public int CopyTo(int start, Span<char> destination)
     {
         int n = Math.Min(destination.Length, Length - start);
         int front = Math.Clamp(_gapStart - start, 0, n);
