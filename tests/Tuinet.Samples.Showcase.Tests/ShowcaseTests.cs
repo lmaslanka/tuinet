@@ -699,10 +699,7 @@ public class ShowcaseTests
             app.Render(buffer, 0);
         }
 
-        for (int i = 0; i < 50; i++) MenuStep(i);
-        long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 500; i++) MenuStep(i);
-        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        AssertSteadyStateAllocatesNothing(MenuStep);
 
         Key(app, KeyCode.Escape);
         Press(app, ':');
@@ -715,13 +712,41 @@ public class ShowcaseTests
             app.Render(buffer, 0);
         }
 
-        for (int i = 0; i < 50; i++) PaletteStep(i);
-        before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 500; i++) PaletteStep(i);
-        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        AssertSteadyStateAllocatesNothing(PaletteStep);
         Assert.True(app.Palette.IsOpen);
         Assert.Equal("", app.Palette.Query);
         Assert.Equal(14, app.Palette.MatchCount);
+    }
+
+    /// <summary>
+    /// After a warm-up, some 500-step round must allocate nothing. Up to five rounds, because a whole app frame runs
+    /// enough code that one-time runtime work (tiering on a slow CI runner) can land in the first; a per-frame
+    /// allocation shows up in every round, and the failure lists them.
+    /// </summary>
+    private static void AssertSteadyStateAllocatesNothing(Action<int> step)
+    {
+        for (int i = 0; i < 50; i++)
+        {
+            step(i);
+        }
+
+        var rounds = new long[5];
+        for (int round = 0; round < rounds.Length; round++)
+        {
+            long before = GC.GetAllocatedBytesForCurrentThread();
+            for (int i = 0; i < 500; i++)
+            {
+                step(i);
+            }
+
+            rounds[round] = GC.GetAllocatedBytesForCurrentThread() - before;
+            if (rounds[round] == 0)
+            {
+                return;
+            }
+        }
+
+        Assert.Fail($"Every round allocated: {string.Join(", ", rounds)} bytes per 500 steps.");
     }
 
     /// <summary>Cell of the first occurrence of <paramref name="text"/> (the screen is one column per char here).</summary>
