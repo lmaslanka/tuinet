@@ -20,9 +20,6 @@ public enum ScrollbarMode : byte
 /// </summary>
 public readonly ref struct Scrollbar : IWidget
 {
-    private const string LowerEighths = "▁▂▃▄▅▆▇";
-    private const string LeftEighths = "▏▎▍▌▋▊▉";
-
     public Scrollbar(int content, int viewport, int position)
     {
         Content = content;
@@ -88,8 +85,8 @@ public readonly ref struct Scrollbar : IWidget
                 // the other side draws the rest of the cell instead, in reverse video: common fonts lack those blocks.
                 bool blockSide = vertical == (start > cellStart);
                 int k = blockSide ? covered : scale - covered;
-                char glyph = (vertical ? LowerEighths : LeftEighths)[k - 1];
-                buffer.SetRune(x, y, new Rune(glyph), blockSide ? edge : edge.With(Attr.Reverse));
+                Rune glyph = vertical ? Eighths.Lower(k) : Eighths.Left(k);
+                buffer.SetRune(x, y, glyph, blockSide ? edge : edge.With(Attr.Reverse));
             }
         }
     }

@@ -197,7 +197,11 @@ def showcase(tmux, binary, width, height):
     ok, s = tmux.wait(n, lambda t: "BY KIND" in t and "#  name" not in t)
     check(ok, f"{label}: ] switches to the stats page", s)
     if height >= 30:                                    # the whole page fits
-        check(re.search(r"→ written +[1-9][0-9]* B", s) is not None, f"{label}: stats show the previous frame's bytes", s)
+        check(re.search(r"BYTES PER FRAME +last [1-9][0-9]* B", s) is not None, f"{label}: stats show the last frame's bytes", s)
+        lines = s.splitlines()
+        heading = next((i for i, line in enumerate(lines) if "RENDER + DIFF + WRITE" in line), 0)
+        bytes_row = lines[heading - 2] if heading >= 2 else ""   # the bytes sparkline's bottom row, above a blank one
+        check(re.search(r"[▁▂▃▄▅▆▇█]{8}", bytes_row) is not None, f"{label}: stats draw the bytes-per-frame sparkline", s)
     tmux.mouse(n, *tmux.find(n, "List"))
     ok, s = tmux.wait(n, lambda t: "#  name" in t and "BY KIND" not in t)   # still sorted by name, from above
     check(ok, f"{label}: mouse: clicking the List tab switches back", s)
@@ -400,6 +404,9 @@ def stress(tmux, binary):
             for chunk in range(0, len(keys), 20):   # bursts of 20 keys: several arrive per frame
                 tmux.type(n, keys[chunk:chunk + 20])
         rows_are_right(step, tmux.settle(n))
+
+    status = tmux.screen(n).splitlines()[-1]
+    check(re.search(r"[▁▂▃▄▅▆▇█]{10}", status) is not None, f"{label}: the status bar ends in a frame-time sparkline", status)
 
     tmux.type(n, "q")
     app.finish(label)

@@ -8,8 +8,6 @@ namespace Tuinet.Widgets;
 /// </summary>
 public readonly ref struct ProgressBar : IWidget
 {
-    private const string Eighths = "▏▎▍▌▋▊▉";
-
     public ProgressBar(double ratio) => Ratio = ratio;
 
     /// <summary>Fill fraction, clamped to 0..1.</summary>
@@ -49,7 +47,7 @@ public readonly ref struct ProgressBar : IWidget
             else if (i == full && partial > 0)
             {
                 var edge = new Style(FilledStyle.Fg, EmptyStyle.Bg, FilledStyle.Attrs);
-                buffer.SetRune(x, y, new Rune(Eighths[partial - 1]), edge);
+                buffer.SetRune(x, y, Eighths.Left(partial), edge);
             }
             else
             {

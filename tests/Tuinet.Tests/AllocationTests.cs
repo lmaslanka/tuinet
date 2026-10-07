@@ -7,6 +7,8 @@ public class AllocationTests
 {
     private static readonly string[] Items = [.. Enumerable.Range(0, 200).Select(i => $"item {i}")];
     private static readonly string[] Pages = [.. Enumerable.Range(0, 12).Select(i => $"page {i}")];
+    private static readonly double[] History = [.. Enumerable.Range(0, 120).Select(i => (double)(i * 37 % 101))];
+    private static readonly Bar[] Bars = [new(3, "feature"), new(7.5, "bugfix", new Style(Color.Red, Color.Default)), new(1, "世界"), new(12, "docs")];
     private static readonly TableColumn[] Columns =
     [
         new("name", Constraint.Fill()),
@@ -170,6 +172,12 @@ public class AllocationTests
         frame.Render(popup, dialog);
         Rect inner = popup.Inner(dialog);
         frame.SetString(inner.X, inner.Y, "inside");
+
+        // Charts with value labels formatted on the stack, and a sparkline over a ring buffer's two halves.
+        frame.Render(new BarChart(Bars) { ValueFormat = "F1", BarStyle = new Style(Color.Blue, Color.Default) }, new Rect(60, rows[1].Y, 20, 8));
+        frame.Render(new BarChart(Bars) { Direction = Direction.Horizontal, Gap = 0 }, new Rect(60, rows[1].Y + 9, 30, 4));
+        int head = tick % History.Length;
+        frame.Render(new Sparkline(History.AsSpan(head), History.AsSpan(0, head)) { MaxStyle = new Style(Color.Red, Color.Default) }, new Rect(60, rows[1].Y + 14, 40, 3));
 
         // Styled text: a builder with a formatted number, markup, and a styled paragraph.
         var status = new StyledTextBuilder(stackalloc char[48], stackalloc StyledRun[6]);

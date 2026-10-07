@@ -15,7 +15,7 @@ One plan per gap found in the 2026-10-03 review. Priority 1 is next.
 | 09 | [Common widgets (overview)](09-more-widgets.md) | missing | — | 5 |
 | 09a | [Popup and placement](09a-popup.md) ✅ done | missing | S | 5 |
 | 09b | [Tabs](09b-tabs.md) ✅ done | missing | S–M | 5 |
-| 09c | [Sparkline and bar chart](09c-sparkline-barchart.md) | missing | M | 5 |
+| 09c | [Sparkline and bar chart](09c-sparkline-barchart.md) ✅ done | missing | M | 5 |
 | 09d | [Menu, fuzzy matching, command palette](09d-menu-fuzzy-palette.md) | missing | M | 5 |
 | 09e | [Tree view](09e-tree-view.md) | missing | M–L | 5 |
 | 10 | [Inline mode](10-inline-mode.md) ✅ done | missing | M | 4 |

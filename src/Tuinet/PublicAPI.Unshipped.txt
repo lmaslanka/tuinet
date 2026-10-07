@@ -905,3 +905,49 @@ Tuinet.Widgets.Tabs.TabAt(int x, int y, in Tuinet.Widgets.TabsState state) -> in
 Tuinet.Widgets.Tabs.Tabs(System.ReadOnlySpan<string!> titles) -> void
 Tuinet.Widgets.Tabs.Tabs() -> void
 Tuinet.Widgets.Tabs.Width.get -> int
+~override Tuinet.Widgets.Bar.Equals(object obj) -> bool
+override Tuinet.Widgets.Bar.GetHashCode() -> int
+~override Tuinet.Widgets.Bar.ToString() -> string
+static Tuinet.Widgets.Bar.operator !=(Tuinet.Widgets.Bar left, Tuinet.Widgets.Bar right) -> bool
+static Tuinet.Widgets.Bar.operator ==(Tuinet.Widgets.Bar left, Tuinet.Widgets.Bar right) -> bool
+Tuinet.Widgets.Bar
+Tuinet.Widgets.Bar.Bar(double Value, string! Label = "", Tuinet.Style Style = default(Tuinet.Style)) -> void
+Tuinet.Widgets.Bar.Bar() -> void
+Tuinet.Widgets.BarChart
+Tuinet.Widgets.BarChart.BarChart(System.ReadOnlySpan<Tuinet.Widgets.Bar> bars) -> void
+Tuinet.Widgets.BarChart.BarChart() -> void
+Tuinet.Widgets.BarChart.BarStyle.get -> Tuinet.Style
+Tuinet.Widgets.BarChart.BarStyle.init -> void
+Tuinet.Widgets.BarChart.BarWidth.get -> int
+Tuinet.Widgets.BarChart.BarWidth.init -> void
+Tuinet.Widgets.BarChart.Direction.get -> Tuinet.Direction
+Tuinet.Widgets.BarChart.Direction.init -> void
+Tuinet.Widgets.BarChart.Gap.get -> int
+Tuinet.Widgets.BarChart.Gap.init -> void
+Tuinet.Widgets.BarChart.LabelStyle.get -> Tuinet.Style
+Tuinet.Widgets.BarChart.LabelStyle.init -> void
+Tuinet.Widgets.BarChart.Max.get -> double
+Tuinet.Widgets.BarChart.Max.init -> void
+Tuinet.Widgets.BarChart.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.BarChart.ValueFormat.get -> string?
+Tuinet.Widgets.BarChart.ValueFormat.init -> void
+Tuinet.Widgets.BarChart.ValueStyle.get -> Tuinet.Style
+Tuinet.Widgets.BarChart.ValueStyle.init -> void
+Tuinet.Widgets.Bar.Deconstruct(out double Value, out string! Label, out Tuinet.Style Style) -> void
+Tuinet.Widgets.Bar.Equals(Tuinet.Widgets.Bar other) -> bool
+Tuinet.Widgets.Bar.Label.get -> string!
+Tuinet.Widgets.Bar.Label.init -> void
+Tuinet.Widgets.Bar.Style.get -> Tuinet.Style
+Tuinet.Widgets.Bar.Style.init -> void
+Tuinet.Widgets.Bar.Value.get -> double
+Tuinet.Widgets.Bar.Value.init -> void
+Tuinet.Widgets.Sparkline
+Tuinet.Widgets.Sparkline.Max.get -> double
+Tuinet.Widgets.Sparkline.Max.init -> void
+Tuinet.Widgets.Sparkline.MaxStyle.get -> Tuinet.Style
+Tuinet.Widgets.Sparkline.MaxStyle.init -> void
+Tuinet.Widgets.Sparkline.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Sparkline.Sparkline(System.ReadOnlySpan<double> values, System.ReadOnlySpan<double> more = default(System.ReadOnlySpan<double>)) -> void
+Tuinet.Widgets.Sparkline.Sparkline() -> void
+Tuinet.Widgets.Sparkline.Style.get -> Tuinet.Style
+Tuinet.Widgets.Sparkline.Style.init -> void

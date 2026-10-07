@@ -283,17 +283,55 @@ public class ShowcaseTests
     }
 
     [Fact]
-    public void Stats_page_counts_the_items_and_shows_the_frame_cost()
+    public void Stats_page_charts_the_items_and_the_frame_cost()
     {
         var app = new ShowcaseApp();
         app.RecordFrame(1234, TimeSpan.FromMicroseconds(56));
         Press(app, ']');
         string screen = Render(app).ToString();
-        foreach (string row in (string[])[@"● feature +4 ", @"▲ critical +5 ", @"■ enabled +17 of 20", @"■ notify +7 of 20",
-            @"→ written +1234 B", @"→ render \+ diff \+ write +56 µs"])
+        foreach (string row in (string[])[@"BY KIND +FLAGS", @"   4       4       4       4       4 +■ notify +7 of 20",
+            @"▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅", @"feature bugfix   chore   docs    spike", @"■ enabled +17 of 20",
+            @"critical ████████████▌ 5", @"BYTES PER FRAME +last 1234 B", @"RENDER \+ DIFF \+ WRITE +last 56 µs"])
         {
             Assert.Matches(row, screen);
         }
+    }
+
+    [Fact]
+    public void Stats_page_bar_charts_follow_edits()
+    {
+        var app = new ShowcaseApp();
+        app.Items[0].Kind = 4;
+        app.Items[1].Kind = 4;
+        app.Items[0].Priority = 3;
+        Press(app, ']');
+        string screen = Render(app).ToString();
+        Assert.Contains("│                                    6      ■ enabled", screen);   // each value right above its bar
+        Assert.Contains("│    3       3       4       4    ▃▃▃▃▃▃▃", screen);
+        Assert.Contains("│ ▂▂▂▂▂▂▂ ▂▂▂▂▂▂▂ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ███████", screen);
+        Assert.Contains("low      ██████████ 4", screen);
+        Assert.Contains("critical ███████████████ 6", screen);
+    }
+
+    [Fact]
+    public void Stats_page_sparkline_shows_the_newest_frame_on_the_right_and_marks_the_peak()
+    {
+        var app = new ShowcaseApp();
+        for (int i = 0; i < ShowcaseApp.FrameHistory + 80; i++)   // wraps the ring
+        {
+            app.RecordFrame(i == 0 ? 90_000 : i % 2 == 0 ? 400 : 100, TimeSpan.FromMicroseconds(50));
+        }
+
+        app.RecordFrame(5000, TimeSpan.FromMicroseconds(50));
+        Press(app, ']');
+        CellBuffer screen = Render(app);
+        (int x, int y) = Find(screen, "last 5000 B");
+        int right = x + "last 5000 B".Length - 1;
+        int bottom = Find(screen, "RENDER + DIFF").Y - 2;
+        Assert.Equal("█", screen[right, bottom].Text);
+        Assert.Equal(Color.Hex(0xF5A623), screen[right, bottom].Style.Fg);   // the peak, in amber
+        Assert.Equal("█", screen[right, y + 1].Text);                       // full height: the old 90 000 B spike scrolled out
+        Assert.Equal("▁", screen[right - 1, bottom].Text);                  // 100 of 5000 rounds to 0 eighths, but shows as ▁
     }
 
     [Fact]

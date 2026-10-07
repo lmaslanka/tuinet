@@ -100,7 +100,7 @@ while (true)
 To see what the library can do, run the samples:
 
 ```sh
-./run           # the showcase in the screenshots: list, edit form, progress dialog
+./run           # the showcase in the screenshots: list, stats charts, edit form, progress dialog
 ./run inline    # inline mode: a download with live progress bars under the prompt
 ./run stress    # latency harness: hold j on 100k items, or press n for full-screen noise
 ```
@@ -497,6 +497,29 @@ term.Poll(out Event ev, animating ? 33 : Timeout.Infinite);
 Base animation on elapsed time, not frame count, so it runs at the same speed whatever the frame
 rate. For a segmented meter like `■■□□`, use a `ProgressBar` with `FilledChar = '■'` and `EmptyChar = '□'`.
 
+### Charts
+
+```csharp
+// A value over time: one value per column, newest on the right. The two spans draw your own ring
+// buffer without a copy (older part, then newer part); h rows give 8h levels.
+frame.Render(new Sparkline(times.AsSpan(head), times.AsSpan(0, head))
+{
+    Style = new Style(Color.Blue, default),
+    MaxStyle = new Style(Color.Yellow, default),   // the peak column
+}, new Rect(x, y, 40, 3));
+
+// Bars that compare values: vertical (labels under, values above) or horizontal (label column, values after).
+Bar[] bars = [new(12, "feature", new Style(Color.Green, default)), new(7, "bugfix"), new(3, "docs")];
+frame.Render(new BarChart(bars) { BarWidth = 7, ValueFormat = "0" }, chartArea);
+frame.Render(new BarChart(bars) { Direction = Direction.Horizontal, Gap = 0, Max = 20 }, listArea);
+```
+
+With `Max` left at NaN, a sparkline scales to the largest *visible* value, so an old spike stops squashing
+the chart once it scrolls out. Zero draws nothing, NaN and negative values leave a gap, and any other positive
+value shows at least `▁`. Bar charts drop bars that don't fit instead of squashing them; values are formatted
+on the stack with `ValueFormat` (`null` hides them). Keep the `Bar[]` in a field and refill it each frame:
+a frame with both charts allocates nothing.
+
 ### Background work
 
 `Post` is thread-safe and wakes a blocked `Poll`. The message comes back as `EventKind.Message`
@@ -735,6 +758,8 @@ public void Key_in_frame_out()
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
 | `Button` | | Padded label with idle and focused styles |
 | `ProgressBar` | | Eighth-block precision, custom fill/empty glyphs (segmented meters) |
+| `Sparkline` | | Values over time in eighth-block columns, several rows tall, newest on the right; draws a ring buffer's two halves without a copy |
+| `BarChart` | | Vertical or horizontal bars with eighth-block ends, labels and formatted values; per-bar styles |
 | `Spinner` | | Time-based frames: `Line`, `Dots`, `Arc` |
 | `Clear` | | Blanks an area (`Popup` does this for you) |
 
@@ -845,11 +870,11 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Popup, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar
+  Widgets/                       Block, Popup, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty
-samples/Tuinet.Samples.Showcase  list, edit form and progress dialog (the screenshots)
+samples/Tuinet.Samples.Showcase  list, stats charts, edit form and progress dialog (the screenshots)
 samples/Tuinet.Samples.Inline    inline mode: download progress under the prompt, logs above it
 samples/Tuinet.Samples.Stress    latency and throughput harness
 bench/Tuinet.Benchmarks          BenchmarkDotNet suite

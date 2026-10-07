@@ -72,6 +72,11 @@ The first release.
 - `Tabs` / `TabsState`: a one-row tab bar with dividers that scrolls to keep the selected tab visible, with `‹` `›`
   when the titles don't fit. It draws only the tabs, so it fits in a block's border. `Next`/`Previous` wrap;
   `HandleMouse` selects on click and scrolls on the arrows and wheel; `TabAt` hit-tests.
+- `Sparkline` and `BarChart`: a value over time in eighth-block columns (several rows stack into 8 levels each,
+  newest on the right, scaled to the largest visible value, and drawn from a ring buffer's two halves without a
+  copy), and vertical or horizontal bars with eighth-block ends, labels and values formatted on the stack. Both
+  allocate nothing per frame. The showcase's stats page charts items per kind and priority and the bytes and time
+  of recent frames; the stress sample's status bar ends in a frame-time sparkline.
 - `CellBuffer.SetStyle` and `SetLink` no longer throw for an area entirely to the right of the buffer.
 - `TestTty` for driving a `Terminal` in tests.
 - Native AOT and trimming compatible.

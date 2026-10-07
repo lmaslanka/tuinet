@@ -8,8 +8,10 @@ public sealed class ShowcaseApp
     private readonly Item[] _items = Item.Samples();
     private ListState _list;
     private TabsState _tabs;
-    private long _frameBytes;
-    private TimeSpan _frameTime;
+    private readonly Ring _frameBytes = new(FrameHistory);
+    private readonly Ring _frameMicroseconds = new(FrameHistory);
+    private readonly Bar[] _kindBars = new Bar[Item.Kinds.Length];
+    private readonly Bar[] _priorityBars = new Bar[Item.Priorities.Length];
     private EditDialog? _edit;
     private ProgressDialog? _progress;
     private string _flash = "";
@@ -42,11 +44,17 @@ public sealed class ShowcaseApp
         return text;
     }
 
-    /// <summary>What the previous frame cost, shown on the stats page (the loop reports it after each <see cref="Terminal.Present"/>).</summary>
+    /// <summary>Frames kept for the stats page's sparklines.</summary>
+    public const int FrameHistory = 120;
+
+    /// <summary>Five bars of 7 columns with 1-column gaps: every kind's name fits under its bar.</summary>
+    private const int KindChartWidth = 39;
+
+    /// <summary>What a frame cost, charted on the stats page (the loop reports it after each <see cref="Terminal.Present"/>).</summary>
     public void RecordFrame(long bytes, TimeSpan time)
     {
-        _frameBytes = bytes;
-        _frameTime = time;
+        _frameBytes.Add(bytes);
+        _frameMicroseconds.Add(time.TotalMicroseconds);
     }
 
     /// <summary>The loop redraws on a timer only while something animates; otherwise it sleeps until input.</summary>
@@ -286,7 +294,7 @@ public sealed class ShowcaseApp
         ArrowStyle = Theme.Accent(Theme.Amber),
     };
 
-    /// <summary>Counts per kind, priority and flag, and what the previous frame cost.</summary>
+    /// <summary>Charts of the items per kind and priority, the flags, and what recent frames cost.</summary>
     private void RenderStats(CellBuffer buffer, Rect area)
     {
         Span<int> kinds = stackalloc int[Item.Kinds.Length];
@@ -301,33 +309,97 @@ public sealed class ShowcaseApp
             notify += item.Notify ? 1 : 0;
         }
 
-        Span<char> value = stackalloc char[48];
-        int y = area.Y;
-        y = Heading(buffer, area, y, "BY KIND", Theme.Blue);
         for (int k = 0; k < kinds.Length; k++)
         {
-            value.TryWrite($"{kinds[k],3}", out int written);
-            y = Stat(buffer, area, y, "● ", Theme.KindColor(k), Item.Kinds[k], value[..written]);
+            _kindBars[k] = new Bar(kinds[k], Item.Kinds[k], Theme.Accent(Theme.KindColor(k)));
         }
 
-        y = Heading(buffer, area, y + 1, "BY PRIORITY", Theme.Violet);
         for (int p = 0; p < priorities.Length; p++)
         {
-            value.TryWrite($"{priorities[p],3}", out int written);
-            y = Stat(buffer, area, y, "▲ ", Theme.PriorityColor(p), Item.Priorities[p], value[..written]);
+            _priorityBars[p] = new Bar(priorities[p], Item.Priorities[p], Theme.Accent(Theme.PriorityColor(p)));
         }
 
-        y = Heading(buffer, area, y + 1, "FLAGS", Theme.Coral);
-        value.TryWrite($"{enabled,3} of {_items.Length}", out int length);
-        y = Stat(buffer, area, y, "■ ", Theme.Green, "enabled", value[..length]);
-        value.TryWrite($"{notify,3} of {_items.Length}", out length);
-        y = Stat(buffer, area, y, "■ ", Theme.Green, "notify", value[..length]);
+        // Top to bottom; on a short screen the sections at the bottom are cut.
+        Span<Rect> top = stackalloc Rect[2];
+        Layout.Horizontal(new Rect(area.X, area.Y, area.Width, 6), [Constraint.Length(KindChartWidth), Constraint.Fill()], top, spacing: 3);
+        Heading(buffer, top[0], top[0].Y, "BY KIND", Theme.Blue);
+        buffer.Render(new BarChart(_kindBars)
+        {
+            Max = _items.Length / 2.0,   // a kind with half the items fills the chart
+            BarWidth = 7,
+            LabelStyle = Theme.Dim,
+            ValueStyle = Theme.Strong,
+        }, Clip(top[0].X, top[0].Y + 1, top[0].Width, 5, area));
 
-        y = Heading(buffer, area, y + 1, "PREVIOUS FRAME", Theme.Green);
-        value.TryWrite($"{_frameBytes,3} B", out length);
-        y = Stat(buffer, area, y, "→ ", Theme.Muted, "written", value[..length]);
-        value.TryWrite($"{_frameTime.TotalMicroseconds,3:F0} µs", out length);
-        Stat(buffer, area, y, "→ ", Theme.Muted, "render + diff + write", value[..length]);
+        Span<char> value = stackalloc char[48];
+        int y = Heading(buffer, top[1], top[1].Y, "FLAGS", Theme.Coral);
+        value.TryWrite($"{enabled,2} of {_items.Length}", out int length);
+        y = Flag(buffer, top[1], y, "enabled", value[..length]);
+        value.TryWrite($"{notify,2} of {_items.Length}", out length);
+        Flag(buffer, top[1], y, "notify", value[..length]);
+
+        y = Heading(buffer, area, area.Y + 7, "BY PRIORITY", Theme.Violet);
+        buffer.Render(new BarChart(_priorityBars)
+        {
+            Direction = Direction.Horizontal,
+            Max = _items.Length,         // each bar is its share of all items
+            Gap = 0,
+            LabelStyle = Theme.Dim,
+            ValueStyle = Theme.Strong,
+        }, Clip(area.X, y, area.Width, _priorityBars.Length, area));
+        y += _priorityBars.Length + 1;
+
+        // The two sparklines share what's left, each under a heading.
+        int rest = Math.Max(2, area.Bottom - y - 3);
+        int sparkline = (rest + 1) / 2;
+        value.TryWrite($"last {_frameBytes.Last:F0} B", out length);
+        ChartHeading(buffer, Clip(area.X, y, area.Width, 1, area), "BYTES PER FRAME", Theme.Green, _frameBytes.Count > 0 ? value[..length] : "");
+        buffer.Render(new Sparkline(_frameBytes.Older, _frameBytes.Newer)
+        {
+            Style = Theme.Accent(Theme.Green),
+            MaxStyle = Theme.Accent(Theme.Amber),
+        }, Clip(area.X, y + 1, area.Width, sparkline, area));
+        y += sparkline + 2;
+        sparkline = rest / 2;
+
+        value.TryWrite($"last {_frameMicroseconds.Last:F0} µs", out length);
+        ChartHeading(buffer, Clip(area.X, y, area.Width, 1, area), "RENDER + DIFF + WRITE", Theme.Blue, _frameMicroseconds.Count > 0 ? value[..length] : "");
+        buffer.Render(new Sparkline(_frameMicroseconds.Older, _frameMicroseconds.Newer)
+        {
+            Style = Theme.Accent(Theme.Blue),
+            MaxStyle = Theme.Accent(Theme.Amber),
+        }, Clip(area.X, y + 1, area.Width, sparkline, area));
+    }
+
+    private static Rect Clip(int x, int y, int width, int height, Rect area) => new Rect(x, y, width, height).Intersect(area);
+
+    /// <summary>A chart's heading, with <paramref name="detail"/> on the right when it fits.</summary>
+    private static void ChartHeading(CellBuffer buffer, Rect row, ReadOnlySpan<char> title, Color color, ReadOnlySpan<char> detail)
+    {
+        if (row.IsEmpty)
+        {
+            return;
+        }
+
+        int end = buffer.SetString(row.X, row.Y, title, Theme.Heading(color), row.Width);
+        int x = row.Right - TextWidth.Of(detail);
+        if (x > end + 1)
+        {
+            buffer.SetString(x, row.Y, detail, Theme.Dim);
+        }
+    }
+
+    private static int Flag(CellBuffer buffer, Rect area, int y, ReadOnlySpan<char> label, ReadOnlySpan<char> value)
+    {
+        if (y < area.Bottom)
+        {
+            int x = buffer.SetString(area.X, y, "■ ", Theme.Accent(Theme.Green), area.Width);
+            x = buffer.SetString(x, y, label, Theme.Body, area.Right - x);
+            int valueX = Math.Max(x + 1, area.Right - TextWidth.Of(value));
+            buffer.SetString(valueX, y, value, Theme.Strong, area.Right - valueX);
+        }
+
+        return y + 1;
     }
 
     private static int Heading(CellBuffer buffer, Rect area, int y, ReadOnlySpan<char> text, Color color)
@@ -335,23 +407,6 @@ public sealed class ShowcaseApp
         if (y < area.Bottom)
         {
             buffer.SetString(area.X, y, text, Theme.Heading(color), area.Width);
-        }
-
-        return y + 1;
-    }
-
-    private static int Stat(CellBuffer buffer, Rect area, int y, ReadOnlySpan<char> glyph, Color color, ReadOnlySpan<char> label, ReadOnlySpan<char> value)
-    {
-        if (y < area.Bottom)
-        {
-            const int ValueColumn = 26;
-            int valueX = area.X + ValueColumn;
-            int x = buffer.SetString(area.X, y, glyph, Theme.Accent(color), area.Width);
-            buffer.SetString(x, y, label, Theme.Body, Math.Min(area.Right, valueX - 1) - x, Overflow.Ellipsis);
-            if (valueX < area.Right)
-            {
-                buffer.SetString(valueX, y, value, Theme.Strong, area.Right - valueX);
-            }
         }
 
         return y + 1;

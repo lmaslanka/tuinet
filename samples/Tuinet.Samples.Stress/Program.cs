@@ -3,7 +3,8 @@
 //   n              toggle full-screen color noise, repainted as fast as the terminal accepts it
 //   q / Ctrl+C     quit
 // The status bar shows frames, bytes and managed allocations since warm-up (or the last resize,
-// which reallocates the cell buffers); in steady state allocations stay at 0.
+// which reallocates the cell buffers); in steady state allocations stay at 0. At its right end, a
+// sparkline of the last frame times (render + diff + write).
 using System.Diagnostics;
 using Tuinet;
 using Tuinet.Widgets;
@@ -11,6 +12,9 @@ using Tuinet.Widgets;
 const int ItemCount = 100_000;
 var highlight = new Style(Color.Rgb(16, 16, 16), Color.Rgb(120, 200, 255));
 var status = new Style(Color.Rgb(16, 16, 16), Color.Rgb(200, 200, 200));
+var sparkline = new Style(Color.Rgb(20, 90, 170), default);
+var frameTimes = new double[60];   // µs, a ring: oldest at frameHead
+int frameHead = 0;
 var list = new ListState();
 bool noise = false;
 uint seed = 1;
@@ -27,6 +31,7 @@ using var terminal = Terminal.Open();
 bool running = true;
 while (running)
 {
+    long frameStart = Stopwatch.GetTimestamp();
     CellBuffer frame = terminal.BeginFrame();
     Layout.Vertical(frame.Area, [Constraint.Fill(), Constraint.Length(1)], rows);
 
@@ -52,8 +57,13 @@ while (running)
     long allocated = startAllocated < 0 ? -1 : GC.GetAllocatedBytesForCurrentThread() - startAllocated;
     line.TryWrite($" frame {terminal.Frames}  last {terminal.LastFrameBytes} B  total {terminal.BytesWritten / 1024} KiB  {fps:F0} fps  alloc {allocated} B  gc0 {GC.CollectionCount(0)}  [{terminal.ColorMode}]  j/k n q", out int length);
     frame.Fill(rows[1], status);
-    frame.SetString(0, rows[1].Y, line[..length], status, rows[1].Width);
+    int sparkWidth = Math.Min(frameTimes.Length, rows[1].Width / 4);
+    frame.SetString(0, rows[1].Y, line[..length], status, rows[1].Width - sparkWidth - 1);
+    var times = new Rect(rows[1].Right - sparkWidth, rows[1].Y, sparkWidth, 1);
+    frame.Render(new Sparkline(frameTimes.AsSpan(frameHead), frameTimes.AsSpan(0, frameHead)) { Style = sparkline }, times);
     terminal.Present();
+    frameTimes[frameHead] = Stopwatch.GetElapsedTime(frameStart).TotalMicroseconds;
+    frameHead = (frameHead + 1) % frameTimes.Length;
 
     if (terminal.Frames == baselineFrame)
     {
