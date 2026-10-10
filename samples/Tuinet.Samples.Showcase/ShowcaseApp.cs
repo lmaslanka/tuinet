@@ -3,14 +3,15 @@ using Tuinet.Widgets;
 namespace Tuinet.Samples.Showcase;
 
 /// <summary>
-/// Main screen: a tabbed panel (the 20-item list, stats) with a details panel, plus the edit and progress dialogs,
-/// a context menu on the rows and a command palette over every action.
+/// Main screen: a tabbed panel (the 20-item list, stats, the items as a tree of groups) with a details panel, plus the
+/// edit and progress dialogs, a context menu on the rows and a command palette over every action.
 /// </summary>
 public sealed class ShowcaseApp
 {
     private readonly Item[] _items = Item.Samples();
     private ListState _list;
     private TabsState _tabs;
+    private TreeState _tree = new();
     private readonly Ring _frameBytes = new(FrameHistory);
     private readonly Ring _frameMicroseconds = new(FrameHistory);
     private readonly Bar[] _kindBars = new Bar[Item.Kinds.Length];
@@ -18,11 +19,13 @@ public sealed class ShowcaseApp
     private EditDialog? _edit;
     private ProgressDialog? _progress;
     private string _flash = "";
+    private Alarm _flashAlarm;
     private string? _copy;
     private int _sortColumn;
     private bool _sortDescending;
     private long _lastClickMs = long.MinValue;
     private int _lastClickRow = -1;
+    private int _lastClickNode = -1;
     private long _nowMs;
     private bool _quit;
 
@@ -62,12 +65,19 @@ public sealed class ShowcaseApp
             new("Sort by owner", "", app => app.SortBy(4)),
             new("Show the list", "alt+1", app => app.ShowPage(ListPage)),
             new("Show the stats", "alt+2", app => app.ShowPage(StatsPage)),
+            new("Show the groups", "alt+3", app => app.ShowPage(GroupsPage)),
             new("Next tab", "]", app => app.ShowPage((app.Page + 1) % Pages.Length)),
             new("Open the context menu", "m", app => app.OpenMenu(null)),
             new("Open the progress dialog", "p", app => app.OpenProgress()),
             new("Quit", "q", app => app.Quit()),
         ];
         _palette = new CommandPalette(commands);
+
+        // Kind groups start open and priority groups closed, so both expanders show on the Groups tab.
+        for (int kind = 0; kind < Item.Kinds.Length; kind++)
+        {
+            _tree.Expand(ItemTree.KindGroup + kind);
+        }
     }
 
     public IReadOnlyList<Item> Items => _items;
@@ -76,7 +86,11 @@ public sealed class ShowcaseApp
 
     public const int ListPage = 0;
     public const int StatsPage = 1;
-    private static readonly string[] Pages = ["List", "Stats"];
+    public const int GroupsPage = 2;
+    private static readonly string[] Pages = ["List", "Stats", "Groups"];
+
+    /// <summary>The Groups tab's tree: its selection follows the list's, and selecting an item there selects it in the list.</summary>
+    public TreeState Groups => _tree;
     public EditDialog? Edit => _edit;
     public bool ProgressOpen => _progress is not null;
     public bool MenuOpen => _menuOpen;
@@ -119,8 +133,42 @@ public sealed class ShowcaseApp
     /// <summary>The loop redraws on a timer only while something animates; otherwise it sleeps until input.</summary>
     public bool IsAnimating(long nowMs) => _progress?.IsAnimating(nowMs) == true;
 
+    /// <summary>A message under the details panel ("copied · …", "saved · …") hides itself after this long.</summary>
+    public const int FlashMs = 3000;
+
+    /// <summary>When the message hides: the loop wakes then with a tick, even when idle.</summary>
+    public long NextDueMs => _flashAlarm.DueMs;
+
     /// <summary>Returns false when the app should exit.</summary>
     public bool Handle(Event ev, long nowMs)
+    {
+        if (_flashAlarm.Fire(nowMs))
+        {
+            _flash = "";
+        }
+
+        string flash = _flash;
+        int page = Page;
+        bool running = HandleEvent(ev, nowMs);
+        if (_flash.Length == 0)
+        {
+            _flashAlarm.Cancel();
+        }
+        else if (!ReferenceEquals(_flash, flash))
+        {
+            _flashAlarm.Start(nowMs, FlashMs);   // a new message: shown for FlashMs from now
+        }
+
+        if (Page == GroupsPage && page != GroupsPage)
+        {
+            // Opening the Groups tab: show the list's selected item there (opening its group if needed).
+            _tree.Select(ItemTree.NodeOf(_items[_list.Selected]), new ItemTree(_items));
+        }
+
+        return running;
+    }
+
+    private bool HandleEvent(Event ev, long nowMs)
     {
         // Ctrl+C quits, unless it copies text selected in the edit dialog.
         if (ev.Kind == EventKind.Key && ev.Key.IsCtrl('c') && _edit?.HasSelection != true)
@@ -135,6 +183,11 @@ public sealed class ShowcaseApp
             if (result != DialogResult.Open)
             {
                 _flash = result == DialogResult.Saved ? $"saved · {_items[_list.Selected].Name}" : "";
+                if (result == DialogResult.Saved)
+                {
+                    _tree.Invalidate();   // the kind or priority may have changed: the item moves to another group
+                }
+
                 _edit = null;
             }
 
@@ -206,9 +259,63 @@ public sealed class ShowcaseApp
                 return true;
             }
         }
+        else if (Page == GroupsPage && HandleGroupsKey(key))
+        {
+            return true;
+        }
 
         _flash = "";
         return true;
+    }
+
+    /// <summary>
+    /// The tree takes the moves and folds (arrows, j/k, h/l, space on a group). Enter edits an item or folds a group,
+    /// space toggles an item, y copies its name. Returns true when <see cref="_flash"/> must stay.
+    /// </summary>
+    private bool HandleGroupsKey(KeyEvent key)
+    {
+        var source = new ItemTree(_items);
+        int node = _tree.SelectedNode;
+        if (_tree.Handle(key, source))
+        {
+            FollowTree();
+        }
+        else if (key.Is(KeyCode.Enter) || key.IsChar('e'))
+        {
+            if (ItemTree.IsItem(node))
+            {
+                EditSelected();
+            }
+            else
+            {
+                _tree.Toggle(node);
+            }
+        }
+        else if (key.IsChar(' ') && ItemTree.IsItem(node))
+        {
+            ToggleSelected();
+        }
+        else if (key.IsChar('y') && ItemTree.IsItem(node))
+        {
+            CopySelected();
+            return true;
+        }
+
+        return false;
+    }
+
+    /// <summary>An item selected in the tree is selected in the list too, so the details panel shows it.</summary>
+    private void FollowTree()
+    {
+        int node = _tree.SelectedNode;
+        for (int i = 0; ItemTree.IsItem(node) && i < _items.Length; i++)
+        {
+            if (ItemTree.NodeOf(_items[i]) == node)
+            {
+                _list.Selected = i;
+                return;
+            }
+        }
     }
 
     /// <summary>
@@ -314,7 +421,18 @@ public sealed class ShowcaseApp
     /// <summary>A header click sorts by that column (again: reverses); a row click selects; a double-click edits.</summary>
     private void HandleMouse(MouseEvent mouse, long nowMs)
     {
-        if (PageTabs().HandleMouse(mouse, ref _tabs) || Page != ListPage)
+        if (PageTabs().HandleMouse(mouse, ref _tabs))
+        {
+            return;
+        }
+
+        if (Page == GroupsPage)
+        {
+            HandleGroupsMouse(mouse, nowMs);
+            return;
+        }
+
+        if (Page != ListPage)
         {
             return;   // the list isn't drawn on other pages, so it must not hit-test its last position
         }
@@ -357,6 +475,29 @@ public sealed class ShowcaseApp
         _lastClickMs = nowMs;
     }
 
+    /// <summary>A click on [+]/[-] folds a group, a click on a row selects it, a double-click on an item edits it.</summary>
+    private void HandleGroupsMouse(MouseEvent mouse, long nowMs)
+    {
+        bool onRow = mouse.IsClick && _tree.List.RowAt(mouse.X, mouse.Y, _tree.Count) >= 0;
+        if (!_tree.HandleMouse(mouse, new ItemTree(_items)) || !onRow)
+        {
+            return;
+        }
+
+        _flash = "";
+        FollowTree();
+        int node = _tree.SelectedNode;
+        if (ItemTree.IsItem(node) && node == _lastClickNode && nowMs - _lastClickMs <= DoubleClickMs)
+        {
+            EditSelected();
+            _lastClickNode = -1;
+            return;
+        }
+
+        _lastClickNode = node;
+        _lastClickMs = nowMs;
+    }
+
     /// <summary>Sort the items by <paramref name="column"/>, keeping the same item selected.</summary>
     public void Sort(int column, bool descending)
     {
@@ -377,6 +518,7 @@ public sealed class ShowcaseApp
             return descending ? -order : order;
         });
         _list.Selected = Array.IndexOf(_items, selected);
+        _tree.Invalidate();   // items keep the list's order inside their groups
     }
 
     public void Render(CellBuffer buffer, long nowMs)
@@ -393,7 +535,7 @@ public sealed class ShowcaseApp
         Layout.Horizontal(rows[2], [Constraint.Fill(), Constraint.Length(38)], columns, spacing: 3);
         RenderPanel(buffer, columns[0]);
         RenderDetails(buffer, columns[1]);
-        RenderKeys(buffer, rows[3]);
+        RenderKeys(buffer, rows[3], Page == GroupsPage ? GroupKeyHints : KeyHints);
 
         if (_menuOpen)
         {
@@ -475,6 +617,20 @@ public sealed class ShowcaseApp
         if (Page == StatsPage)
         {
             RenderStats(buffer, inner);
+        }
+        else if (Page == GroupsPage)
+        {
+            buffer.Render(new TreeView<ItemTree>(new ItemTree(_items))
+            {
+                GuideStyle = Theme.Faded,
+                ExpanderStyle = Theme.Accent(Theme.Amber),
+                SelectedStyle = Theme.RowSelected,
+                HighlightSymbol = "▌",
+                HighlightSymbolStyle = Theme.Accent(Theme.Blue),
+                Scrollbar = ScrollbarMode.Auto,
+                ScrollbarThumbStyle = Theme.Accent(Theme.Muted),
+                ScrollbarTrackStyle = Theme.Faded,
+            }, inner, ref _tree);
         }
         else
         {
@@ -675,10 +831,13 @@ public sealed class ShowcaseApp
     private static readonly (string Key, string Action)[] KeyHints =
         [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("m", "menu"), ("[ ]", "tabs"), ("ctrl+p", "commands"), ("q", "quit")];
 
-    private static void RenderKeys(CellBuffer buffer, Rect row)
+    private static readonly (string Key, string Action)[] GroupKeyHints =
+        [("j/k", "move"), ("←/→", "fold"), ("enter", "edit"), ("space", "toggle"), ("[ ]", "tabs"), ("ctrl+p", "commands"), ("q", "quit")];
+
+    private static void RenderKeys(CellBuffer buffer, Rect row, (string Key, string Action)[] hints)
     {
         var keys = new StyledTextBuilder(stackalloc char[112], stackalloc StyledRun[32]);
-        foreach ((string key, string action) in KeyHints)
+        foreach ((string key, string action) in hints)
         {
             if (keys.Length > 0)
             {

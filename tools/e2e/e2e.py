@@ -180,6 +180,8 @@ def showcase(tmux, binary, width, height):
     tmux.keys(n, "C-s")
     ok, s = tmux.wait(n, lambda t: "03  hello world" in t and "saved · hello world" in t)
     check(ok, f"{label}: ctrl+s saves and the table shows the new name", s)
+    ok, s = tmux.wait(n, lambda t: "saved · " not in t and "03  hello world" in t, timeout=6)
+    check(ok, f"{label}: the message hides itself after 3 s with no input (the idle loop wakes for its alarm)", s)
 
     tmux.type(n, "p")
     ok, s = tmux.wait(n, lambda t: "PIPELINE" in t)
@@ -203,6 +205,21 @@ def showcase(tmux, binary, width, height):
         heading = next((i for i, line in enumerate(lines) if "RENDER + DIFF + WRITE" in line), 0)
         bytes_row = lines[heading - 2] if heading >= 2 else ""   # the bytes sparkline's bottom row, above a blank one
         check(re.search(r"[▁▂▃▄▅▆▇█]{8}", bytes_row) is not None, f"{label}: stats draw the bytes-per-frame sparkline", s)
+    tmux.type(n, "]")
+    # The view scrolls to the list's selected item, so which groups show depends on the steps above.
+    ok, s = tmux.wait(n, lambda t: "[-] " in t and "[+] " in t and "BY KIND" not in t and "#  name" not in t)
+    check(ok, f"{label}: ] switches to the groups page, with open and closed groups", s)
+    opened = s.count("[-]")
+    tmux.mouse(n, *tmux.find(n, "[+] critical"))
+    ok, s = tmux.wait(n, lambda t: t.count("[-]") == opened + 1)
+    check(ok, f"{label}: mouse: clicking [+] opens a priority group", s)
+    tmux.type(n, "[")
+    ok, s = tmux.wait(n, lambda t: "BY KIND" in t)
+    check(ok, f"{label}: [ goes back to the stats page", s)
+    if tmux.find(n, "List") is None:                    # a narrow bar scrolled past it on the way to Groups
+        tmux.mouse(n, *tmux.find(n, "‹"))
+        ok, s = tmux.wait(n, lambda t: "List" in t)
+        check(ok, f"{label}: mouse: clicking ‹ scrolls the tab bar back", s)
     tmux.mouse(n, *tmux.find(n, "List"))
     ok, s = tmux.wait(n, lambda t: "#  name" in t and "BY KIND" not in t)   # still sorted by name, from above
     check(ok, f"{label}: mouse: clicking the List tab switches back", s)

@@ -32,6 +32,20 @@ The first release.
   instead of spaces when that is shorter; erased cells keep their background (BCE). A dialog closing over a
   themed screen goes from 2.2 KB to 313 bytes, and list and table scroll frames shrink by 53–71%.
   `TerminalOptions.EraseSequences` turns it off.
+- Optional main loop: `Terminal.Run(IApp)` draws a frame, sleeps until input, handles every event already waiting
+  and draws once. While `IApp.IsAnimating` it draws about 30 frames a second (`frameMs`), with an `EventKind.Tick`
+  for each frame no input caused, and `IApp.NextDueMs` wakes an idle app at a given time. In inline mode the last
+  frame is drawn again after the app stops. It allocates nothing per frame. `FocusRing` is a value type for the
+  focused control: Tab/Shift+Tab wrap around, a click focuses the control under it, and `Is(i)` feeds `Focused`.
+  `Alarm` is a one-shot "at this time" check for timed changes, with no timer or callback.
+  `Terminal.LastFrameTime` is the time from `BeginFrame` to the end of `Present`. All three samples run on `Run`,
+  the edit dialog's focus is a `FocusRing`, and the Showcase's "saved"/"copied" message hides itself after 3 s.
+- Tree view: `TreeView<TSource>` over an `ITreeSource` (integer node ids, children asked for only once a node is
+  expanded) with `TreeState`: `[+]`/`[-]` expanders, `├─`/`└─`/`│` guides, cached visible rows (a frame draws only
+  the rows on screen; rows are rebuilt only when the tree's shape changes), a selection that follows its node,
+  `Select` to open the path to a node, `Invalidate` for changed data. Keys (arrows, h/j/k/l, PageUp/PageDown,
+  Home/End, Space), a click on the expander, wheel and scrollbar drag. A frame takes ~7 µs at any scroll position in
+  a 109,000-row tree. The Showcase has a Groups tab: the items by kind and priority, in sync with the list.
 - Split scrolling: on terminals with left/right margins (DECLRMM/DECSLRM, asked with DECRQM at startup), a band
   narrower than the screen that scrolls, such as a list beside a panel, is moved by the terminal too. A 150-column
   list scrolling beside a 50-column panel goes from 10.3 KB to 459 bytes per frame. `Terminal.LeftRightMarginsActive`

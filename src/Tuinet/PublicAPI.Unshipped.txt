@@ -1001,3 +1001,82 @@ Tuinet.Widgets.MenuState.Handle(Tuinet.KeyEvent key, System.ReadOnlySpan<Tuinet.
 Tuinet.Widgets.MenuState.MenuState() -> void
 Tuinet.Widgets.MenuState.Reset(System.ReadOnlySpan<Tuinet.Widgets.MenuItem> items) -> void
 Tuinet.Widgets.MenuState.Selected.get -> int
+const Tuinet.Widgets.TreeState.Root = -1 -> int
+Tuinet.Widgets.ITreeSource
+Tuinet.Widgets.ITreeSource.ChildCount(int node) -> int
+Tuinet.Widgets.ITreeSource.Child(int node, int index) -> int
+Tuinet.Widgets.ITreeSource.HasChildren(int node) -> bool
+Tuinet.Widgets.ITreeSource.Parent(int node) -> int
+Tuinet.Widgets.ITreeSource.RenderLabel(int node, Tuinet.Rect area, Tuinet.CellBuffer! buffer, bool selected) -> void
+Tuinet.Widgets.TreeState
+Tuinet.Widgets.TreeState.Collapse(int node) -> void
+Tuinet.Widgets.TreeState.Count.get -> int
+Tuinet.Widgets.TreeState.Expand(int node) -> void
+Tuinet.Widgets.TreeState.HandleMouse<TSource>(Tuinet.MouseEvent ev, TSource source, int wheelRows = 3) -> bool
+Tuinet.Widgets.TreeState.Handle<TSource>(Tuinet.KeyEvent key, TSource source) -> bool
+Tuinet.Widgets.TreeState.Invalidate() -> void
+Tuinet.Widgets.TreeState.IsExpanded(int node) -> bool
+Tuinet.Widgets.TreeState.List -> Tuinet.Widgets.ListState
+Tuinet.Widgets.TreeState.NodeAt(int row) -> int
+Tuinet.Widgets.TreeState.SelectedNode.get -> int
+Tuinet.Widgets.TreeState.Select<TSource>(int node, TSource source) -> void
+Tuinet.Widgets.TreeState.Toggle(int node) -> void
+Tuinet.Widgets.TreeState.TreeState() -> void
+Tuinet.Widgets.TreeView<TSource>
+Tuinet.Widgets.TreeView<TSource>.CollapsedSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TreeView<TSource>.CollapsedSymbol.init -> void
+Tuinet.Widgets.TreeView<TSource>.ExpandedSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TreeView<TSource>.ExpandedSymbol.init -> void
+Tuinet.Widgets.TreeView<TSource>.ExpanderStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.ExpanderStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.Guides.get -> bool
+Tuinet.Widgets.TreeView<TSource>.Guides.init -> void
+Tuinet.Widgets.TreeView<TSource>.GuideStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.GuideStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.HighlightSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TreeView<TSource>.HighlightSymbol.init -> void
+Tuinet.Widgets.TreeView<TSource>.HighlightSymbolStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.HighlightSymbolStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.LeafSymbol.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.TreeView<TSource>.LeafSymbol.init -> void
+Tuinet.Widgets.TreeView<TSource>.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.TreeState! state) -> void
+Tuinet.Widgets.TreeView<TSource>.Scrollbar.get -> Tuinet.Widgets.ScrollbarMode
+Tuinet.Widgets.TreeView<TSource>.Scrollbar.init -> void
+Tuinet.Widgets.TreeView<TSource>.ScrollbarThumbStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.ScrollbarThumbStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.ScrollbarTrackStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.ScrollbarTrackStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.SelectedStyle.get -> Tuinet.Style
+Tuinet.Widgets.TreeView<TSource>.SelectedStyle.init -> void
+Tuinet.Widgets.TreeView<TSource>.TreeView(TSource source) -> void
+Tuinet.Widgets.TreeView<TSource>.TreeView() -> void
+const Tuinet.Terminal.DefaultFrameMs = 33 -> int
+static Tuinet.Event.Tick.get -> Tuinet.Event
+Tuinet.Alarm
+Tuinet.Alarm.Alarm() -> void
+Tuinet.Alarm.At(long dueMs) -> void
+Tuinet.Alarm.Cancel() -> void
+Tuinet.Alarm.DueMs.get -> long
+Tuinet.Alarm.Fire(long nowMs) -> bool
+Tuinet.Alarm.IsSet.get -> bool
+Tuinet.Alarm.Start(long nowMs, long delayMs) -> void
+Tuinet.EventKind.Tick = 8 -> Tuinet.EventKind
+Tuinet.FocusRing
+Tuinet.FocusRing.Count.get -> int
+Tuinet.FocusRing.Current.get -> int
+Tuinet.FocusRing.Current.set -> void
+Tuinet.FocusRing.FocusRing(int count, int current = 0) -> void
+Tuinet.FocusRing.FocusRing() -> void
+Tuinet.FocusRing.HandleMouse(Tuinet.MouseEvent mouse, System.ReadOnlySpan<Tuinet.Rect> areas) -> bool
+Tuinet.FocusRing.Handle(Tuinet.KeyEvent key) -> bool
+Tuinet.FocusRing.Is(int index) -> bool
+Tuinet.FocusRing.Move(int delta) -> void
+Tuinet.FocusRing.Next() -> void
+Tuinet.FocusRing.Previous() -> void
+Tuinet.IApp
+Tuinet.IApp.Handle(Tuinet.Event ev, long nowMs) -> bool
+Tuinet.IApp.IsAnimating(long nowMs) -> bool
+Tuinet.IApp.NextDueMs(long nowMs) -> long
+Tuinet.IApp.Render(Tuinet.CellBuffer! frame, long nowMs) -> void
+Tuinet.Terminal.LastFrameTime.get -> System.TimeSpan
+Tuinet.Terminal.Run(Tuinet.IApp! app, int frameMs = 33) -> void

@@ -32,12 +32,14 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
-  - Widgets: blocks, paragraphs, virtualized lists and tables, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars and spinners.
+  - Widgets: blocks, paragraphs, virtualized lists, tables and trees, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars and spinners.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
   - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
     it, instead of the alternate screen.
   - Window title, clipboard copy over SSH (OSC 52), cursor shapes and clickable hyperlinks (OSC 8).
+  - An optional main loop (`Terminal.Run`) that sleeps when idle and coalesces input bursts, plus `FocusRing`
+    for Tab-order focus and `Alarm` for timed changes. All of them are plain values, with no widget tree.
 - **Full input.**
   - Keys with Ctrl/Alt/Shift, F1–F12, PgUp/PgDn.
   - Opt-in kitty keyboard protocol: Ctrl+I apart from Tab, Esc with no delay, key releases.
@@ -142,6 +144,39 @@ while (running)
     while (running && term.Poll(out ev, 0));   // drain the burst, then draw once
 }
 ```
+
+`term.Run(app)` is this loop, written once. Your app implements `IApp`: `Handle` returns false to quit, and
+`Render` draws the whole UI. While `IsAnimating` returns true, the loop draws about 30 frames a second, with an
+`EventKind.Tick` before each frame that no input caused. `NextDueMs` wakes an idle app at a given time. The
+`nowMs` arguments are milliseconds since `Run` started. `Run` allocates nothing per frame, and you can still
+write your own loop when you need something else.
+
+```csharp
+using var term = Terminal.Open();
+term.Run(new Counter());
+
+sealed class Counter : IApp
+{
+    private int _count;
+
+    public bool Handle(Event ev, long nowMs)
+    {
+        if (ev.Key.IsChar('+')) _count++;
+        return !ev.Key.IsChar('q');
+    }
+
+    public void Render(CellBuffer frame, long nowMs)
+    {
+        Span<char> text = stackalloc char[40];
+        text.TryWrite($"count: {_count}  (+ adds, q quits)", out int length);   // no string per frame
+        frame.SetString(0, 0, text[..length], default);
+    }
+}
+```
+
+In inline mode, `Run` draws the last frame again after the app stops, since that frame stays on screen.
+`Terminal.LastFrameBytes` and `LastFrameTime` (from `BeginFrame` to the end of `Present`) give the cost of the
+last frame, for a stats overlay.
 
 ## 📚 Guide
 
@@ -352,13 +387,70 @@ frame.Render(new Table<Files>(new Files(files), Columns)
 changes and cache the result as `Constraint.Length(width)` to size a column to its content. For rows
 of strings, use the built-in `TextRows` source: `new Table<TextRows>(new TextRows(rows), columns)`.
 
+### Trees
+
+`TreeView` shows a hierarchy: a file tree, grouped items, an outline. Your `ITreeSource` addresses nodes by
+integer ids you choose, and is asked for a node's children only once it's expanded, so a file tree can read a
+directory the first time it opens. `TreeState` (a class you keep across frames) holds the expanded nodes and
+caches the visible rows. They're rebuilt only when the tree's shape changes, so a frame draws only the rows on
+screen, however far down a 100,000-row tree it's scrolled.
+
+```csharp
+readonly struct Folders(Folder[] folders) : ITreeSource   // ids: folder i is i, file j of folder i is 1000 * (i + 1) + j
+{
+    public int ChildCount(int node) => node == TreeState.Root ? folders.Length : node < 1000 ? folders[node].Files.Length : 0;
+    public int Child(int node, int index) => node == TreeState.Root ? index : 1000 * (node + 1) + index;
+    public bool HasChildren(int node) => node >= 0 && node < 1000;
+    public int Parent(int node) => node < 1000 ? TreeState.Root : node / 1000 - 1;
+
+    public void RenderLabel(int node, Rect area, CellBuffer buffer, bool selected) =>
+        buffer.SetString(area.X, area.Y, node < 1000 ? folders[node].Name : folders[node / 1000 - 1].Files[node % 1000],
+            default, area.Width, Overflow.Ellipsis);
+}
+```
+
+```csharp
+var tree = new TreeState();   // keep this across frames
+var source = new Folders(folders);
+
+// render
+frame.Render(new TreeView<Folders>(source)
+{
+    GuideStyle = new Style(Color.BrightBlack, default),
+    SelectedStyle = new Style(default, Color.Hex(0x1C2433), Attr.Bold),
+}, area, ref tree);
+
+// input: arrows or j/k move, → opens (then steps in), ← closes (then steps out), space toggles
+if (ev.Kind == EventKind.Key && !tree.Handle(ev.Key, source) && ev.Key.Is(KeyCode.Enter)) Open(tree.SelectedNode);
+if (ev.Kind == EventKind.Mouse) tree.HandleMouse(ev.Mouse, source);   // click [+]/[-] to fold, click selects
+```
+
+```
+[-] src
+ ├─ [+] Internal
+ ├─ [-] Widgets
+ │   ├─ ListView.cs
+ │   └─ TreeView.cs
+ └─ Terminal.cs
+[+] tests
+```
+
+Nodes with children get `[+]` when collapsed and `[-]` when expanded (`CollapsedSymbol`, `ExpandedSymbol`; e.g.
+`"▸ "` and `"▾ "`). `Guides = false` drops the lines. The selection follows its node when rows above it open or
+close; if its parent closes, the parent is selected. `tree.Select(node, source)` opens the path to a node (with
+`Parent`) and selects it, and `tree.Invalidate()` picks up data that changed or arrived later. Highlight symbol,
+scrollbar, wheel and scrollbar drag work as in `ListView`, through `tree.List`.
+
 ### Forms
 
-Interactive widgets keep their state in objects you own, so focus is just an `int` in your app.
-There's no focus manager to fight.
+Interactive widgets keep their state in objects you own, so focus is just a value in your app.
+There's no focus manager to fight. `FocusRing` is that value with the usual keys: Tab and Shift+Tab move it
+(wrapping around), a click focuses the control under it, and `Is(i)` feeds each widget's `Focused`.
 
 ```csharp
 // state, kept across frames
+var focus = new FocusRing(5);                 // name, priority, notify, Save, notes (below)
+var targets = new Rect[5];                    // where each control was drawn, for clicks
 var name = new TextInputState("TUI.NET");
 var priority = new DropdownState(selected: 1);
 string[] priorities = ["low", "medium", "high"];
@@ -367,7 +459,7 @@ bool notify = true;
 // render
 var box = new Block { Title = " name ", BorderType = BorderType.Rounded };
 frame.Render(box, nameArea);
-frame.Render(new TextInput { Focused = focus == 0 }, box.Inner(nameArea), ref name);   // places the real cursor
+frame.Render(new TextInput { Focused = focus.Is(0) }, box.Inner(nameArea), ref name);   // places the real cursor
 
 var dropdown = new Dropdown<TextItems>(new TextItems(priorities))
 {
@@ -375,12 +467,15 @@ var dropdown = new Dropdown<TextItems>(new TextItems(priorities))
     PopupBordered = true,
 };
 frame.Render(dropdown, pickArea, ref priority);
-frame.Render(new Checkbox("notify me", notify) { Focused = focus == 2 }, checkArea);
-frame.Render(new Button("Save") { Focused = focus == 3, FocusedStyle = new Style(Color.Black, Color.Green) }, buttonArea);
+frame.Render(new Checkbox("notify me", notify) { Focused = focus.Is(2) }, checkArea);
+frame.Render(new Button("Save") { Focused = focus.Is(3), FocusedStyle = new Style(Color.Black, Color.Green) }, buttonArea);
 dropdown.RenderPopup(pickArea, frame, ref priority);   // last, so it draws on top
+(targets[0], targets[1], targets[2], targets[3]) = (nameArea, pickArea, checkArea, buttonArea);
 
 // input
-switch (focus)
+if (ev.Kind == EventKind.Mouse && focus.HandleMouse(ev.Mouse, targets)) { /* clicked: focused, now use it */ }
+if (ev.Kind == EventKind.Key && focus.Handle(ev.Key)) return;   // Tab, Shift+Tab
+switch (focus.Current)
 {
     case 0: name.Handle(ev.Key); break;                          // editing, Ctrl+W, Alt+B/F, …
     case 1: priority.Handle(ev.Key, priorities.Length); break;   // Enter opens, ↑/↓ moves, Enter picks
@@ -400,13 +495,13 @@ For a complete form with validation, see [`EditDialog.cs`](https://github.com/lm
 ```csharp
 var notes = new TextAreaState("first line\nsecond line");    // state, kept across frames
 
-frame.Render(new TextArea { Focused = focus == 4, LineNumbers = true, Placeholder = "notes…" }, notesArea, ref notes);
+frame.Render(new TextArea { Focused = focus.Is(4), LineNumbers = true, Placeholder = "notes…" }, notesArea, ref notes);
 
 // input
 switch (ev.Kind)
 {
     case EventKind.Key when ev.Key.IsCtrl('c') && notes.HasSelection: term.CopyToClipboard(notes.Selection); break;
-    case EventKind.Key when focus == 4: notes.Handle(ev.Key); break;    // Enter is a line break; Tab is yours
+    case EventKind.Key when focus.Is(4): notes.Handle(ev.Key); break;   // Enter is a line break; Tab is yours
     case EventKind.Mouse: notes.HandleMouse(ev.Mouse); break;           // click, drag to select, wheel
     case EventKind.Paste: notes.Insert(ev.Paste); break;                // keeps line breaks
 }
@@ -527,7 +622,25 @@ term.Poll(out Event ev, animating ? 33 : Timeout.Infinite);
 ```
 
 Base animation on elapsed time, not frame count, so it runs at the same speed whatever the frame
-rate. For a segmented meter like `■■□□`, use a `ProgressBar` with `FilledChar = '■'` and `EmptyChar = '□'`.
+rate. With `Terminal.Run`, return `animating` from `IApp.IsAnimating` instead of choosing the timeout.
+
+For something that happens once, later (hide a "saved" message after 3 seconds, run a search once typing
+pauses), keep an `Alarm` in your state. It's a plain value: no timer thread, no callback.
+
+```csharp
+flash = "saved";
+flashAlarm.Start(nowMs, 3000);
+
+// IApp
+public bool Handle(Event ev, long nowMs)
+{
+    if (flashAlarm.Fire(nowMs)) flash = "";   // true once, at the first event at or after the time
+    …
+}
+
+public long NextDueMs(long nowMs) => flashAlarm.DueMs;   // Run wakes then with a Tick; long.MaxValue when not set
+```
+ For a segmented meter like `■■□□`, use a `ProgressBar` with `FilledChar = '■'` and `EmptyChar = '□'`.
 
 ### Charts
 
@@ -780,6 +893,7 @@ public void Key_in_frame_out()
 | `Block` | | Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, `Inner(area)` |
 | `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; optional scrollbar; `LineCount` |
 | `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol, optional scrollbar; click, wheel and scrollbar drag |
+| `TreeView<T>` | `TreeState` | Hierarchy with `[+]`/`[-]` expanders and `├─`/`└─` guides, lazy children, cached rows (a frame draws only what's visible), selection that follows its node; keys, click on the expander, wheel and scrollbar drag |
 | `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow, optional scrollbar; click, wheel, scrollbar drag and header hit-testing |
 | `Scrollbar` | | Vertical or horizontal, eighth-block thumb ends, `PositionAt` for clicks and drags |
 | `TextInput` | `TextInputState` | Single-line editing, emacs keys, selection, undo/redo, masking, horizontal scroll, real terminal cursor; click or drag |
@@ -814,6 +928,8 @@ public void Key_in_frame_out()
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
 | `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 60 / 39 µs | |
+| `TreeView` frame, 109,000 rows open in a 1,000,000-node tree, at row 0 / 50,000 / 99,000 | 6.8 / 7.0 / 6.6 µs | |
+| Rebuilding those 109,000 rows after a node opens or closes | 0.47 ms | |
 | Caret down / a keystroke in that text area, then its frame | 61 / 78 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 | `Fuzzy.Score`, a 3-char pattern against one command name (10,000 names: 0.28 ms) | 28 ns | |
@@ -906,7 +1022,7 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Popup, Menu, Tabs, Paragraph, ListView, Table, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
+  Widgets/                       Block, Popup, Menu, Tabs, Paragraph, ListView, Table, TreeView, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty

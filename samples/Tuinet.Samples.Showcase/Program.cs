@@ -3,7 +3,6 @@
 // and a command palette (Ctrl+P) over every action. Nothing is saved to disk. The window title follows the
 // selection, 'y' copies the selected item's name to the clipboard, and keys use the kitty keyboard protocol
 // where the terminal has it.
-using System.Diagnostics;
 using Tuinet;
 using Tuinet.Samples.Showcase;
 
@@ -15,35 +14,38 @@ using var terminal = Terminal.Open(new TerminalOptions
     SuspendOnCtrlZ = true,
     KittyKeyboard = true,
 });
-var app = new ShowcaseApp();
-var clock = Stopwatch.StartNew();
-var title = new char[96];
+terminal.Run(new ShowcaseLoop(terminal, new ShowcaseApp()));   // sleeps until input, or ~30 fps while the progress dialog animates
 
-bool running = true;
-while (running)
+/// <summary>Connects the app to the terminal: the window title, the clipboard, and the frame costs for the stats page.</summary>
+internal sealed class ShowcaseLoop(Terminal terminal, ShowcaseApp app) : IApp
 {
-    long now = clock.ElapsedMilliseconds;
-    title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
-    terminal.SetTitle(title.AsSpan(0, titleLength));   // sent only when it changes
-    app.LeftRightMargins = terminal.LeftRightMarginsActive;   // the terminal's reply arrives with the first input
-    long frameStart = Stopwatch.GetTimestamp();
-    app.Render(terminal.BeginFrame(), now);
-    terminal.Present();
-    app.RecordFrame(terminal.LastFrameBytes, Stopwatch.GetElapsedTime(frameStart));   // shown on the stats page
+    private readonly char[] _title = new char[96];
 
-    // Sleep until input, or wake ~30 times a second while the progress dialog animates.
-    if (!terminal.Poll(out Event ev, app.IsAnimating(now) ? 33 : Timeout.Infinite))
+    public bool Handle(Event ev, long nowMs)
     {
-        continue;
-    }
-
-    do
-    {
-        running = app.Handle(ev, clock.ElapsedMilliseconds);
+        bool running = app.Handle(ev, nowMs);
         if (app.TakeCopy() is string text)
         {
             terminal.CopyToClipboard(text);
         }
+
+        return running;
     }
-    while (running && terminal.Poll(out ev, 0));
+
+    public void Render(CellBuffer frame, long nowMs)
+    {
+        if (terminal.Frames > 0)
+        {
+            app.RecordFrame(terminal.LastFrameBytes, terminal.LastFrameTime);   // the previous frame, shown on the stats page
+        }
+
+        _title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
+        terminal.SetTitle(_title.AsSpan(0, titleLength));   // sent only when it changes
+        app.LeftRightMargins = terminal.LeftRightMarginsActive;   // the terminal's reply arrives with the first input
+        app.Render(frame, nowMs);
+    }
+
+    public bool IsAnimating(long nowMs) => app.IsAnimating(nowMs);
+
+    public long NextDueMs(long nowMs) => app.NextDueMs;
 }

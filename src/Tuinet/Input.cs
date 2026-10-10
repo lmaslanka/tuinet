@@ -150,6 +150,12 @@ public enum EventKind : byte
     Paste,
     FocusGained,
     FocusLost,
+
+    /// <summary>
+    /// Time passed with no input: <see cref="Terminal.Run"/> sends it when an animation frame or
+    /// <see cref="IApp.NextDueMs"/> comes due. <see cref="Terminal.Poll"/> never returns it.
+    /// </summary>
+    Tick,
 }
 
 /// <summary>One input event. Only the members matching <see cref="Kind"/> are meaningful.</summary>
@@ -187,6 +193,9 @@ public readonly struct Event
     public static Event FromMouse(MouseEvent mouse) => new(EventKind.Mouse, mouse: mouse);
     public static Event FromPaste(string text) => new(EventKind.Paste, payload: text);
     public static Event Focus(bool gained) => new(gained ? EventKind.FocusGained : EventKind.FocusLost);
+
+    /// <summary>An <see cref="EventKind.Tick"/>: time passed with no input.</summary>
+    public static Event Tick => new(EventKind.Tick);
 
     public override string ToString() => Kind switch
     {

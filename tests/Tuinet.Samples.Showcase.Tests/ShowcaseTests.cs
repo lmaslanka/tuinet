@@ -243,7 +243,7 @@ public class ShowcaseTests
     public void Tabs_sit_in_the_panel_border()
     {
         CellBuffer screen = Render(new ShowcaseApp());
-        Assert.StartsWith("  ╭─ List ─ Stats ───", screen.RowText(4));
+        Assert.StartsWith("  ╭─ List ─ Stats ─ Groups ───", screen.RowText(4));
         Assert.Contains("─ ITEMS · 20 ─╮", screen.RowText(4));
     }
 
@@ -258,9 +258,13 @@ public class ShowcaseTests
         Assert.DoesNotContain("▲ #  name", stats);
         Assert.Contains("SELECTED · 03", stats);                // the details panel stays
 
+        Press(app, ']');
+        Assert.Equal(ShowcaseApp.GroupsPage, app.Page);
         Press(app, ']');                                         // wraps
         Assert.Equal(ShowcaseApp.ListPage, app.Page);
         Press(app, '[');
+        Assert.Equal(ShowcaseApp.GroupsPage, app.Page);
+        Key(app, KeyCode.Char, '2', Modifiers.Alt);
         Assert.Equal(ShowcaseApp.StatsPage, app.Page);
         Key(app, KeyCode.Char, '1', Modifiers.Alt);
         Assert.Equal(ShowcaseApp.ListPage, app.Page);
@@ -304,6 +308,116 @@ public class ShowcaseTests
         var app = new ShowcaseApp { LeftRightMargins = true };
         Press(app, ']');
         Assert.Matches(@"■ L/R margins +on", Render(app).ToString());
+    }
+
+    [Fact]
+    public void Groups_page_shows_kinds_open_and_priorities_closed()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ']', ']');
+        Assert.Equal(ShowcaseApp.GroupsPage, app.Page);
+        string screen = Render(app).ToString();
+        foreach (string row in (string[])[@"List ─ Stats ─ Groups", @"\[-\] feature \(4\)", @" ├─ \[\+\] critical \(1\)",
+            @" └─ \[\+\] low \(1\)", @"\[-\] spike \(4\)", @"←/→ fold"])
+        {
+            Assert.Matches(row, screen);
+        }
+    }
+
+    [Fact]
+    public void Opening_the_groups_page_reveals_the_lists_selected_item()
+    {
+        var app = new ShowcaseApp();
+        Press(app, 'j', 'j', 'j');                                   // 04 verify & return diff: docs, medium
+        Press(app, ']', ']');
+        Assert.Equal(3, app.Groups.SelectedNode);
+        CellBuffer screen = Render(app);
+        (int x, int y) = Find(screen, "04 verify & return diff");
+        Assert.Equal("▌", screen.RowText(y).Substring(x - 9, 1));   // the highlight symbol, before the guides
+        Assert.Contains("├─ [-] medium (1)", screen.RowText(y - 1));    // its group was opened
+    }
+
+    [Fact]
+    public void Selecting_an_item_in_the_tree_selects_it_in_the_list()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ']', ']');                                        // item 01 (feature, low)
+        Key(app, KeyCode.Down);                                      // bugfix
+        Key(app, KeyCode.Right);                                     // into its first child: critical
+        Key(app, KeyCode.Right);                                     // open it
+        Key(app, KeyCode.Right);                                     // into its item
+        Item item = app.Items[app.Selected];
+        Assert.Equal("bugfix", Item.Kinds[item.Kind]);
+        Assert.Equal("critical", Item.Priorities[item.Priority]);
+        Assert.Equal(ItemTree.NodeOf(item), app.Groups.SelectedNode);
+        Assert.Contains($"SELECTED · {item.Number:D2}", Render(app).ToString());
+        Key(app, KeyCode.Left);                                      // back to its group: the list keeps the item
+        Assert.Equal(item, app.Items[app.Selected]);
+    }
+
+    [Fact]
+    public void Enter_folds_a_group_and_edits_an_item_and_space_toggles_an_item()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ']', ']');
+        Key(app, KeyCode.Home);                                      // feature
+        Key(app, KeyCode.Enter);
+        Assert.False(app.Groups.IsExpanded(ItemTree.KindGroup));
+        Assert.Contains("[+] feature (4)", Render(app).ToString());
+        Key(app, KeyCode.Enter);
+        Assert.True(app.Groups.IsExpanded(ItemTree.KindGroup));
+
+        app.Groups.Select(ItemTree.NodeOf(app.Items[5]), new ItemTree([.. app.Items]));
+        Key(app, KeyCode.Down);                                      // through the tree, so the list follows
+        Key(app, KeyCode.Up);
+        Item item = app.Items[app.Selected];
+        bool enabled = item.Enabled;
+        Press(app, ' ');
+        Assert.NotEqual(enabled, item.Enabled);
+        Key(app, KeyCode.Enter);
+        Assert.NotNull(app.Edit);
+    }
+
+    [Fact]
+    public void Clicks_fold_groups_and_select_items_and_a_double_click_edits()
+    {
+        var app = new ShowcaseApp();
+        Press(app, ']', ']');
+        (int x, int y) = Find(Render(app), "[+] critical (1)");     // feature's critical group
+        Click(app, x, y);
+        Assert.True(app.Groups.IsExpanded(ItemTree.PriorityGroup + 3));
+        Assert.Null(app.Edit);
+
+        CellBuffer screen = Render(app);
+        string name = app.Items.Single(i => i.Kind == 0 && i.Priority == 3).Name;
+        (x, y) = Find(screen, name);
+        Click(app, x, y, now: 1000);
+        Assert.Equal(name, app.Items[app.Selected].Name);
+        Assert.Contains(name, Render(app).RowText(5));               // the details panel follows
+        Click(app, x, y, now: 1000 + ShowcaseApp.DoubleClickMs - 1);
+        Assert.NotNull(app.Edit);
+    }
+
+    [Fact]
+    public void Groups_page_frames_allocate_nothing()
+    {
+        var app = new ShowcaseApp();
+        var buffer = new CellBuffer(110, 34);
+        Press(app, ']', ']');
+
+        // Move through the tree, then fold and unfold a group: a rebuild reuses the rows' arrays.
+        void GroupsStep(int i)
+        {
+            Key(app, i % 5 == 0 ? KeyCode.Up : KeyCode.Down);
+            if (i % 7 == 0)
+            {
+                app.Handle(Event.FromChar(' '), 0);
+            }
+
+            app.Render(buffer, 0);
+        }
+
+        AssertSteadyStateAllocatesNothing(GroupsStep);
     }
 
     [Fact]
@@ -479,6 +593,32 @@ public class ShowcaseTests
         Assert.Equal("prepare workspace", app.TakeCopy());
         Assert.Null(app.TakeCopy());
         Assert.Contains("copied · prepare workspace", Render(app).ToString());
+    }
+
+    [Fact]
+    public void A_message_hides_itself_after_three_seconds()
+    {
+        var app = new ShowcaseApp();
+        Assert.Equal(long.MaxValue, app.NextDueMs);   // nothing to wake for: the loop sleeps until input
+        app.Handle(Event.FromChar('y'), 1000);
+        Assert.Equal(1000 + ShowcaseApp.FlashMs, app.NextDueMs);
+
+        app.Handle(Event.Tick, 3999);
+        Assert.Contains("copied · parse", Render(app).ToString());
+        app.Handle(Event.Tick, 4000);                 // what Terminal.Run sends at NextDueMs
+        Assert.DoesNotContain("copied ·", Render(app).ToString());
+        Assert.Equal(long.MaxValue, app.NextDueMs);
+    }
+
+    [Fact]
+    public void A_new_message_restarts_the_clock_and_a_cleared_one_cancels_it()
+    {
+        var app = new ShowcaseApp();
+        app.Handle(Event.FromChar('y'), 0);
+        app.Handle(Event.FromChar('y'), 2000);        // the same text again: shown for another 3 s
+        Assert.Equal(2000 + ShowcaseApp.FlashMs, app.NextDueMs);
+        app.Handle(Event.FromChar('j'), 2500);        // a key hides it at once
+        Assert.Equal(long.MaxValue, app.NextDueMs);
     }
 
     [Fact]
@@ -663,7 +803,7 @@ public class ShowcaseTests
     {
         var app = new ShowcaseApp();
         Press(app, ':');
-        Assert.Equal(14, app.Palette.MatchCount);   // an empty query lists every command, in order
+        Assert.Equal(15, app.Palette.MatchCount);   // an empty query lists every command, in order
         Assert.Equal("Edit item", app.Palette.Match(0).Name);
         Type(app, "sk");
         Assert.Equal("Sort by kind", app.Palette.Match(0).Name);
@@ -724,7 +864,7 @@ public class ShowcaseTests
         AssertSteadyStateAllocatesNothing(PaletteStep);
         Assert.True(app.Palette.IsOpen);
         Assert.Equal("", app.Palette.Query);
-        Assert.Equal(14, app.Palette.MatchCount);
+        Assert.Equal(15, app.Palette.MatchCount);
     }
 
     /// <summary>

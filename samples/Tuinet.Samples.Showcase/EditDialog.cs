@@ -29,6 +29,7 @@ public sealed class EditDialog
 
     private readonly Item _item;
     private readonly Rect[] _targets = new Rect[FocusCount];   // where each control was last drawn, for clicks
+    private FocusRing _focus = new(FocusCount);
     private TextInputState _name;
     private TextInputState _owner;
     private TextAreaState _description;
@@ -52,7 +53,7 @@ public sealed class EditDialog
         _notify = item.Notify;
     }
 
-    public int Focus { get; private set; }
+    public int Focus => _focus.Current;
 
     /// <summary>Text is selected in the focused field, so Ctrl+C copies it instead of quitting.</summary>
     public bool HasSelection => FocusedText()?.HasSelection == true;
@@ -90,13 +91,13 @@ public sealed class EditDialog
         }
 
         // An open dropdown owns the keyboard until it closes.
-        if (Focus == Kind && _kind.IsOpen)
+        if (_focus.Is(Kind) && _kind.IsOpen)
         {
             _kind.Handle(key, Item.Kinds.Length);
             return DialogResult.Open;
         }
 
-        if (Focus == Priority && _priority.IsOpen)
+        if (_focus.Is(Priority) && _priority.IsOpen)
         {
             _priority.Handle(key, Item.Priorities.Length);
             return DialogResult.Open;
@@ -107,9 +108,9 @@ public sealed class EditDialog
             return DialogResult.Closed;
         }
 
-        if (key.Code == KeyCode.Tab)
+        if (_focus.Handle(key))   // Tab, Shift+Tab
         {
-            Move((key.Modifiers & Modifiers.Shift) != 0 ? -1 : 1);
+            CloseDropdowns();
             return DialogResult.Open;
         }
 
@@ -125,7 +126,7 @@ public sealed class EditDialog
         }
 
         // The description takes Enter (a line break) and ↑/↓; Tab leaves it.
-        if (Focus == Description)
+        if (_focus.Is(Description))
         {
             _description.Handle(key);
             return DialogResult.Open;
@@ -144,7 +145,7 @@ public sealed class EditDialog
             else
             {
                 text.Handle(key);
-                if (Focus == Name && !text.IsEmpty)
+                if (_focus.Is(Name) && !text.IsEmpty)
                 {
                     _nameMissing = false;
                 }
@@ -214,14 +215,13 @@ public sealed class EditDialog
             return DialogResult.Open;
         }
 
-        int field = mouse.IsClick ? Array.FindIndex(_targets, mouse.IsIn) : -1;
-        if (field < 0)
+        if (!_focus.HandleMouse(mouse, _targets))   // a click on a control focuses it
         {
             return DialogResult.Open;
         }
 
-        Move(field - Focus);
-        switch (field)
+        CloseDropdowns();
+        switch (Focus)
         {
             case Name or Owner:
                 ((TextInputState)FocusedText()!).HandleMouse(mouse);
@@ -310,8 +310,8 @@ public sealed class EditDialog
         _targets[Save] = new Rect(x, rows[7].Y, 8, 1);
         _targets[Close] = new Rect(x + 10, rows[7].Y, 9, 1);
         Style idle = new(Theme.Text, Theme.Raised);
-        buffer.Render(new Button("Save") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Green, Attr.Bold), Focused = Focus == Save }, _targets[Save]);
-        buffer.Render(new Button("Close") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Coral, Attr.Bold), Focused = Focus == Close }, _targets[Close]);
+        buffer.Render(new Button("Save") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Green, Attr.Bold), Focused = _focus.Is(Save) }, _targets[Save]);
+        buffer.Render(new Button("Close") { Style = idle, FocusedStyle = new Style(Theme.Bg, Theme.Coral, Attr.Bold), Focused = _focus.Is(Close) }, _targets[Close]);
         if (_status.Length > 0)
         {
             buffer.SetString(x + 21, rows[7].Y, _status, Theme.Accent(Theme.Coral), rows[7].Right - x - 21, Overflow.Ellipsis);
@@ -332,9 +332,14 @@ public sealed class EditDialog
 
     private void Move(int delta)
     {
+        CloseDropdowns();
+        _focus.Move(delta);
+    }
+
+    private void CloseDropdowns()
+    {
         _kind.Close();
         _priority.Close();
-        Focus = (Focus + delta + FocusCount) % FocusCount;
     }
 
     private DialogResult TrySave()
@@ -344,7 +349,7 @@ public sealed class EditDialog
         {
             _nameMissing = true;
             _status = "name is required";
-            Focus = Name;
+            _focus.Current = Name;
             return DialogResult.Open;
         }
 
@@ -360,7 +365,7 @@ public sealed class EditDialog
 
     private Block Outline(ReadOnlySpan<char> label, int field, ReadOnlySpan<char> error)
     {
-        bool focused = Focus == field;
+        bool focused = _focus.Is(field);
         Color border = !error.IsEmpty ? Theme.Coral : focused ? Theme.Blue : Theme.Faint;
         return new Block
         {
@@ -379,7 +384,7 @@ public sealed class EditDialog
         buffer.Render(outline, box);
         buffer.Render(new TextInput
         {
-            Focused = Focus == field,
+            Focused = _focus.Is(field),
             Style = Theme.Body,
             SelectionStyle = new Style(Theme.Bg, Theme.Blue),
             Placeholder = "…",
@@ -393,7 +398,7 @@ public sealed class EditDialog
         buffer.Render(outline, box);
         buffer.Render(new TextArea
         {
-            Focused = Focus == Description,
+            Focused = _focus.Is(Description),
             Style = Theme.Body,
             SelectionStyle = new Style(Theme.Bg, Theme.Blue),
             Placeholder = "…",
@@ -413,7 +418,7 @@ public sealed class EditDialog
         // Checked fills it green; unchecked leaves a dim slot.
         buffer.Render(new Checkbox(label, value)
         {
-            Focused = Focus == field,
+            Focused = _focus.Is(field),
             Style = value ? Theme.Body : Theme.Dim,
             FocusedStyle = Theme.Heading(Theme.Blue),
             CheckedSymbol = "▐█▌",

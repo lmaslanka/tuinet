@@ -1,6 +1,7 @@
 using System.Buffers;
 using System.Buffers.Text;
 using System.Collections.Concurrent;
+using System.Diagnostics;
 using System.Text;
 using Tuinet.Widgets;
 
@@ -24,8 +25,9 @@ namespace Tuinet;
 ///     term.Present();                                                             // one write
 /// }
 /// </code>
+/// Or implement <see cref="IApp"/> and let <see cref="Run"/> be that loop.
 /// </summary>
-public sealed class Terminal : IDisposable
+public sealed partial class Terminal : IDisposable
 {
     private readonly ITty _tty;
     private readonly bool _ownsTty;
@@ -48,6 +50,7 @@ public sealed class Terminal : IDisposable
     private bool _fullRedraw;
     private bool _resumed;
     private bool _inFrame;
+    private long _frameStart;
     private bool _disposed;
 
     public Terminal(ITty tty, TerminalOptions? options = null)
@@ -117,6 +120,12 @@ public sealed class Terminal : IDisposable
 
     /// <summary>Bytes the last <see cref="Present"/> wrote.</summary>
     public int LastFrameBytes { get; private set; }
+
+    /// <summary>
+    /// How long the last frame took, from <see cref="BeginFrame"/> to the end of <see cref="Present"/>: drawing,
+    /// diffing and the write.
+    /// </summary>
+    public TimeSpan LastFrameTime { get; private set; }
 
     /// <summary>
     /// With <see cref="TerminalOptions.KittyKeyboard"/>: the terminal confirmed the kitty keyboard protocol. The
@@ -206,6 +215,7 @@ public sealed class Terminal : IDisposable
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         SyncSize();
+        _frameStart = Stopwatch.GetTimestamp();
         _back.Clear();
         _inFrame = true;
         return _back;
@@ -246,6 +256,7 @@ public sealed class Terminal : IDisposable
         Flush();
         (_front, _back) = (_back, _front);
         Frames++;
+        LastFrameTime = Stopwatch.GetElapsedTime(_frameStart);
         if (_renderer.CursorShapeUsed && !_leaveResetsCursorShape)
         {
             UpdateLeave();
