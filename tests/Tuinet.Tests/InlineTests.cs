@@ -25,7 +25,7 @@ public class InlineTests
         Assert.Equal(new Size(20, 3), terminal.Size);
         Assert.Equal(
             "\u001b[?25l\u001b[?7l\u001b[?2027h" + "\u001b[6n"
-            + "\u001b[?2026h\u001b[0m\u001b[5H\u001b[J\u001b[?2026l",
+            + "\u001b[?2026h\u001b[0m\u001b[5H\u001b[J" + "\u001b[?69$p\r\u001b[K" + "\u001b[?2026l",
             tty.WrittenText);
     }
 
@@ -34,7 +34,7 @@ public class InlineTests
     {
         var tty = new TestTty(20, 10);
         using var terminal = Start(tty, height: 3, row: 4, column: 7);
-        Assert.EndsWith("\u001b[6H\u001b[J\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[6H\u001b[J\u001b[?69$p\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class InlineTests
         var tty = new TestTty(20, 10);
         using var terminal = Start(tty, height: 3, row: 8);
         // Rows 8..10 don't fit: one line feed on the last row scrolls the prompt up, and the band is rows 7..9.
-        Assert.EndsWith("\u001b[0m\u001b[10H\n\u001b[8H\u001b[J\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[0m\u001b[10H\n\u001b[8H\u001b[J\u001b[?69$p\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -51,7 +51,7 @@ public class InlineTests
     {
         var tty = new TestTty(20, 10);
         using var terminal = new Terminal(tty, Inline(3, timeoutMs: 50));
-        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -261,7 +261,7 @@ public class InlineTests
         string text = tty.WrittenText;
         Assert.DoesNotContain("?1049", text);
         Assert.Contains("\u001b[6n", text[tty.Suspends[0]..]);
-        Assert.EndsWith("\u001b[8H\u001b[J\u001b[?2026l", text);
+        Assert.EndsWith("\u001b[8H\u001b[J\u001b[?69$p\r\u001b[K\u001b[?2026l", text);
     }
 
     private static void Present(Terminal terminal, string text)

@@ -29,6 +29,7 @@ internal sealed class VtParser
     private State _state;
     private int _csiLen;
     private bool _csiOverflow;
+    private byte _csiIntermediate;
     private int _utf8Len;
     private int _utf8Needed;
     private int _pasteLen;
@@ -52,6 +53,12 @@ internal sealed class VtParser
     /// before any reply. Terminals without the protocol never reply.
     /// </summary>
     public int KittyFlags { get; private set; } = -1;
+
+    /// <summary>
+    /// The terminal reported left/right margin mode (DECLRMM, mode 69) as one it knows: <c>CSI ? 69 ; Ps $ y</c> with
+    /// Ps 1-3, the reply to <c>CSI ? 69 $ p</c>. False before any reply, and after a reply of 0 (unknown) or 4.
+    /// </summary>
+    public bool LeftRightMargins { get; private set; }
 
     /// <summary>The reply to a cursor position query, 0-based, once it has arrived.</summary>
     public bool TryTakeCursorReport(out int row, out int column)
@@ -177,6 +184,7 @@ internal sealed class VtParser
             case (byte)'[':
                 _csiLen = 0;
                 _csiOverflow = false;
+                _csiIntermediate = 0;
                 _state = State.Csi;
                 return;
             case (byte)'O':
@@ -211,6 +219,7 @@ internal sealed class VtParser
 
         if (b is >= 0x20 and <= 0x2F)
         {
+            _csiIntermediate = b;
             return;
         }
 
@@ -246,6 +255,17 @@ internal sealed class VtParser
         if (prefix == '?' && final == 'u')
         {
             KittyFlags = count >= 1 ? p[0] : 0;
+            return;
+        }
+
+        if (prefix == '?' && final == 'y' && _csiIntermediate == '$')
+        {
+            // DECRPM, a mode report. 4 is "permanently reset": known, but it can't be turned on.
+            if (count >= 2 && p[0] == 69)
+            {
+                LeftRightMargins = p[1] is >= 1 and <= 3;
+            }
+
             return;
         }
 

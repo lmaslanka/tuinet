@@ -10,9 +10,10 @@ namespace Tuinet.Tests;
 /// point advances by its own width; zero-width ones attach to the previous cell, like xterm). Any cursor move
 /// ends the current cluster. With allowScroll (inline mode), a line feed on the last row scrolls the screen
 /// into <see cref="Scrollback"/>. Hyperlinks (OSC 8) and the cursor shape (DECSCUSR) are tracked and checked too;
-/// titles (OSC 2) and clipboard writes (OSC 52) are recorded.
+/// titles (OSC 2) and clipboard writes (OSC 52) are recorded. With leftRightMargins the terminal has DECLRMM and
+/// DECSLRM: IL/DL move only the columns between the margins, which must not split a wide glyph; without it, any use fails.
 /// </summary>
-internal sealed class VtEmulator(int width, int height, bool legacy = false, bool allowScroll = false)
+internal sealed class VtEmulator(int width, int height, bool legacy = false, bool allowScroll = false, bool leftRightMargins = false)
 {
     private (string Text, Style Style, bool Cont)[,] _grid = Blank(width, height);
     private string?[,] _links = new string?[width, height];
@@ -26,11 +27,19 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
     private int _y;
     private int _top;
     private int _bottom = height - 1;
+    private int _left;
+    private int _right = width - 1;
+    private bool _lrmm;
     private Style _pen;
     private bool _cursorVisible;
 
-    /// <summary>IL/DL sequences replayed so far.</summary>
+    /// <summary>IL/DL sequences replayed so far, and those of them inside left/right margins.</summary>
     public int LineMoves { get; private set; }
+
+    public int ColumnMoves { get; private set; }
+
+    /// <summary>Left/right margin support queries (DECRQM 69) received.</summary>
+    public int MarginQueries { get; private set; }
 
     /// <summary>With allowScroll: rows scrolled off the top by line feeds on the last row, oldest first.</summary>
     public List<string> Scrollback { get; } = [];
@@ -82,6 +91,8 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         _links = new string?[w, h];
         _top = 0;
         _bottom = h - 1;
+        _left = 0;
+        _right = w - 1;
     }
 
     public void Feed(byte[] bytes)
@@ -144,6 +155,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 }
 
                 Assert.True(_y != _bottom, "LF at the bottom margin scrolled the screen");
+                AssertFullWidth("LF");
                 _y++;
                 Assert.True(_y < _h, "LF scrolled the screen");
                 i++;
@@ -279,6 +291,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
 
     private void Put(string glyph, int width)
     {
+        AssertFullWidth($"'{glyph}'");
         Assert.True(_x + width <= _w, $"glyph '{glyph}' written past the right edge at ({_x},{_y})");
 
         // Like a real terminal: overwriting half of a wide glyph destroys the other half.
@@ -361,12 +374,39 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 _x = 0;
                 _y = 0;
                 break;
+            case 's':
+                // DECSLRM: set the left/right margins (none: the whole width) and home the cursor. Without DECLRMM
+                // this would be SCOSC (save cursor), which the renderer never sends.
+                Assert.True(_lrmm, $"CSI {param}s without left/right margin mode");
+                string[] sides = param.Split(';');
+                _left = param.Length > 0 ? int.Parse(sides[0]) - 1 : 0;
+                _right = param.Length > 0 ? int.Parse(sides[1]) - 1 : _w - 1;
+                Assert.True(_left < _right && _right < _w, $"bad left/right margins {param}");
+                _x = 0;
+                _y = 0;
+                break;
+            case 'p':
+                // DECRQM for left/right margin mode: the reply is the test's business.
+                Assert.Equal("?69$", param);
+                MarginQueries++;
+                break;
             case 'L' or 'M':
                 // IL / DL: insert or delete lines at the cursor row, inside the margins; new lines
-                // take the current background (BCE). The cursor goes to the left column.
+                // take the current background (BCE). The cursor goes to the left margin.
                 Assert.True(_y >= _top && _y <= _bottom, $"IL/DL outside the margins at row {_y}");
+                Assert.True(_x >= _left && _x <= _right, $"IL/DL outside the left/right margins at column {_x}");
                 int n = param.Length > 0 ? int.Parse(param) : 1;
                 LineMoves++;
+                if (_left > 0 || _right < _w - 1)
+                {
+                    ColumnMoves++;
+                    for (int y = _top; y <= _bottom; y++)
+                    {
+                        Assert.False(_grid[_left, y].Cont, $"left margin {_left} splits a wide glyph on row {y}");
+                        Assert.False(_right + 1 < _w && _grid[_right + 1, y].Cont, $"right margin {_right} splits a wide glyph on row {y}");
+                    }
+                }
+
                 for (int i = 0; i < n; i++)
                 {
                     if (final == 'M')
@@ -381,7 +421,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                     }
                 }
 
-                _x = 0;
+                _x = _left;
                 break;
             case 'q':
                 // DECSCUSR: "n q" (the space is an intermediate byte).
@@ -394,6 +434,14 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 if (param == "?25")
                 {
                     _cursorVisible = final == 'h';
+                }
+                else if (param == "?69")
+                {
+                    // DECLRMM. Resetting it resets the left/right margins, as on xterm.
+                    Assert.True(leftRightMargins, "left/right margin mode used on a terminal without it");
+                    _lrmm = final == 'h';
+                    _left = _lrmm ? _left : 0;
+                    _right = _lrmm ? _right : _w - 1;
                 }
 
                 break;
@@ -483,6 +531,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
             return;
         }
 
+        AssertFullWidth("erase");
         LineErases++;
         int end = x + count;
         if (_grid[x, _y].Cont && x > 0)
@@ -508,7 +557,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         {
             for (int y = from; y <= to; y++)
             {
-                for (int x = 0; x < _w; x++)
+                for (int x = _left; x <= _right; x++)
                 {
                     _grid[x, y - 1] = _grid[x, y];
                     _links[x, y - 1] = _links[x, y];
@@ -519,7 +568,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         {
             for (int y = to; y >= from; y--)
             {
-                for (int x = 0; x < _w; x++)
+                for (int x = _left; x <= _right; x++)
                 {
                     _grid[x, y + 1] = _grid[x, y];
                     _links[x, y + 1] = _links[x, y];
@@ -528,9 +577,13 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         }
     }
 
+    /// <summary>Text and graphic output, and erasing, happen only with the margins reset by the renderer.</summary>
+    private void AssertFullWidth(string what) =>
+        Assert.True(_left == 0 && _right == _w - 1, $"{what} with left/right margins {_left}..{_right} set");
+
     private void BlankRow(int y)
     {
-        for (int x = 0; x < _w; x++)
+        for (int x = _left; x <= _right; x++)
         {
             _grid[x, y] = (" ", new Style(default, _pen.Bg), false);
             _links[x, y] = null;

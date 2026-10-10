@@ -9,7 +9,8 @@ namespace Tuinet;
 /// only what changed: clean rows are skipped with a vectorized memcmp, gaps inside a row are
 /// jumped (CUF) or re-emitted (whichever is fewer bytes), and style changes are SGR deltas.
 /// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
-/// (scroll margins + delete/insert line) and only the rows that are really new get painted.
+/// (scroll margins + delete/insert line) and only the rows that are really new get painted. On terminals with
+/// left/right margins (DECLRMM) a band narrower than the screen moves too: a list beside a fixed panel.
 /// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
 /// Hyperlinks (OSC 8) open and close around runs of cells with the same link; none stays open between writes.
 /// </summary>
@@ -26,11 +27,25 @@ internal sealed class Renderer
     /// <summary>A dirty band must be at least this tall, and this many rows must match after a shift.</summary>
     private const int MinScrollRows = 3;
 
+    /// <summary>
+    /// A column band must line up this many cells (rows × columns) to pay for its ~45 bytes of margin sequences, and
+    /// a candidate is only scored when this many cells around its seed line up in the probe row.
+    /// </summary>
+    private const int MinColumnShiftCells = 64;
+    private const int MinSeedRun = 4;
+
+    /// <summary>Rows sampled for the median column run (the match count still checks every row).</summary>
+    private const int ColumnSamples = 9;
+
+    // Frame's source[y] for a row the terminal shows as left by a column shift: the row in _shown.
+    private const int ShownRow = -2;
+
     private readonly ColorMode _mode;
     private readonly bool _scrollRegions;
     private readonly bool _erase;
     private VtBuffer _out = null!;
     private Cell[] _blank = [];
+    private Cell[] _shown = [];   // rows a column shift left on screen: old row outside the band, moved cells inside
     private bool _started;
     private int _width;
     private int _cx = -1;
@@ -55,6 +70,12 @@ internal sealed class Renderer
     }
 
     public ColorMode Mode => _mode;
+
+    /// <summary>
+    /// The terminal has left/right margins (DECLRMM/DECSLRM; it said so in reply to DECRQM): with scroll regions on,
+    /// bands narrower than the screen are moved by the terminal too.
+    /// </summary>
+    public bool LeftRightMargins { get; set; }
 
     /// <summary>
     /// Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
@@ -149,7 +170,8 @@ internal sealed class Renderer
             }
 
             ReadOnlySpan<Cell> cur = current.Row(y);
-            ReadOnlySpan<Cell> prev = source[y] >= 0 ? previous.Row(source[y]) : BlankRow();
+            ReadOnlySpan<Cell> prev = source[y] >= 0 ? previous.Row(source[y])
+                : source[y] == ShownRow ? _shown.AsSpan(y * _width, _width) : BlankRow();
             int first = prefix[y] >= 0 ? prefix[y] : CommonPrefix(cur, prev);
             if (first == cur.Length)
             {
@@ -327,6 +349,14 @@ internal sealed class Renderer
                 {
                     ApplyShift(top, bottom, shift, source, prefix);
                 }
+                else if (LeftRightMargins)
+                {
+                    ColumnBand band = FindColumnShift(current, previous, top, bottom, prefix);
+                    if (band.Shift != 0)
+                    {
+                        ApplyColumnShift(previous, top, bottom, band, source, prefix);
+                    }
+                }
             }
         }
     }
@@ -396,6 +426,262 @@ internal sealed class Renderer
         }
 
         return matches;
+    }
+
+    /// <summary>Columns [Left, Right) of a band whose rows show the previous rows y + <see cref="Shift"/>.</summary>
+    private readonly record struct ColumnBand(int Shift, int Left, int Right);
+
+    /// <summary>
+    /// A band where whole rows don't line up, but a range of columns does (a list beside a panel that stays put, or
+    /// changes too): find the shift and columns that line up the most cells. Candidates come from probe rows and seed
+    /// columns (the probe's first and last changed cell): the nearest previous row matching a few cells around the
+    /// seed gives a shift; the columns are the median, over the band's rows, of the run of matching cells around the
+    /// seed, so a row that matches by chance further out (or a highlighted row that doesn't) doesn't move them.
+    /// </summary>
+    private ColumnBand FindColumnShift(CellBuffer current, CellBuffer previous, int top, int bottom, Span<int> prefix)
+    {
+        int length = bottom - top + 1;
+        ColumnBand best = default;
+        int bestCells = 0;
+        Span<int> probes = [top + length / 2, top + length / 4, top + 3 * length / 4];
+        foreach (int probe in probes)
+        {
+            ReadOnlySpan<Cell> row = current.Row(probe);
+            ReadOnlySpan<Cell> old = previous.Row(probe);
+            int first = prefix[probe];
+            int last = row.Length - 1;
+            while (last > first && row[last].Equals(old[last]))
+            {
+                last--;
+            }
+
+            for (int i = 0; i < 2; i++)
+            {
+                int seed = i == 0 ? first : last;
+                if (i == 1 && seed == first)
+                {
+                    break;
+                }
+
+                for (int distance = 1; distance <= length - MinScrollRows; distance++)
+                {
+                    int shift = 0;
+                    if (probe + distance <= bottom && SeedMatches(row, previous.Row(probe + distance), seed))
+                    {
+                        shift = distance;
+                    }
+                    else if (probe - distance >= top && SeedMatches(row, previous.Row(probe - distance), seed))
+                    {
+                        shift = -distance;
+                    }
+
+                    if (shift == 0)
+                    {
+                        continue;
+                    }
+
+                    // A seed inside the best band with the same shift would find that band again.
+                    if (shift != best.Shift || seed < best.Left || seed >= best.Right)
+                    {
+                        ColumnBand band = ColumnsFor(current, previous, top, bottom, shift, seed);
+                        if (band.Shift != 0 && band != best)
+                        {
+                            int matches = CountSliceMatches(current, previous, top, bottom, band);
+                            int cells = matches * (band.Right - band.Left);
+                            if (matches >= MinScrollRows && 2 * matches >= length - Math.Abs(shift)
+                                && cells >= MinColumnShiftCells && cells > bestCells)
+                            {
+                                best = band;
+                                bestCells = cells;
+                                if (matches == length - Math.Abs(shift))
+                                {
+                                    return best;   // every row that can line up does
+                                }
+                            }
+                        }
+                    }
+
+                    break;
+                }
+            }
+        }
+
+        return best;
+    }
+
+    /// <summary>Does <paramref name="previous"/> match <paramref name="current"/> in a few cells around column <paramref name="x"/>?</summary>
+    private static bool SeedMatches(ReadOnlySpan<Cell> current, ReadOnlySpan<Cell> previous, int x)
+    {
+        if (!current[x].Equals(previous[x]))
+        {
+            return false;
+        }
+
+        (int left, int right) = RunAround(current, previous, x);
+        return right - left >= MinSeedRun;
+    }
+
+    /// <summary>The run [left, right) of cells equal in both rows around column <paramref name="x"/>, which must be one.</summary>
+    private static (int Left, int Right) RunAround(ReadOnlySpan<Cell> current, ReadOnlySpan<Cell> previous, int x)
+    {
+        int right = x + CommonPrefix(current[x..], previous[x..]);
+        int left = x;
+        while (left > 0 && current[left - 1].Equals(previous[left - 1]))
+        {
+            left--;
+        }
+
+        return (left, right);
+    }
+
+    /// <summary>
+    /// The columns to move for <paramref name="shift"/>: the median run around <paramref name="seed"/> over a sample of the
+    /// rows that match there, narrowed so no wide glyph on screen is cut by a margin. Shift 0 if fewer than 2 columns.
+    /// </summary>
+    private static ColumnBand ColumnsFor(CellBuffer current, CellBuffer previous, int top, int bottom, int shift, int seed)
+    {
+        int from = Math.Max(top, top - shift);
+        int to = Math.Min(bottom, bottom - shift);
+        int step = Math.Max(1, (to - from + ColumnSamples) / ColumnSamples);
+        Span<int> lefts = stackalloc int[ColumnSamples + 1];
+        Span<int> rights = stackalloc int[ColumnSamples + 1];
+        int count = 0;
+        for (int y = from; y <= to && count < lefts.Length; y += step)
+        {
+            ReadOnlySpan<Cell> row = current.Row(y);
+            ReadOnlySpan<Cell> old = previous.Row(y + shift);
+            if (row[seed].Equals(old[seed]))
+            {
+                (lefts[count], rights[count]) = RunAround(row, old, seed);
+                count++;
+            }
+        }
+
+        if (count == 0)
+        {
+            return default;
+        }
+
+        lefts = lefts[..count];
+        rights = rights[..count];
+        lefts.Sort();
+        rights.Sort();
+        int left = lefts[count / 2];
+        int right = rights[count / 2];
+        if (left > seed || right <= seed)
+        {
+            return default;
+        }
+
+        // A margin through a wide glyph would split it: leave the glyph out (on every row the terminal moves). Taking
+        // it in instead would take in a column that doesn't line up.
+        int width = current.Width;
+        for (bool narrowed = true; narrowed && right - left >= 2;)
+        {
+            narrowed = false;
+            for (int y = top; y <= bottom && right - left >= 2; y++)
+            {
+                ReadOnlySpan<Cell> old = previous.Row(y);
+                if (left > 0 && old[left].IsContinuation)
+                {
+                    left++;
+                    narrowed = true;
+                }
+
+                if (right < width && old[right].IsContinuation)
+                {
+                    right--;
+                    narrowed = true;
+                }
+            }
+        }
+
+        return right - left >= 2 ? new ColumnBand(shift, left, right) : default;
+    }
+
+    private static int CountSliceMatches(CellBuffer current, CellBuffer previous, int top, int bottom, ColumnBand band)
+    {
+        int matches = 0;
+        int length = band.Right - band.Left;
+        for (int y = Math.Max(top, top - band.Shift); y <= Math.Min(bottom, bottom - band.Shift); y++)
+        {
+            if (Same(current.Row(y).Slice(band.Left, length), previous.Row(y + band.Shift).Slice(band.Left, length)))
+            {
+                matches++;
+            }
+        }
+
+        return matches;
+    }
+
+    /// <summary>
+    /// Move columns [left, right) of rows [top, bottom] by the band's shift on the terminal: left/right margin mode
+    /// on, margins around the band, delete or insert lines at its top row, margins reset, mode off. Rows of the band
+    /// are then diffed against what that leaves on screen (built in <see cref="_shown"/>): the old row outside the
+    /// columns, the moved (or blank) cells inside.
+    /// </summary>
+    private void ApplyColumnShift(CellBuffer previous, int top, int bottom, ColumnBand band, Span<int> source, Span<int> prefix)
+    {
+        if (band.Left == 0 && band.Right == _width)
+        {
+            ApplyShift(top, bottom, band.Shift, source, prefix);
+            return;
+        }
+
+        Begin();
+        _out.Reserve(128);
+        SetPen(default);
+        _out.Bytes("\u001b[?69h\u001b["u8);
+        _out.Int(Top + top + 1);
+        _out.Byte((byte)';');
+        _out.Int(Top + bottom + 1);
+        _out.Bytes("r\u001b["u8);
+        _out.Int(band.Left + 1);
+        _out.Byte((byte)';');
+        _out.Int(band.Right);
+        _out.Bytes("s\u001b["u8);
+        _out.Int(Top + top + 1);
+        _out.Byte((byte)';');
+        _out.Int(band.Left + 1);
+        _out.Bytes("H\u001b["u8);
+        int count = Math.Abs(band.Shift);
+        if (count > 1)
+        {
+            _out.Int(count);
+        }
+
+        _out.Byte(band.Shift > 0 ? (byte)'M' : (byte)'L');
+
+        // Reset both margins (CSI s is DECSLRM while the mode is on) before painting, then leave the mode.
+        _out.Bytes("\u001b[s\u001b[r\u001b[?69l"u8);
+        _cx = -1;
+        _cy = -1;
+
+        int size = previous.Width * previous.Height;
+        if (_shown.Length < size)
+        {
+            _shown = new Cell[size];
+        }
+
+        int length = band.Right - band.Left;
+        for (int y = top; y <= bottom; y++)
+        {
+            Span<Cell> shown = _shown.AsSpan(y * _width, _width);
+            previous.Row(y).CopyTo(shown);
+            int from = y + band.Shift;
+            Span<Cell> moved = shown.Slice(band.Left, length);
+            if (from >= top && from <= bottom)
+            {
+                previous.Row(from).Slice(band.Left, length).CopyTo(moved);
+            }
+            else
+            {
+                moved.Fill(Cell.Empty);
+            }
+
+            source[y] = ShownRow;
+            prefix[y] = -1;
+        }
     }
 
     /// <summary>

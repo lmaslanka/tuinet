@@ -77,7 +77,9 @@ public sealed record TerminalOptions
 
     /// <summary>
     /// When a band of full-width rows scrolls, let the terminal move them (scroll margins plus
-    /// insert/delete line) instead of repainting every row. Turn off for a terminal that mishandles them.
+    /// insert/delete line) instead of repainting every row. On terminals that report left/right margins (DECLRMM,
+    /// asked at startup; see <see cref="Terminal.LeftRightMarginsActive"/>) bands narrower than the screen move too,
+    /// such as a list beside a panel. Turn off for a terminal that mishandles them.
     /// </summary>
     public bool ScrollRegions { get; init; } = true;
 

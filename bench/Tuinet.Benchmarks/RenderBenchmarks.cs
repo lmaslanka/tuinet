@@ -10,6 +10,7 @@ public class RenderBenchmarks
     private const int W = 200;
     private const int H = 60;
     private readonly Renderer _renderer = new(ColorMode.TrueColor);
+    private readonly Renderer _margins = new(ColorMode.TrueColor) { LeftRightMargins = true };
     private readonly VtBuffer _out = new(1 << 20);
     private CellBuffer _a = null!;
     private CellBuffer _b = null!;
@@ -19,6 +20,8 @@ public class RenderBenchmarks
     private CellBuffer _plain = null!;
     private CellBuffer _dialog = null!;
     private CellBuffer _short = null!;
+    private CellBuffer _split = null!;
+    private CellBuffer _splitScrolled = null!;
 
     [GlobalSetup]
     public void Setup()
@@ -40,6 +43,8 @@ public class RenderBenchmarks
             _dialog.SetString(box.X + 3, y, "a line of dialog text, then blank to the border", dialogStyle);
         }
 
+        _split = Split(Screen(0));
+        _splitScrolled = Split(Screen(0, shift: 1));
         _short = Screen(0);
         for (int y = 0; y < H; y++)
         {
@@ -68,11 +73,13 @@ public class RenderBenchmarks
     [Benchmark(Description = "full repaint, styled")]
     public int FullRepaint() => Render(_b, _a);
 
-    private int Render(CellBuffer current, CellBuffer previous)
+    private int Render(CellBuffer current, CellBuffer previous) => Render(current, previous, _renderer);
+
+    private int Render(CellBuffer current, CellBuffer previous, Renderer renderer)
     {
         _out.Clear();
-        _renderer.AfterClear();
-        _renderer.Render(current, previous, _out);
+        renderer.AfterClear();
+        renderer.Render(current, previous, _out);
         return _out.Length;
     }
 
@@ -81,6 +88,31 @@ public class RenderBenchmarks
     {
         var buffer = new CellBuffer(W, H);
         buffer.Fill(buffer.Area, new Style(Color.Rgb(200, 200, 200), Color.Rgb(20, 24, 28)));
+        return buffer;
+    }
+
+    /// <summary>The left 150 columns move up by one beside a 50-column panel that stays: the terminal has no margins.</summary>
+    [Benchmark(Description = "split scroll, no margins")]
+    public int SplitScroll() => Render(_splitScrolled, _split);
+
+    /// <summary>The same on a terminal with left/right margins (DECLRMM): the terminal moves the 150 columns.</summary>
+    [Benchmark(Description = "split scroll, margins")]
+    public int SplitScrollMargins() => Render(_splitScrolled, _split, _margins);
+
+    /// <summary>A page change with left/right margins on: every row dirty, no shift to find (the detection's worst case).</summary>
+    [Benchmark(Description = "full repaint, margins")]
+    public int FullRepaintMargins() => Render(_b, _a, _margins);
+
+    /// <summary>Overlay a panel on columns 150-199 whose rows all differ and don't move.</summary>
+    private static CellBuffer Split(CellBuffer buffer)
+    {
+        var panel = new Style(Color.Rgb(220, 220, 220), Color.Rgb(30, 30, 40));
+        for (int y = 0; y < H; y++)
+        {
+            buffer.Fill(new Rect(150, y, W - 150, 1), panel);
+            buffer.SetString(151, y, $"│ panel row {y}: {y * 7919 % 1000} items", panel);
+        }
+
         return buffer;
     }
 

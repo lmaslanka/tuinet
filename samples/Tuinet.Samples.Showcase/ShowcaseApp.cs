@@ -102,6 +102,13 @@ public sealed class ShowcaseApp
     /// <summary>Five bars of 7 columns with 1-column gaps: every kind's name fits under its bar.</summary>
     private const int KindChartWidth = 39;
 
+    /// <summary>
+    /// The terminal moves scrolled bands narrower than the screen itself (left/right margins; see
+    /// <see cref="Terminal.LeftRightMarginsActive"/>): the table scrolls beside the details panel for a fraction of the
+    /// bytes. Shown on the stats page.
+    /// </summary>
+    public bool LeftRightMargins { get; set; }
+
     /// <summary>What a frame cost, charted on the stats page (the loop reports it after each <see cref="Terminal.Present"/>).</summary>
     public void RecordFrame(long bytes, TimeSpan time)
     {
@@ -527,7 +534,9 @@ public sealed class ShowcaseApp
         value.TryWrite($"{enabled,2} of {_items.Length}", out int length);
         y = Flag(buffer, top[1], y, "enabled", value[..length]);
         value.TryWrite($"{notify,2} of {_items.Length}", out length);
-        Flag(buffer, top[1], y, "notify", value[..length]);
+        y = Flag(buffer, top[1], y, "notify", value[..length]);
+        y = Heading(buffer, top[1], y + 1, "TERMINAL", Theme.Blue);
+        Flag(buffer, top[1], y, "L/R margins", LeftRightMargins ? "on" : "off");
 
         y = Heading(buffer, area, area.Y + 7, "BY PRIORITY", Theme.Violet);
         buffer.Render(new BarChart(_priorityBars)

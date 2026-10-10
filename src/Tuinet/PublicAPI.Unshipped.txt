@@ -408,6 +408,7 @@ Tuinet.Terminal.Height.get -> int
 Tuinet.Terminal.Invalidate() -> void
 Tuinet.Terminal.KittyKeyboardActive.get -> bool
 Tuinet.Terminal.LastFrameBytes.get -> int
+Tuinet.Terminal.LeftRightMarginsActive.get -> bool
 Tuinet.Terminal.Options.get -> Tuinet.TerminalOptions!
 Tuinet.Terminal.Poll(out Tuinet.Event ev, int timeoutMs) -> bool
 Tuinet.Terminal.Post(object! message) -> void

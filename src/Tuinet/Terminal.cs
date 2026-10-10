@@ -77,6 +77,8 @@ public sealed class Terminal : IDisposable
         Enter();
     }
 
+    private static ReadOnlySpan<byte> LeftRightMarginsQuery => "\u001b[?69$p"u8;
+
     /// <summary>Longest text <see cref="CopyToClipboard"/> sends, in UTF-8 bytes (terminals cap OSC 52 around here).</summary>
     public const int MaxClipboardBytes = 74_000;
 
@@ -121,6 +123,13 @@ public sealed class Terminal : IDisposable
     /// reply arrives with input, so this turns true during the first polls; it stays false on terminals without it.
     /// </summary>
     public bool KittyKeyboardActive => _options.KittyKeyboard && _parser.KittyFlags > 0;
+
+    /// <summary>
+    /// With <see cref="TerminalOptions.ScrollRegions"/>: the terminal reported left/right margins (DECLRMM), so a band
+    /// narrower than the screen that scrolls (a list beside a panel) is moved by the terminal too. The reply arrives with
+    /// input, so this turns true during the first polls; it stays false on terminals without them.
+    /// </summary>
+    public bool LeftRightMarginsActive => _options.ScrollRegions && _parser.LeftRightMargins;
 
     /// <summary>
     /// Set the window (or tab) title (OSC 2). Control characters are dropped. The terminal's own title comes back on
@@ -231,6 +240,7 @@ public sealed class Terminal : IDisposable
             _fullRedraw = false;
         }
 
+        _renderer.LeftRightMargins = LeftRightMarginsActive;
         _renderer.Frame(_back, _front);
         LastFrameBytes = _out.Length;
         Flush();
@@ -292,6 +302,7 @@ public sealed class Terminal : IDisposable
 
         PlaceBand(row);
         _blank = Fresh(_blank, _front.Width, _front.Height);
+        _renderer.LeftRightMargins = LeftRightMarginsActive;
         _renderer.Frame(_front, _blank);
         Flush();
     }
@@ -592,8 +603,20 @@ public sealed class Terminal : IDisposable
         _out.Reserve(128);
         // ?2027: grapheme cluster mode, so terminals that know it size clusters the way CellBuffer does.
         _out.Bytes(_inline is null
-            ? "\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h\u001b[0m\u001b[2J"u8
+            ? "\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h"u8
             : "\u001b[?25l\u001b[?7l\u001b[?2027h"u8);
+        if (_inline is null)
+        {
+            if (_options.ScrollRegions)
+            {
+                // Ask whether the terminal has left/right margins (DECRQM 69), before the clear: one that can't
+                // parse the query may print its last byte.
+                _out.Bytes(LeftRightMarginsQuery);
+            }
+
+            _out.Bytes("\u001b[0m\u001b[2J"u8);
+        }
+
         if (_options.Mouse)
         {
             _out.Bytes(_options.MouseMotion ? "\u001b[?1003h\u001b[?1006h"u8 : "\u001b[?1002h\u001b[?1006h"u8);
@@ -638,6 +661,14 @@ public sealed class Terminal : IDisposable
         _renderer.Forget();
         _renderer.Top = 0;
         PlaceBand(start);
+        if (_options.ScrollRegions)
+        {
+            // In the band, just erased: a terminal that can't parse the query may print its last byte, so erase again.
+            _out.Reserve(16);
+            _out.Bytes(LeftRightMarginsQuery);
+            _out.Bytes("\r\u001b[K"u8);
+        }
+
         _renderer.Close();
         _front.Clear();
         Flush();

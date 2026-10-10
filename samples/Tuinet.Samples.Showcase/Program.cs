@@ -25,6 +25,7 @@ while (running)
     long now = clock.ElapsedMilliseconds;
     title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
     terminal.SetTitle(title.AsSpan(0, titleLength));   // sent only when it changes
+    app.LeftRightMargins = terminal.LeftRightMarginsActive;   // the terminal's reply arrives with the first input
     long frameStart = Stopwatch.GetTimestamp();
     app.Render(terminal.BeginFrame(), now);
     terminal.Present();

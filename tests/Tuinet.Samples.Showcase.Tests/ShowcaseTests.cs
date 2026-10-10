@@ -291,10 +291,19 @@ public class ShowcaseTests
         string screen = Render(app).ToString();
         foreach (string row in (string[])[@"BY KIND +FLAGS", @"   4       4       4       4       4 +■ notify +7 of 20",
             @"▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅", @"feature bugfix   chore   docs    spike", @"■ enabled +17 of 20",
-            @"critical ████████████▌ 5", @"BYTES PER FRAME +last 1234 B", @"RENDER \+ DIFF \+ WRITE +last 56 µs"])
+            @"critical ████████████▌ 5", @"BYTES PER FRAME +last 1234 B", @"RENDER \+ DIFF \+ WRITE +last 56 µs",
+            @"TERMINAL", @"■ L/R margins +off"])
         {
             Assert.Matches(row, screen);
         }
+    }
+
+    [Fact]
+    public void Stats_page_says_when_the_terminal_moves_split_bands()
+    {
+        var app = new ShowcaseApp { LeftRightMargins = true };
+        Press(app, ']');
+        Assert.Matches(@"■ L/R margins +on", Render(app).ToString());
     }
 
     [Fact]

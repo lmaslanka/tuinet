@@ -32,6 +32,10 @@ The first release.
   instead of spaces when that is shorter; erased cells keep their background (BCE). A dialog closing over a
   themed screen goes from 2.2 KB to 313 bytes, and list and table scroll frames shrink by 53–71%.
   `TerminalOptions.EraseSequences` turns it off.
+- Split scrolling: on terminals with left/right margins (DECLRMM/DECSLRM, asked with DECRQM at startup), a band
+  narrower than the screen that scrolls, such as a list beside a panel, is moved by the terminal too. A 150-column
+  list scrolling beside a 50-column panel goes from 10.3 KB to 459 bytes per frame. `Terminal.LeftRightMarginsActive`
+  reports whether the terminal has them; elsewhere nothing changes. `TerminalOptions.ScrollRegions` gates it.
 - Inline mode: `TerminalOptions.Inline = new InlineOptions(height)` draws in a band under the shell prompt
   instead of on the alternate screen; the band stays in the scrollback after exit. `Terminal.PrintAbove`
   prints log lines above the band. The band is placed with a cursor position query and follows resizes.

@@ -27,6 +27,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Gaps inside a row are jumped with relative cursor moves.
   - Runs of blanks are erased (to the end of the row, or n cells) instead of written as spaces.
   - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
+    On terminals with left/right margins (DECLRMM) this works for a band narrower than the screen too, such as a list beside a panel.
   - Style changes are sent as minimal deltas.
   - Each frame goes out in a single synchronized write.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
@@ -617,7 +618,7 @@ click every control in the edit dialog, and click outside the progress dialog to
 | `FocusEvents` | off | `FocusGained` / `FocusLost` |
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
-| `ScrollRegions` | on | Let the terminal move full-width rows that scrolled, instead of repainting them |
+| `ScrollRegions` | on | Let the terminal move rows that scrolled, instead of repainting them: full-width bands, and narrower ones where the terminal reports left/right margins (`term.LeftRightMarginsActive`) |
 | `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
 | `KittyKeyboard` | off | Kitty keyboard protocol where the terminal has it (see below) |
@@ -805,6 +806,8 @@ public void Key_in_frame_out()
 | One cell changed | 4.7 µs | 59 |
 | Full repaint, a different truecolor style on every row | 35 µs | 13.3 KB |
 | Scroll by one row, every row different | 7.7 µs | 271 |
+| Scroll by one row beside a 50-column panel, terminal without left/right margins | 31 µs | 10.3 KB |
+| The same, terminal with left/right margins (DECLRMM) | 13 µs | 459 |
 | An 80×24 dialog closes over a themed background | 8.6 µs | 313 |
 | Every row gets shorter (text, then blanks to the right edge) | 12 µs | 698 |
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
