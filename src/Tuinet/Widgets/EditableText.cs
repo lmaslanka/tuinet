@@ -101,8 +101,8 @@ public abstract class EditableText
 
     /// <summary>
     /// Insert text at the caret in place of the selection (e.g. a paste), as one undo step. Control characters and
-    /// invisible format characters (bidi controls, zero-width space, BOM…; see <see cref="IsInvisibleFormat"/>) are
-    /// dropped; a <see cref="TextAreaState"/> keeps line breaks (as '\n') and turns tabs into four spaces.
+    /// invisible format characters (bidi controls, zero-width space, word joiner, BOM; joiners such as ZWJ are kept)
+    /// are dropped; a <see cref="TextAreaState"/> keeps line breaks (as '\n') and turns tabs into four spaces.
     /// </summary>
     public void Insert(ReadOnlySpan<char> text)
     {
