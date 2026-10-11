@@ -1,0 +1,181 @@
+### YamlMime:ApiPage
+title: Class Snapshot
+body:
+- api1: Class Snapshot
+  id: Tuinet_Testing_Snapshot
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/Snapshot.cs#L20
+  metadata:
+    uid: Tuinet.Testing.Snapshot
+    commentId: T:Tuinet.Testing.Snapshot
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Testing
+      url: Tuinet.Testing.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Snapshot tests for frames: <xref href="Tuinet.Testing.Snapshot.Verify(Tuinet.CellBuffer%2cSystem.String%2cSystem.Boolean%2cSystem.String%2cSystem.String)" data-throw-if-not-resolved="false"></xref> compares a buffer with
+
+    <code>__snapshots__/&lt;name&gt;.txt</code> next to the test's source file. On a mismatch (or a missing snapshot) it writes
+
+    <code>&lt;name&gt;.received.txt</code> beside it and throws; set <code>TUINET_ACCEPT_SNAPSHOTS=1</code> to write the snapshots
+
+    instead, then review them in the diff.
+
+
+    <pre><code class="lang-csharp">var buffer = new CellBuffer(40, 10);
+
+    app.Render(buffer, nowMs: 0);
+
+    Snapshot.Verify(buffer, "main-screen");</code></pre>
+- code: public static class Snapshot
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: Snapshot
+    url: Tuinet.Testing.Snapshot.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.MemberwiseClone()
+    url: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Fields
+- api3: AcceptVariable
+  id: Tuinet_Testing_Snapshot_AcceptVariable
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/Snapshot.cs#L23
+  metadata:
+    uid: Tuinet.Testing.Snapshot.AcceptVariable
+    commentId: F:Tuinet.Testing.Snapshot.AcceptVariable
+- markdown: The environment variable that makes <xref href="Tuinet.Testing.Snapshot.Verify(System.String%2cSystem.String%2cSystem.String%2cSystem.String)" data-throw-if-not-resolved="false"></xref> write snapshots instead of comparing.
+- code: public const string AcceptVariable = "TUINET_ACCEPT_SNAPSHOTS"
+- h4: Field Value
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- h2: Methods
+- api3: Parse(string)
+  id: Tuinet_Testing_Snapshot_Parse_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/Snapshot.cs#L81
+  metadata:
+    uid: Tuinet.Testing.Snapshot.Parse(System.String)
+    commentId: M:Tuinet.Testing.Snapshot.Parse(System.String)
+- markdown: >-
+    Read a styled snapshot (<xref href="Tuinet.Testing.CellBufferTesting.ToStyledString(Tuinet.CellBuffer)" data-throw-if-not-resolved="false"></xref>) back into a buffer as wide as its
+
+    widest line and one row per line. Plain text parses too, since it is markup without tags (escape <code>[</code> as <code>[[</code>).
+- code: public static CellBuffer Parse(string styled)
+- h4: Parameters
+- parameters:
+  - name: styled
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- h4: Returns
+- parameters:
+  - type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+- api3: Verify(CellBuffer, string, bool, string?, string)
+  id: Tuinet_Testing_Snapshot_Verify_Tuinet_CellBuffer_System_String_System_Boolean_System_String_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/Snapshot.cs#L31
+  metadata:
+    uid: Tuinet.Testing.Snapshot.Verify(Tuinet.CellBuffer,System.String,System.Boolean,System.String,System.String)
+    commentId: M:Tuinet.Testing.Snapshot.Verify(Tuinet.CellBuffer,System.String,System.Boolean,System.String,System.String)
+- markdown: >-
+    Compare <code class="paramref">buffer</code> with snapshot <code class="paramref">name</code>: as <xref href="Tuinet.Testing.CellBufferTesting.ToStyledString(Tuinet.CellBuffer)" data-throw-if-not-resolved="false"></xref>
+
+    when <code class="paramref">styled</code> (colors and attributes count), else as plain text (<xref href="Tuinet.CellBuffer.ToString" data-throw-if-not-resolved="false"></xref>).
+
+    Trailing spaces and blank lines are ignored. Snapshots live in <code class="paramref">directory</code>, by default a
+
+    <code>__snapshots__</code> folder next to the calling test's source file.
+- code: public static void Verify(CellBuffer buffer, string name, bool styled = true, string? directory = null, string sourceFile = "")
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: name
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+  - name: styled
+    type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    optional: true
+  - name: directory
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    - '?'
+    optional: true
+  - name: sourceFile
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    optional: true
+- api3: Verify(string, string, string?, string)
+  id: Tuinet_Testing_Snapshot_Verify_System_String_System_String_System_String_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/Snapshot.cs#L41
+  metadata:
+    uid: Tuinet.Testing.Snapshot.Verify(System.String,System.String,System.String,System.String)
+    commentId: M:Tuinet.Testing.Snapshot.Verify(System.String,System.String,System.String,System.String)
+- markdown: >-
+    Compare <code class="paramref">actual</code> with snapshot <code class="paramref">name</code>, ignoring trailing spaces, trailing blank
+
+    lines and line-ending style. Snapshots live in <code class="paramref">directory</code>, by default <code>__snapshots__</code> next to the calling source file.
+- code: public static void Verify(string actual, string name, string? directory = null, string sourceFile = "")
+- h4: Parameters
+- parameters:
+  - name: actual
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+  - name: name
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+  - name: directory
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    - '?'
+    optional: true
+  - name: sourceFile
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    optional: true
+languageId: csharp
+metadata:
+  description: >-
+    Snapshot tests for frames:  compares a buffer with
+
+    __snapshots__/&lt;name&gt;.txt next to the test's source file. On a mismatch (or a missing snapshot) it writes
+
+    &lt;name&gt;.received.txt beside it and throws; set TUINET_ACCEPT_SNAPSHOTS=1 to write the snapshots
+
+    instead, then review them in the diff.
+
+
+    var buffer = new CellBuffer(40, 10);
+
+    app.Render(buffer, nowMs: 0);
+
+    Snapshot.Verify(buffer, "main-screen");

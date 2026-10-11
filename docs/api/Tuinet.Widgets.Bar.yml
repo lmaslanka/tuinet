@@ -1,0 +1,101 @@
+### YamlMime:ApiPage
+title: Struct Bar
+body:
+- api1: Struct Bar
+  id: Tuinet_Widgets_Bar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Bar
+    commentId: T:Tuinet.Widgets.Bar
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: One bar of a <xref href="Tuinet.Widgets.BarChart" data-throw-if-not-resolved="false"></xref>. <code class="paramref">Style</code> is layered over <xref href="Tuinet.Widgets.BarChart.BarStyle" data-throw-if-not-resolved="false"></xref>.
+- code: 'public readonly record struct Bar : IEquatable<Bar>'
+- h4: Implements
+- list:
+  - text: IEquatable<Bar>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: Bar(double, string, Style)
+  id: Tuinet_Widgets_Bar__ctor_System_Double_System_String_Tuinet_Style_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Bar.#ctor(System.Double,System.String,Tuinet.Style)
+    commentId: M:Tuinet.Widgets.Bar.#ctor(System.Double,System.String,Tuinet.Style)
+- markdown: One bar of a <xref href="Tuinet.Widgets.BarChart" data-throw-if-not-resolved="false"></xref>. <code class="paramref">Style</code> is layered over <xref href="Tuinet.Widgets.BarChart.BarStyle" data-throw-if-not-resolved="false"></xref>.
+- code: public Bar(double Value, string Label = "", Style Style = default)
+- h4: Parameters
+- parameters:
+  - name: Value
+    type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+  - name: Label
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    optional: true
+  - name: Style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+- h2: Properties
+- api3: Label
+  id: Tuinet_Widgets_Bar_Label
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Bar.Label
+    commentId: P:Tuinet.Widgets.Bar.Label
+- code: public string Label { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- api3: Style
+  id: Tuinet_Widgets_Bar_Style
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Bar.Style
+    commentId: P:Tuinet.Widgets.Bar.Style
+- code: public Style Style { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Value
+  id: Tuinet_Widgets_Bar_Value
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Bar.Value
+    commentId: P:Tuinet.Widgets.Bar.Value
+- code: public double Value { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+languageId: csharp
+metadata:
+  description: One bar of a . Style is layered over .

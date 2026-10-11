@@ -1,0 +1,79 @@
+### YamlMime:ApiPage
+title: Struct Size
+body:
+- api1: Struct Size
+  id: Tuinet_Size
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L3
+  metadata:
+    uid: Tuinet.Size
+    commentId: T:Tuinet.Size
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public readonly record struct Size : IEquatable<Size>'
+- h4: Implements
+- list:
+  - text: IEquatable<Size>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: Size(int, int)
+  id: Tuinet_Size__ctor_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L3
+  metadata:
+    uid: Tuinet.Size.#ctor(System.Int32,System.Int32)
+    commentId: M:Tuinet.Size.#ctor(System.Int32,System.Int32)
+- code: public Size(int Width, int Height)
+- h4: Parameters
+- parameters:
+  - name: Width
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: Height
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Properties
+- api3: Height
+  id: Tuinet_Size_Height
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L3
+  metadata:
+    uid: Tuinet.Size.Height
+    commentId: P:Tuinet.Size.Height
+- code: public int Height { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Width
+  id: Tuinet_Size_Width
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L3
+  metadata:
+    uid: Tuinet.Size.Width
+    commentId: P:Tuinet.Size.Width
+- code: public int Width { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+languageId: csharp

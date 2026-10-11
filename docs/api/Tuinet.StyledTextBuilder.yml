@@ -1,0 +1,188 @@
+### YamlMime:ApiPage
+title: Struct StyledTextBuilder
+body:
+- api1: Struct StyledTextBuilder
+  id: Tuinet_StyledTextBuilder
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L85
+  metadata:
+    uid: Tuinet.StyledTextBuilder
+    commentId: T:Tuinet.StyledTextBuilder
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Builds a <xref href="Tuinet.StyledText" data-throw-if-not-resolved="false"></xref> into caller memory (usually <code>stackalloc</code>), merging adjacent runs
+
+    with the same style. Never throws when full: what fits is kept and <xref href="Tuinet.StyledTextBuilder.Overflowed" data-throw-if-not-resolved="false"></xref> is set.
+
+
+    <pre><code class="lang-csharp">var keys = new StyledTextBuilder(stackalloc char[64], stackalloc StyledRun[8]);
+
+    keys.Append("j/k", key);
+
+    keys.Append(" move  ", dim);
+
+    keys.Append(count, key);
+
+    buffer.SetText(x, y, keys.Build());</code></pre>
+- code: public ref struct StyledTextBuilder
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: StyledTextBuilder(Span<char>, Span<StyledRun>)
+  id: Tuinet_StyledTextBuilder__ctor_System_Span_System_Char__System_Span_Tuinet_StyledRun__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L92
+  metadata:
+    uid: Tuinet.StyledTextBuilder.#ctor(System.Span{System.Char},System.Span{Tuinet.StyledRun})
+    commentId: M:Tuinet.StyledTextBuilder.#ctor(System.Span{System.Char},System.Span{Tuinet.StyledRun})
+- code: public StyledTextBuilder(Span<char> chars, Span<StyledRun> runs)
+- h4: Parameters
+- parameters:
+  - name: chars
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: runs
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: StyledRun
+      url: Tuinet.StyledRun.html
+    - '>'
+- h2: Properties
+- api3: Length
+  id: Tuinet_StyledTextBuilder_Length
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L99
+  metadata:
+    uid: Tuinet.StyledTextBuilder.Length
+    commentId: P:Tuinet.StyledTextBuilder.Length
+- markdown: Chars written so far.
+- code: public readonly int Length { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Overflowed
+  id: Tuinet_StyledTextBuilder_Overflowed
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L102
+  metadata:
+    uid: Tuinet.StyledTextBuilder.Overflowed
+    commentId: P:Tuinet.StyledTextBuilder.Overflowed
+- markdown: Something didn't fit in the char or run buffer and was cut.
+- code: public readonly bool Overflowed { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- h2: Methods
+- api3: Append(scoped ReadOnlySpan<char>, Style)
+  id: Tuinet_StyledTextBuilder_Append_System_ReadOnlySpan_System_Char__Tuinet_Style_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L104
+  metadata:
+    uid: Tuinet.StyledTextBuilder.Append(System.ReadOnlySpan{System.Char},Tuinet.Style)
+    commentId: M:Tuinet.StyledTextBuilder.Append(System.ReadOnlySpan{System.Char},Tuinet.Style)
+- code: public void Append(scoped ReadOnlySpan<char> text, Style style = default)
+- h4: Parameters
+- parameters:
+  - name: text
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+- api3: Append<T>(T, Style, ReadOnlySpan<char>)
+  id: Tuinet_StyledTextBuilder_Append__1___0_Tuinet_Style_System_ReadOnlySpan_System_Char__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L127
+  metadata:
+    uid: Tuinet.StyledTextBuilder.Append``1(``0,Tuinet.Style,System.ReadOnlySpan{System.Char})
+    commentId: M:Tuinet.StyledTextBuilder.Append``1(``0,Tuinet.Style,System.ReadOnlySpan{System.Char})
+- markdown: Format <code class="paramref">value</code> (a number, date, …) straight into the buffer.
+- code: 'public void Append<T>(T value, Style style = default, ReadOnlySpan<char> format = default) where T : ISpanFormattable'
+- h4: Parameters
+- parameters:
+  - name: value
+    type:
+    - T
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+  - name: format
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+    optional: true
+- h4: Type Parameters
+- parameters:
+  - name: T
+- api3: Build(Style)
+  id: Tuinet_StyledTextBuilder_Build_Tuinet_Style_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L142
+  metadata:
+    uid: Tuinet.StyledTextBuilder.Build(Tuinet.Style)
+    commentId: M:Tuinet.StyledTextBuilder.Build(Tuinet.Style)
+- code: public readonly StyledText Build(Style style = default)
+- h4: Parameters
+- parameters:
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+- h4: Returns
+- parameters:
+  - type:
+    - text: StyledText
+      url: Tuinet.StyledText.html
+languageId: csharp
+metadata:
+  description: >-
+    Builds a  into caller memory (usually stackalloc), merging adjacent runs
+
+    with the same style. Never throws when full: what fits is kept and  is set.
+
+
+    var keys = new StyledTextBuilder(stackalloc char[64], stackalloc StyledRun[8]);
+
+    keys.Append("j/k", key);
+
+    keys.Append(" move  ", dim);
+
+    keys.Append(count, key);
+
+    buffer.SetText(x, y, keys.Build());

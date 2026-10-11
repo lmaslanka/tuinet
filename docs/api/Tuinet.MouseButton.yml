@@ -1,0 +1,28 @@
+### YamlMime:ApiPage
+title: Enum MouseButton
+body:
+- api1: Enum MouseButton
+  id: Tuinet_MouseButton
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Input.cs#L116
+  metadata:
+    uid: Tuinet.MouseButton
+    commentId: T:Tuinet.MouseButton
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public enum MouseButton : byte'
+- h2: Fields
+- parameters:
+  - name: Left
+    default: "1"
+  - name: Middle
+    default: "2"
+  - name: None
+    default: "0"
+  - name: Right
+    default: "3"
+languageId: csharp

@@ -1,0 +1,125 @@
+### YamlMime:ApiPage
+title: Class Spinner
+body:
+- api1: Class Spinner
+  id: Tuinet_Widgets_Spinner
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L61
+  metadata:
+    uid: Tuinet.Widgets.Spinner
+    commentId: T:Tuinet.Widgets.Spinner
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: Animation frames for activity indicators. Pick a frame from elapsed time, not frame count.
+- code: public static class Spinner
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: Spinner
+    url: Tuinet.Widgets.Spinner.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.MemberwiseClone()
+    url: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Properties
+- api3: Arc
+  id: Tuinet_Widgets_Spinner_Arc
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L65
+  metadata:
+    uid: Tuinet.Widgets.Spinner.Arc
+    commentId: P:Tuinet.Widgets.Spinner.Arc
+- code: public static ReadOnlySpan<char> Arc { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: Dots
+  id: Tuinet_Widgets_Spinner_Dots
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L64
+  metadata:
+    uid: Tuinet.Widgets.Spinner.Dots
+    commentId: P:Tuinet.Widgets.Spinner.Dots
+- code: public static ReadOnlySpan<char> Dots { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: Line
+  id: Tuinet_Widgets_Spinner_Line
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L63
+  metadata:
+    uid: Tuinet.Widgets.Spinner.Line
+    commentId: P:Tuinet.Widgets.Spinner.Line
+- code: public static ReadOnlySpan<char> Line { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- h2: Methods
+- api3: Frame(ReadOnlySpan<char>, long, int)
+  id: Tuinet_Widgets_Spinner_Frame_System_ReadOnlySpan_System_Char__System_Int64_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L68
+  metadata:
+    uid: Tuinet.Widgets.Spinner.Frame(System.ReadOnlySpan{System.Char},System.Int64,System.Int32)
+    commentId: M:Tuinet.Widgets.Spinner.Frame(System.ReadOnlySpan{System.Char},System.Int64,System.Int32)
+- markdown: The frame for <code class="paramref">elapsedMs</code> at <code class="paramref">intervalMs</code> per frame.
+- code: public static char Frame(ReadOnlySpan<char> frames, long elapsedMs, int intervalMs = 100)
+- h4: Parameters
+- parameters:
+  - name: frames
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: elapsedMs
+    type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+  - name: intervalMs
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+    optional: true
+- h4: Returns
+- parameters:
+  - type:
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+languageId: csharp
+metadata:
+  description: Animation frames for activity indicators. Pick a frame from elapsed time, not frame count.

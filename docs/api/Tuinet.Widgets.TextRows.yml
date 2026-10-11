@@ -1,0 +1,122 @@
+### YamlMime:ApiPage
+title: Struct TextRows
+body:
+- api1: Struct TextRows
+  id: Tuinet_Widgets_TextRows
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L339
+  metadata:
+    uid: Tuinet.Widgets.TextRows
+    commentId: T:Tuinet.Widgets.TextRows
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: A table source over rows of strings (row-major), drawn in one style. Missing cells are blank.
+- code: 'public readonly ref struct TextRows : ITableSource'
+- h4: Implements
+- list:
+  - text: ITableSource
+    url: Tuinet.Widgets.ITableSource.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: TextRows(ReadOnlySpan<string[]>, Style)
+  id: Tuinet_Widgets_TextRows__ctor_System_ReadOnlySpan_System_String____Tuinet_Style_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L344
+  metadata:
+    uid: Tuinet.Widgets.TextRows.#ctor(System.ReadOnlySpan{System.String[]},Tuinet.Style)
+    commentId: M:Tuinet.Widgets.TextRows.#ctor(System.ReadOnlySpan{System.String[]},Tuinet.Style)
+- code: public TextRows(ReadOnlySpan<string[]> rows, Style style = default)
+- h4: Parameters
+- parameters:
+  - name: rows
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    - '['
+    - ']'
+    - '>'
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+- h2: Properties
+- api3: RowCount
+  id: Tuinet_Widgets_TextRows_RowCount
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L350
+  metadata:
+    uid: Tuinet.Widgets.TextRows.RowCount
+    commentId: P:Tuinet.Widgets.TextRows.RowCount
+- code: public int RowCount { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: Cell(int, int, Span<char>, out Style)
+  id: Tuinet_Widgets_TextRows_Cell_System_Int32_System_Int32_System_Span_System_Char__Tuinet_Style__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L352
+  metadata:
+    uid: Tuinet.Widgets.TextRows.Cell(System.Int32,System.Int32,System.Span{System.Char},Tuinet.Style@)
+    commentId: M:Tuinet.Widgets.TextRows.Cell(System.Int32,System.Int32,System.Span{System.Char},Tuinet.Style@)
+- markdown: >-
+    Text of one cell: a stored string as a span (no copy), or text formatted into
+
+    <code class="paramref">scratch</code> (numbers, dates) and sliced. <code class="paramref">style</code> is layered
+
+    over the row style, so selection and striping still show.
+- code: public ReadOnlySpan<char> Cell(int row, int column, Span<char> scratch, out Style style)
+- h4: Parameters
+- parameters:
+  - name: row
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: column
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: scratch
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+languageId: csharp
+metadata:
+  description: A table source over rows of strings (row-major), drawn in one style. Missing cells are blank.

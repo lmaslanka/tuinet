@@ -1,0 +1,37 @@
+### YamlMime:ApiPage
+title: Enum CursorShape
+body:
+- api1: Enum CursorShape
+  id: Tuinet_CursorShape
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L19
+  metadata:
+    uid: Tuinet.CursorShape
+    commentId: T:Tuinet.CursorShape
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: Terminal cursor shapes (DECSCUSR). <xref href="Tuinet.CursorShape.Default" data-throw-if-not-resolved="false"></xref> is whatever the user's terminal is set to.
+- code: 'public enum CursorShape : byte'
+- h2: Fields
+- parameters:
+  - name: Bar
+    default: "6"
+  - name: BlinkingBar
+    default: "5"
+  - name: BlinkingBlock
+    default: "1"
+  - name: BlinkingUnderline
+    default: "3"
+  - name: Block
+    default: "2"
+  - name: Default
+    default: "0"
+  - name: Underline
+    default: "4"
+languageId: csharp
+metadata:
+  description: Terminal cursor shapes (DECSCUSR).  is whatever the user's terminal is set to.

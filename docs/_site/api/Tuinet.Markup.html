@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class Markup | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class Markup | TUI.NET ">
+      
+      <meta name="description" content="A small markup for styled text, parsed into caller memory without allocating.
+
+[b] bold, [dim], [i] italic, [u] underline, [blink], [reverse],
+[hidden], [s] strike (long names work too: [bold], [italic], …).[fg=red], [bg=#1C2433]: a name (black … white, bright-red …,
+default), #RRGGBB, or a palette index 0–255. A bare color name or #RRGGBB sets the
+foreground; a bare number is just text.Several in one tag: [b fg=#F5A623]. [/] closes the latest tag.[[ is a literal [. A tag that doesn&#39;t parse is kept as text, so [1/3] needs no escaping.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Markup' data-commentid='T:Tuinet.Markup' id='Tuinet_Markup'>Class Markup    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L175'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.html'>Tuinet</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>A small markup for styled text, parsed into caller memory without allocating.</p>
+<ul><li><code>[b]</code> bold, <code>[dim]</code>, <code>[i]</code> italic, <code>[u]</code> underline, <code>[blink]</code>, <code>[reverse]</code>,
+<code>[hidden]</code>, <code>[s]</code> strike (long names work too: <code>[bold]</code>, <code>[italic]</code>, …).</li><li><code>[fg=red]</code>, <code>[bg=#1C2433]</code>: a name (<code>black</code> … <code>white</code>, <code>bright-red</code> …,
+<code>default</code>), <code>#RRGGBB</code>, or a palette index 0–255. A bare color name or <code>#RRGGBB</code> sets the
+foreground; a bare number is just text.</li><li>Several in one tag: <code>[b fg=#F5A623]</code>. <code>[/]</code> closes the latest tag.</li><li><code>[[</code> is a literal <code>[</code>. A tag that doesn't parse is kept as text, so <code>[1/3]</code> needs no escaping.</li></ul>
+<pre><code class='lang-csharp'>public static class Markup</code></pre><h4 class='section'>Inheritance</h4><dl class="typelist inheritance"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>
+</div>
+<div>
+<a href='Tuinet.Markup.html'>Markup</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone'>object.MemberwiseClone()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Markup.Parse(System.ReadOnlySpan{System.Char},System.Span{System.Char},System.Span{Tuinet.StyledRun},Tuinet.Style)' data-commentid='M:Tuinet.Markup.Parse(System.ReadOnlySpan{System.Char},System.Span{System.Char},System.Span{Tuinet.StyledRun},Tuinet.Style)' id='Tuinet_Markup_Parse_System_ReadOnlySpan_System_Char__System_Span_System_Char__System_Span_Tuinet_StyledRun__Tuinet_Style_'>Parse(ReadOnlySpan&lt;char&gt;, Span&lt;char&gt;, Span&lt;StyledRun&gt;, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L184'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Parse <code class="paramref">markup</code>. The visible text goes into <code class="paramref">chars</code> (at most
+<code>markup.Length</code> are needed) and runs into <code class="paramref">runs</code> (at most one per tag and text
+piece); what doesn't fit is cut. Styles are layered over <code class="paramref">style</code>.</p>
+<pre><code class='lang-csharp'>public static StyledText Parse(ReadOnlySpan&lt;char&gt; markup, Span&lt;char&gt; chars, Span&lt;StyledRun&gt; runs, Style style = default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>markup</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>chars</code> <a href='https://learn.microsoft.com/dotnet/api/system.span-1'>Span</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>runs</code> <a href='https://learn.microsoft.com/dotnet/api/system.span-1'>Span</a>&lt;<a href='Tuinet.StyledRun.html'>StyledRun</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.StyledText.html'>StyledText</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Markup.TryParseColor(System.ReadOnlySpan{System.Char},Tuinet.Color@)' data-commentid='M:Tuinet.Markup.TryParseColor(System.ReadOnlySpan{System.Char},Tuinet.Color@)' id='Tuinet_Markup_TryParseColor_System_ReadOnlySpan_System_Char__Tuinet_Color__'>TryParseColor(ReadOnlySpan&lt;char&gt;, out Color)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L284'><i class='bi bi-code-slash'></i></a></h3>
+ <p>A color name (<code>red</code>, <code>bright-blue</code>, <code>default</code>), <code>#RRGGBB</code>, or a palette index 0–255.</p>
+<pre><code class='lang-csharp'>public static bool TryParseColor(ReadOnlySpan&lt;char&gt; text, out Color color)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>color</code> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Markup.TryParseTag(System.ReadOnlySpan{System.Char},Tuinet.Style,Tuinet.Style@)' data-commentid='M:Tuinet.Markup.TryParseTag(System.ReadOnlySpan{System.Char},Tuinet.Style,Tuinet.Style@)' id='Tuinet_Markup_TryParseTag_System_ReadOnlySpan_System_Char__Tuinet_Style_Tuinet_Style__'>TryParseTag(ReadOnlySpan&lt;char&gt;, Style, out Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L238'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layer the attributes and colors in <code class="paramref">tag</code> (e.g. &quot;b fg=red&quot;) over <code class="paramref">style</code>.</p>
+<pre><code class='lang-csharp'>public static bool TryParseTag(ReadOnlySpan&lt;char&gt; tag, Style style, out Style result)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>tag</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>result</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

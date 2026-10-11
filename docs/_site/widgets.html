@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Widgets | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Widgets | TUI.NET ">
+      
+      
+      <link rel="icon" href="favicon.ico">
+      <link rel="stylesheet" href="public/docfx.min.css">
+      <link rel="stylesheet" href="public/main.css">
+      <meta name="docfx:navrel" content="toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/lmaslanka/tuinet/blob/main/docs/widgets.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="index.html">
+            <img id="logo" class="svg" src="logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="widgets">Widgets</h1>
+
+<p>Widgets are stateless <code>readonly ref struct</code>s: build one, render it into an area, and it is gone. Anything that
+must survive between frames (a selection, a scroll offset, the text being edited) lives in a state value your app
+owns and passes in. Run <code>./run gallery</code> to see every widget next to the code that draws it.</p>
+<p><img src="images/gallery-table.png" alt="The gallery's table page: a sortable process table beside its code"></p>
+<table>
+<thead>
+<tr>
+<th>Widget</th>
+<th>State</th>
+<th>What it does</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>Block</code></td>
+<td></td>
+<td>Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, <code>Inner(area)</code></td>
+</tr>
+<tr>
+<td><code>Paragraph</code></td>
+<td></td>
+<td>Multi-line plain or styled text with word/char wrapping, alignment and scroll; optional scrollbar; <code>LineCount</code></td>
+</tr>
+<tr>
+<td><code>ListView&lt;T&gt;</code></td>
+<td><code>ListState</code></td>
+<td>Virtualized, selectable, scrolls to follow the selection, highlight symbol, optional scrollbar; click, wheel and scrollbar drag</td>
+</tr>
+<tr>
+<td><code>TreeView&lt;T&gt;</code></td>
+<td><code>TreeState</code></td>
+<td>Hierarchy with <code>[+]</code>/<code>[-]</code> expanders and <code>├─</code>/<code>└─</code> guides, lazy children, cached rows (a frame draws only what's visible), selection that follows its node; keys, click on the expander, wheel and scrollbar drag</td>
+</tr>
+<tr>
+<td><code>Table&lt;T&gt;</code></td>
+<td><code>ListState</code></td>
+<td>Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow, optional scrollbar; click, wheel, scrollbar drag and header hit-testing</td>
+</tr>
+<tr>
+<td><code>Scrollbar</code></td>
+<td></td>
+<td>Vertical or horizontal, eighth-block thumb ends, <code>PositionAt</code> for clicks and drags</td>
+</tr>
+<tr>
+<td><code>TextInput</code></td>
+<td><code>TextInputState</code></td>
+<td>Single-line editing, emacs keys, selection, undo/redo, masking, horizontal scroll, real terminal cursor; click or drag</td>
+</tr>
+<tr>
+<td><code>TextArea</code></td>
+<td><code>TextAreaState</code></td>
+<td>Multi-line editing: soft wrap or sideways scroll, line numbers, selection, undo/redo, placeholder; click, drag and wheel; only visible lines are measured</td>
+</tr>
+<tr>
+<td><code>Dropdown&lt;T&gt;</code></td>
+<td><code>DropdownState</code></td>
+<td>Select box with a popup list that flips above when there's no room below, optional shadow; click to open and pick</td>
+</tr>
+<tr>
+<td><code>Tabs</code></td>
+<td><code>TabsState</code></td>
+<td>One-row tab bar, dividers, scrolls with <code>‹</code> <code>›</code> when the titles don't fit, fits in a block border; click and wheel</td>
+</tr>
+<tr>
+<td><code>Popup</code></td>
+<td></td>
+<td>Shadow + fill + <code>Block</code> over existing content; <code>Outer</code> sizes it from its content, <code>Rect.PlaceNear</code> places it by an anchor</td>
+</tr>
+<tr>
+<td><code>Menu</code></td>
+<td><code>MenuState</code></td>
+<td>Popup action list: mnemonics, right-aligned shortcuts, separators joined to the border, disabled items; keys, click and hover</td>
+</tr>
+<tr>
+<td><code>Checkbox</code></td>
+<td>your <code>bool</code></td>
+<td>One-row symbol + label, or a large <code>Boxed</code> square</td>
+</tr>
+<tr>
+<td><code>Button</code></td>
+<td></td>
+<td>Padded label with idle and focused styles</td>
+</tr>
+<tr>
+<td><code>ProgressBar</code></td>
+<td></td>
+<td>Eighth-block precision, custom fill/empty glyphs (segmented meters)</td>
+</tr>
+<tr>
+<td><code>Sparkline</code></td>
+<td></td>
+<td>Values over time in eighth-block columns, several rows tall, newest on the right; draws a ring buffer's two halves without a copy</td>
+</tr>
+<tr>
+<td><code>BarChart</code></td>
+<td></td>
+<td>Vertical or horizontal bars with eighth-block ends, labels and formatted values; per-bar styles</td>
+</tr>
+<tr>
+<td><code>Spinner</code></td>
+<td></td>
+<td>Time-based frames: <code>Line</code>, <code>Dots</code>, <code>Arc</code></td>
+</tr>
+<tr>
+<td><code>Clear</code></td>
+<td></td>
+<td>Blanks an area (<code>Popup</code> does this for you)</td>
+</tr>
+</tbody>
+</table>
+<h2 id="lists">Lists</h2>
+<p><code>ListView</code> is virtualized: it asks your <code>IListSource</code> to draw only the rows that are visible. It
+handles selection, highlighting and keeping the selected row in view. The selection lives in a
+<code>ListState</code> that you own.</p>
+<pre><code class="lang-csharp">readonly struct Files(FileInfo[] files) : IListSource
+{
+    public int Count =&gt; files.Length;
+
+    public void RenderItem(int index, Rect area, CellBuffer buffer, bool selected)
+    {
+        Span&lt;char&gt; size = stackalloc char[20];
+        files[index].Length.TryFormat(size, out int n);
+        buffer.SetString(area.X, area.Y, files[index].Name, default, area.Width - n - 1, Overflow.Ellipsis);
+        buffer.SetString(area.Right - n, area.Y, size[..n], new Style(Color.BrightBlack, default));
+    }
+}
+</code></pre>
+<pre><code class="lang-csharp">var state = new ListState();   // keep this across frames
+
+// render
+frame.Render(new ListView&lt;Files&gt;(new Files(files))
+{
+    SelectedStyle = new Style(default, Color.Hex(0x1C2433), Attr.Bold),
+    HighlightSymbol = &quot;▌&quot;,
+    HighlightSymbolStyle = new Style(Color.Cyan, default),
+}, area, ref state);
+
+// input
+if (ev.Key.IsChar('j')) state.Next(files.Length);
+if (ev.Key.IsChar('k')) state.Previous(files.Length);
+if (ev.Key.Is(KeyCode.PageDown)) state.PageDown(files.Length);
+if (ev.Kind == EventKind.Mouse) state.HandleMouse(ev.Mouse, files.Length);   // click selects, wheel scrolls
+</code></pre>
+<p>The view scrolls to the selected row whenever the selection changes. In between, it can scroll on its
+own (the mouse wheel, or <code>state.Scroll(rows, count)</code>) and leave the selection off screen.</p>
+<p>For plain strings, use the built-in <code>TextItems</code> source: <code>new ListView&lt;TextItems&gt;(new TextItems(names))</code>.</p>
+<h2 id="scrollbars">Scrollbars</h2>
+<p><code>ListView</code>, <code>Table</code> and <code>Paragraph</code> draw a scrollbar in their rightmost column with
+<code>Scrollbar = ScrollbarMode.Auto</code> (only while the content is longer than the view) or <code>Always</code>. The
+content gets one column less while it shows. The thumb's ends use eighth-blocks, so it moves in
+eighths of a cell.</p>
+<pre><code class="lang-csharp">frame.Render(new ListView&lt;Files&gt;(new Files(files))
+{
+    Scrollbar = ScrollbarMode.Auto,
+    ScrollbarThumbStyle = new Style(Color.BrightBlack, default),
+    ScrollbarTrackStyle = new Style(Color.Hex(0x3A4252), default),   // '│' track
+}, area, ref state);
+</code></pre>
+<p>For lists and tables, <code>state.HandleMouse</code> also scrolls when you click or drag the scrollbar, and the
+drag keeps going when the pointer leaves it. For anything else, render a <code>Scrollbar</code> yourself and map
+the pointer back with <code>Scrollbar.PositionAt</code>:</p>
+<pre><code class="lang-csharp">var bar = new Rect(area.Right - 1, area.Y, 1, area.Height);
+frame.Render(new Scrollbar(content: lines, viewport: area.Height, position: scroll), bar);
+
+// input: a press on the bar starts a drag that lasts until the button comes up
+if (ev.Mouse.IsClickIn(bar)) dragging = true;
+if (ev.Mouse.Kind == MouseKind.Up) dragging = false;
+if (dragging) scroll = Scrollbar.PositionAt(bar, ev.Mouse.X, ev.Mouse.Y, lines, area.Height);
+</code></pre>
+<p><code>Orientation = Direction.Horizontal</code> draws it along a row instead. A custom <code>ThumbChar</code> (or
+<code>Smooth = false</code>) moves the thumb in whole cells.</p>
+<h2 id="tables">Tables</h2>
+<p><code>Table</code> is a virtualized list with a header and columns. Column widths are layout constraints.
+Each column aligns its header and cells left, center or right. Your <code>ITableSource</code> returns the text
+of each visible cell: either a string you already hold, or text formatted into the <code>scratch</code> span
+it is given. The table measures, aligns and clips the text, so formatting numbers stays allocation-free.
+Selection uses the same <code>ListState</code> as <code>ListView</code>.</p>
+<pre><code class="lang-csharp">static readonly TableColumn[] Columns =
+[
+    new(&quot;name&quot;, Constraint.Fill()),
+    new(&quot;size&quot;, Constraint.Length(10), Alignment.Right),
+    new(&quot;state&quot;, Constraint.Length(7), Alignment.Center),
+];
+
+readonly struct Files(FileInfo[] files) : ITableSource
+{
+    public int RowCount =&gt; files.Length;
+
+    public ReadOnlySpan&lt;char&gt; Cell(int row, int column, Span&lt;char&gt; scratch, out Style style)
+    {
+        style = default;
+        switch (column)
+        {
+            case 0:
+                return files[row].Name;
+            case 1:
+                files[row].Length.TryFormat(scratch, out int n);
+                return scratch[..n];
+            default:
+                style = new Style(files[row].IsReadOnly ? Color.Yellow : Color.Green, default);
+                return files[row].IsReadOnly ? &quot;ro&quot; : &quot;rw&quot;;
+        }
+    }
+}
+
+frame.Render(new Table&lt;Files&gt;(new Files(files), Columns)
+{
+    HeaderStyle = new Style(Color.BrightBlack, default, Attr.Bold),
+    HeaderSeparator = true,                 // ─── under the header
+    ColumnSeparator = '│',                  // drawn in the gap, joined with ┼ on the rule
+    AlternateRowStyle = new Style(default, Color.Hex(0x111722)),   // zebra stripes
+    SortColumn = 1, SortDescending = true,  // ▼ on &quot;size&quot;; the sorting itself is yours
+    SelectedStyle = new Style(default, Color.Hex(0x1C2433), Attr.Bold),
+    HighlightSymbol = &quot;▌&quot;,
+}, area, ref state);
+</code></pre>
+<p><code>Table.Measure(source, column, header)</code> returns the widest cell in a column. Call it when the data
+changes and cache the result as <code>Constraint.Length(width)</code> to size a column to its content. For rows
+of strings, use the built-in <code>TextRows</code> source: <code>new Table&lt;TextRows&gt;(new TextRows(rows), columns)</code>.</p>
+<h2 id="trees">Trees</h2>
+<p><code>TreeView</code> shows a hierarchy: a file tree, grouped items, an outline. Your <code>ITreeSource</code> addresses nodes by
+integer ids you choose, and is asked for a node's children only once it's expanded, so a file tree can read a
+directory the first time it opens. <code>TreeState</code> (a class you keep across frames) holds the expanded nodes and
+caches the visible rows. They're rebuilt only when the tree's shape changes, so a frame draws only the rows on
+screen, however far down a 100,000-row tree it's scrolled.</p>
+<pre><code class="lang-csharp">readonly struct Folders(Folder[] folders) : ITreeSource   // ids: folder i is i, file j of folder i is 1000 * (i + 1) + j
+{
+    public int ChildCount(int node) =&gt; node == TreeState.Root ? folders.Length : node &lt; 1000 ? folders[node].Files.Length : 0;
+    public int Child(int node, int index) =&gt; node == TreeState.Root ? index : 1000 * (node + 1) + index;
+    public bool HasChildren(int node) =&gt; node &gt;= 0 &amp;&amp; node &lt; 1000;
+    public int Parent(int node) =&gt; node &lt; 1000 ? TreeState.Root : node / 1000 - 1;
+
+    public void RenderLabel(int node, Rect area, CellBuffer buffer, bool selected) =&gt;
+        buffer.SetString(area.X, area.Y, node &lt; 1000 ? folders[node].Name : folders[node / 1000 - 1].Files[node % 1000],
+            default, area.Width, Overflow.Ellipsis);
+}
+</code></pre>
+<pre><code class="lang-csharp">var tree = new TreeState();   // keep this across frames
+var source = new Folders(folders);
+
+// render
+frame.Render(new TreeView&lt;Folders&gt;(source)
+{
+    GuideStyle = new Style(Color.BrightBlack, default),
+    SelectedStyle = new Style(default, Color.Hex(0x1C2433), Attr.Bold),
+}, area, ref tree);
+
+// input: arrows or j/k move, → opens (then steps in), ← closes (then steps out), space toggles
+if (ev.Kind == EventKind.Key &amp;&amp; !tree.Handle(ev.Key, source) &amp;&amp; ev.Key.Is(KeyCode.Enter)) Open(tree.SelectedNode);
+if (ev.Kind == EventKind.Mouse) tree.HandleMouse(ev.Mouse, source);   // click [+]/[-] to fold, click selects
+</code></pre>
+<pre><code>[-] src
+ ├─ [+] Internal
+ ├─ [-] Widgets
+ │   ├─ ListView.cs
+ │   └─ TreeView.cs
+ └─ Terminal.cs
+[+] tests
+</code></pre>
+<p>Nodes with children get <code>[+]</code> when collapsed and <code>[-]</code> when expanded (<code>CollapsedSymbol</code>, <code>ExpandedSymbol</code>; e.g.
+<code>&quot;▸ &quot;</code> and <code>&quot;▾ &quot;</code>). <code>Guides = false</code> drops the lines. The selection follows its node when rows above it open or
+close; if its parent closes, the parent is selected. <code>tree.Select(node, source)</code> opens the path to a node (with
+<code>Parent</code>) and selects it, and <code>tree.Invalidate()</code> picks up data that changed or arrived later. Highlight symbol,
+scrollbar, wheel and scrollbar drag work as in <code>ListView</code>, through <code>tree.List</code>.</p>
+<h2 id="forms">Forms</h2>
+<p>Interactive widgets keep their state in objects you own, so focus is just a value in your app.
+There's no focus manager to fight. <code>FocusRing</code> is that value with the usual keys: Tab and Shift+Tab move it
+(wrapping around), a click focuses the control under it, and <code>Is(i)</code> feeds each widget's <code>Focused</code>.</p>
+<pre><code class="lang-csharp">// state, kept across frames
+var focus = new FocusRing(5);                 // name, priority, notify, Save, notes (below)
+var targets = new Rect[5];                    // where each control was drawn, for clicks
+var name = new TextInputState(&quot;TUI.NET&quot;);
+var priority = new DropdownState(selected: 1);
+string[] priorities = [&quot;low&quot;, &quot;medium&quot;, &quot;high&quot;];
+bool notify = true;
+
+// render
+var box = new Block { Title = &quot; name &quot;, BorderType = BorderType.Rounded };
+frame.Render(box, nameArea);
+frame.Render(new TextInput { Focused = focus.Is(0) }, box.Inner(nameArea), ref name);   // places the real cursor
+
+var dropdown = new Dropdown&lt;TextItems&gt;(new TextItems(priorities))
+{
+    SelectedStyle = new Style(Color.Black, Color.Cyan),
+    PopupBordered = true,
+};
+frame.Render(dropdown, pickArea, ref priority);
+frame.Render(new Checkbox(&quot;notify me&quot;, notify) { Focused = focus.Is(2) }, checkArea);
+frame.Render(new Button(&quot;Save&quot;) { Focused = focus.Is(3), FocusedStyle = new Style(Color.Black, Color.Green) }, buttonArea);
+dropdown.RenderPopup(pickArea, frame, ref priority);   // last, so it draws on top
+(targets[0], targets[1], targets[2], targets[3]) = (nameArea, pickArea, checkArea, buttonArea);
+
+// input
+if (ev.Kind == EventKind.Mouse &amp;&amp; focus.HandleMouse(ev.Mouse, targets)) { /* clicked: focused, now use it */ }
+if (ev.Kind == EventKind.Key &amp;&amp; focus.Handle(ev.Key)) return;   // Tab, Shift+Tab
+switch (focus.Current)
+{
+    case 0: name.Handle(ev.Key); break;                          // editing, Ctrl+W, Alt+B/F, …
+    case 1: priority.Handle(ev.Key, priorities.Length); break;   // Enter opens, ↑/↓ moves, Enter picks
+    case 2 when ev.Key.IsChar(' '): notify = !notify; break;
+}
+</code></pre>
+<p><code>TextInputState</code> supports the usual editing keys: Home/End, Ctrl+A/E, Ctrl+U/K, Ctrl+W, Ctrl/Alt+←/→,
+Alt+B/F/D and Delete. It also does masking (<code>mask: '•'</code> for passwords) and paste (<code>Insert(string)</code>).
+For a complete form with validation, see <a href="https://github.com/lmaslanka/tuinet/blob/main/samples/Tuinet.Samples.Showcase/EditDialog.cs"><code>EditDialog.cs</code></a>.</p>
+<h3 id="multi-line-text">Multi-line text</h3>
+<p><code>TextArea</code> edits multi-line text: descriptions, commit messages, notes. Long lines wrap at word boundaries
+(or scroll sideways with <code>SoftWrap = false</code>), and it can show line numbers.</p>
+<pre><code class="lang-csharp">var notes = new TextAreaState(&quot;first line\nsecond line&quot;);    // state, kept across frames
+
+frame.Render(new TextArea { Focused = focus.Is(4), LineNumbers = true, Placeholder = &quot;notes…&quot; }, notesArea, ref notes);
+
+// input
+switch (ev.Kind)
+{
+    case EventKind.Key when ev.Key.IsCtrl('c') &amp;&amp; notes.HasSelection: term.CopyToClipboard(notes.Selection); break;
+    case EventKind.Key when focus.Is(4): notes.Handle(ev.Key); break;   // Enter is a line break; Tab is yours
+    case EventKind.Mouse: notes.HandleMouse(ev.Mouse); break;           // click, drag to select, wheel
+    case EventKind.Paste: notes.Insert(ev.Paste); break;                // keeps line breaks
+}
+</code></pre>
+<p>Both editors share one editing core (<code>EditableText</code>), so both have:</p>
+<ul>
+<li><strong>Selection.</strong> Shift with any movement key selects. <code>Selection</code> is the selected text, ready for
+<code>CopyToClipboard</code>; <code>DeleteSelection()</code> cuts. Typing or pasting replaces it. Dragging the mouse selects.</li>
+<li><strong>Undo and redo.</strong> Ctrl+Z (or Ctrl+/, which also works when <code>SuspendOnCtrlZ</code> takes Ctrl+Z) and Ctrl+Y
+(or Ctrl+Shift+Z). Runs of typing undo a word at a time; undo restores the selection an edit replaced.
+The last 1000 steps are kept. <code>Set</code> and <code>Clear</code> start a new history.</li>
+<li><strong>Grapheme clusters.</strong> The caret moves and deletes by cluster, and by word with Ctrl or Alt
+(←/→, Backspace, Delete). Offsets (<code>Caret</code>, <code>SelectionStart</code>, …) are UTF-16 indexes into <code>Text</code>.</li>
+</ul>
+<p>On top of that, the text area has ↑/↓ and PageUp/PageDown by screen row (keeping the column), Home/End for the
+line (Ctrl+Home/End for the text) and Ctrl+A to select all. The text lives
+in a gap buffer with a line index, and a frame only measures the lines on screen, so a 100,000-line text draws
+as fast as a short one. It allocates only when the text or the undo history outgrows its buffers.</p>
+<h2 id="popups-and-dialogs">Popups and dialogs</h2>
+<p><code>Popup</code> draws a box over whatever is already on screen: an optional drop shadow, a fill and a <code>Block</code>, in one
+call. The area you give it includes the shadow, and <code>Outer</code> turns a content size into that area, so centering
+on the content works:</p>
+<pre><code class="lang-csharp">var popup = new Popup
+{
+    Block = new Block { Title = &quot; confirm &quot;, BorderType = BorderType.Rounded, Style = new Style(Color.Default, Color.Hex(0x111722)) },
+    Shadow = true,       // darkens the cells below and right of the box, keeping their glyphs
+    Padding = 1,         // one blank row and two blank columns inside the border
+};
+Rect dialog = frame.Area.Centered(popup.Outer(40, 3));   // 40×3 of content
+frame.Render(popup, dialog);
+frame.SetString(popup.Inner(dialog).X, popup.Inner(dialog).Y, &quot;Delete 3 files?&quot;);
+
+// input: click outside to close
+if (ev.Mouse.IsClick &amp;&amp; !ev.Mouse.IsIn(popup.Frame(dialog))) open = false;
+</code></pre>
+<p><code>frame.Area.PlaceNear(anchor, size)</code> places a popup next to something instead: below it if it fits, else
+above, else on the side with more room, moved left to stay on screen. Pass a 0×0 anchor for a point, such
+as the mouse pointer for a context menu. <code>Dropdown</code> lists use the same rule and take <code>PopupShadow = true</code>.</p>
+<h2 id="tabs">Tabs</h2>
+<pre><code class="lang-csharp">string[] pages = [&quot;Files&quot;, &quot;Search&quot;, &quot;Settings&quot;];
+var tabs = new TabsState();                                  // state, kept across frames
+
+var bar = new Tabs(pages)
+{
+    SelectedStyle = new Style(Color.Black, Color.Cyan, Attr.Bold),
+    DividerStyle = new Style(Color.BrightBlack, default),   // '│' between titles
+};
+frame.Render(bar, new Rect(area.X + 2, area.Y, area.Width - 4, 1), ref tabs);   // e.g. in a block's top border
+
+// input
+if (ev.Kind == EventKind.Key &amp;&amp; ev.Key.IsChar(']')) tabs.Next(pages.Length);   // wraps
+if (ev.Kind == EventKind.Mouse) bar.HandleMouse(ev.Mouse, ref tabs);           // click a title, ‹ ›, wheel
+</code></pre>
+<p>The bar draws only the tabs and leaves the rest of the row alone, so it can sit in a <code>Block</code>'s border.
+When the titles don't fit, it scrolls to keep the selected one visible and shows <code>‹</code> <code>›</code> where tabs are hidden.
+<code>TabsState.Handle</code> takes ←/→ and Home/End for when the bar itself has focus. Shortcuts that switch tabs from
+anywhere are yours: the showcase uses <code>[</code>/<code>]</code> and Alt+1…9, because terminals don't report Ctrl+Tab without the
+kitty keyboard protocol.</p>
+<h2 id="menus-and-the-command-palette">Menus and the command palette</h2>
+<pre><code class="lang-csharp">// Built once; '&amp;' marks the mnemonic letter. Swap an item with `with` to change it: a struct copy, no allocation.
+MenuItem[] items = [new(&quot;&amp;Edit&quot;, &quot;enter&quot;), new(&quot;&amp;Copy&quot;, &quot;y&quot;), MenuItem.Separator, new(&quot;&amp;Delete&quot;, &quot;del&quot;, Enabled: false)];
+var menu = new MenuState();
+
+// open: at the pointer (a 0×0 point) or under a row
+menu.Reset(items);
+Rect box = frame.Area.PlaceNear(new Rect(mouse.X, mouse.Y, 0, 0), Menu.Measure(items));
+
+// render last, so it sits on top
+frame.Render(new Menu(items) { Popup = new Popup { Shadow = true } }, box, ref menu);
+
+// input
+MenuResult result = ev.Kind == EventKind.Key ? menu.Handle(ev.Key, items) : menu.HandleMouse(ev.Mouse, items);
+if (result == MenuResult.Activated) Run(menu.Selected);   // Enter, Space, a click or a mnemonic
+// Cancelled: Esc, or a press outside the menu; the caller can still act on that click
+</code></pre>
+<p>Up/Down (and j/k) skip separators and disabled items and wrap. With <code>TerminalOptions.MouseMotion</code>, the item under
+the pointer is highlighted. A menu taller than its area scrolls.</p>
+<p><code>Fuzzy.Score(pattern, text)</code> filters a list by what was typed: the pattern's chars must appear in order. It's -1
+for no match, and higher for matches at word starts, camelCase humps and in runs. Case is ignored unless the
+pattern has an uppercase letter. An overload writes the matched positions, for highlighting. Scoring 10,000 command
+names takes about 0.3 ms and allocates nothing, so filter on every keystroke, only when the query changed
+(<code>TextInputState.CopyTo</code> reads it without allocating). The showcase's
+<a href="https://github.com/lmaslanka/tuinet/blob/main/samples/Tuinet.Samples.Showcase/CommandPalette.cs"><code>CommandPalette.cs</code></a>
+puts this together with a <code>Popup</code>, a <code>TextInput</code> and a <code>ListView</code> in about 250 lines.</p>
+<h2 id="progress-and-animation">Progress and animation</h2>
+<pre><code class="lang-csharp">var clock = Stopwatch.StartNew();
+
+frame.Render(new ProgressBar(done / (double)total)
+{
+    FilledStyle = new Style(Color.Green, default),
+    EmptyStyle = new Style(Color.BrightBlack, default),   // ░ remainder; eighth-blocks at the edge
+}, barArea);
+
+char spinner = Spinner.Frame(Spinner.Dots, clock.ElapsedMilliseconds);
+frame.SetRune(barArea.Right + 1, barArea.Y, new Rune(spinner));
+
+// Wake ~30×/s only while something animates; otherwise sleep until input.
+bool animating = done &lt; total;
+term.Poll(out Event ev, animating ? 33 : Timeout.Infinite);
+</code></pre>
+<p>Base animation on elapsed time, not frame count, so it runs at the same speed whatever the frame
+rate. With <code>Terminal.Run</code>, return <code>animating</code> from <code>IApp.IsAnimating</code> instead of choosing the timeout.</p>
+<p>For something that happens once, later (hide a &quot;saved&quot; message after 3 seconds, run a search once typing
+pauses), keep an <code>Alarm</code> in your state. It's a plain value: no timer thread, no callback.</p>
+<pre><code class="lang-csharp">flash = &quot;saved&quot;;
+flashAlarm.Start(nowMs, 3000);
+
+// IApp
+public bool Handle(Event ev, long nowMs)
+{
+    if (flashAlarm.Fire(nowMs)) flash = &quot;&quot;;   // true once, at the first event at or after the time
+    …
+}
+
+public long NextDueMs(long nowMs) =&gt; flashAlarm.DueMs;   // Run wakes then with a Tick; long.MaxValue when not set
+</code></pre>
+<p>For a segmented meter like <code>■■□□</code>, use a <code>ProgressBar</code> with <code>FilledChar = '■'</code> and <code>EmptyChar = '□'</code>.</p>
+<h2 id="charts">Charts</h2>
+<pre><code class="lang-csharp">// A value over time: one value per column, newest on the right. The two spans draw your own ring
+// buffer without a copy (older part, then newer part); h rows give 8h levels.
+frame.Render(new Sparkline(times.AsSpan(head), times.AsSpan(0, head))
+{
+    Style = new Style(Color.Blue, default),
+    MaxStyle = new Style(Color.Yellow, default),   // the peak column
+}, new Rect(x, y, 40, 3));
+
+// Bars that compare values: vertical (labels under, values above) or horizontal (label column, values after).
+Bar[] bars = [new(12, &quot;feature&quot;, new Style(Color.Green, default)), new(7, &quot;bugfix&quot;), new(3, &quot;docs&quot;)];
+frame.Render(new BarChart(bars) { BarWidth = 7, ValueFormat = &quot;0&quot; }, chartArea);
+frame.Render(new BarChart(bars) { Direction = Direction.Horizontal, Gap = 0, Max = 20 }, listArea);
+</code></pre>
+<p>With <code>Max</code> left at NaN, a sparkline scales to the largest <em>visible</em> value, so an old spike stops squashing
+the chart once it scrolls out. Zero draws nothing, NaN and negative values leave a gap, and any other positive
+value shows at least <code>▁</code>. Bar charts drop bars that don't fit instead of squashing them; values are formatted
+on the stack with <code>ValueFormat</code> (<code>null</code> hides them). Keep the <code>Bar[]</code> in a field and refill it each frame:
+a frame with both charts allocates nothing.</p>
+<hr>
+<p><a href="getting-started.html">Getting started</a> · <a href="layout.html">Layout and styling</a> · <a href="widgets.html">Widgets</a> ·
+<a href="input.html">Input and the terminal</a> · <a href="testing.html">Testing</a> · <a href="performance.html">Performance</a> · <a href="api/index.html">API reference</a></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/lmaslanka/tuinet/blob/main/docs/widgets.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

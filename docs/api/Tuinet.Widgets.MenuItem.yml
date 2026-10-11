@@ -1,0 +1,141 @@
+### YamlMime:ApiPage
+title: Struct MenuItem
+body:
+- api1: Struct MenuItem
+  id: Tuinet_Widgets_MenuItem
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.MenuItem
+    commentId: T:Tuinet.Widgets.MenuItem
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    One row of a <xref href="Tuinet.Widgets.Menu" data-throw-if-not-resolved="false"></xref>. An '&amp;' in <xref href="Tuinet.Widgets.MenuItem.Label" data-throw-if-not-resolved="false"></xref> marks the next letter as its mnemonic (drawn with
+
+    <xref href="Tuinet.Widgets.Menu.MnemonicStyle" data-throw-if-not-resolved="false"></xref>; pressing it activates the item); "&amp;&amp;" is a literal '&amp;'. Items are values: build
+
+    the array once and swap one in with <code>with { Enabled = … }</code> to change it.
+- code: 'public readonly record struct MenuItem : IEquatable<MenuItem>'
+- h4: Implements
+- list:
+  - text: IEquatable<MenuItem>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: MenuItem(string, string, bool)
+  id: Tuinet_Widgets_MenuItem__ctor_System_String_System_String_System_Boolean_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.#ctor(System.String,System.String,System.Boolean)
+    commentId: M:Tuinet.Widgets.MenuItem.#ctor(System.String,System.String,System.Boolean)
+- markdown: >-
+    One row of a <xref href="Tuinet.Widgets.Menu" data-throw-if-not-resolved="false"></xref>. An '&amp;' in <xref href="Tuinet.Widgets.MenuItem.Label" data-throw-if-not-resolved="false"></xref> marks the next letter as its mnemonic (drawn with
+
+    <xref href="Tuinet.Widgets.Menu.MnemonicStyle" data-throw-if-not-resolved="false"></xref>; pressing it activates the item); "&amp;&amp;" is a literal '&amp;'. Items are values: build
+
+    the array once and swap one in with <code>with { Enabled = … }</code> to change it.
+- code: public MenuItem(string Label, string Shortcut = "", bool Enabled = true)
+- h4: Parameters
+- parameters:
+  - name: Label
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+  - name: Shortcut
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    optional: true
+  - name: Enabled
+    type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    optional: true
+- h2: Properties
+- api3: Enabled
+  id: Tuinet_Widgets_MenuItem_Enabled
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.Enabled
+    commentId: P:Tuinet.Widgets.MenuItem.Enabled
+- code: public bool Enabled { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: IsSeparator
+  id: Tuinet_Widgets_MenuItem_IsSeparator
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L15
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.IsSeparator
+    commentId: P:Tuinet.Widgets.MenuItem.IsSeparator
+- code: public bool IsSeparator { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Label
+  id: Tuinet_Widgets_MenuItem_Label
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.Label
+    commentId: P:Tuinet.Widgets.MenuItem.Label
+- code: public string Label { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- api3: Separator
+  id: Tuinet_Widgets_MenuItem_Separator
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L13
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.Separator
+    commentId: P:Tuinet.Widgets.MenuItem.Separator
+- markdown: A divider line, drawn joined to the menu's border. Never selected.
+- code: public static MenuItem Separator { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: MenuItem
+      url: Tuinet.Widgets.MenuItem.html
+- api3: Shortcut
+  id: Tuinet_Widgets_MenuItem_Shortcut
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.MenuItem.Shortcut
+    commentId: P:Tuinet.Widgets.MenuItem.Shortcut
+- code: public string Shortcut { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+languageId: csharp
+metadata:
+  description: >-
+    One row of a . An '&amp;' in  marks the next letter as its mnemonic (drawn with
+
+    ; pressing it activates the item); "&amp;&amp;" is a literal '&amp;'. Items are values: build
+
+    the array once and swap one in with with { Enabled = … } to change it.

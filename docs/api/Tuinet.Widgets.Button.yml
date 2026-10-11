@@ -1,0 +1,151 @@
+### YamlMime:ApiPage
+title: Struct Button
+body:
+- api1: Struct Button
+  id: Tuinet_Widgets_Button
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.Button
+    commentId: T:Tuinet.Widgets.Button
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: 'A one-row button: the label padded by two cells each side, filled with its style.'
+- code: 'public readonly ref struct Button : IWidget'
+- h4: Implements
+- list:
+  - text: IWidget
+    url: Tuinet.IWidget.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: Button(ReadOnlySpan<char>)
+  id: Tuinet_Widgets_Button__ctor_System_ReadOnlySpan_System_Char__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L6
+  metadata:
+    uid: Tuinet.Widgets.Button.#ctor(System.ReadOnlySpan{System.Char})
+    commentId: M:Tuinet.Widgets.Button.#ctor(System.ReadOnlySpan{System.Char})
+- code: public Button(ReadOnlySpan<char> label)
+- h4: Parameters
+- parameters:
+  - name: label
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- h2: Properties
+- api3: Focused
+  id: Tuinet_Widgets_Button_Focused
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L11
+  metadata:
+    uid: Tuinet.Widgets.Button.Focused
+    commentId: P:Tuinet.Widgets.Button.Focused
+- code: public bool Focused { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: FocusedStyle
+  id: Tuinet_Widgets_Button_FocusedStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L10
+  metadata:
+    uid: Tuinet.Widgets.Button.FocusedStyle
+    commentId: P:Tuinet.Widgets.Button.FocusedStyle
+- code: public Style FocusedStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Label
+  id: Tuinet_Widgets_Button_Label
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L8
+  metadata:
+    uid: Tuinet.Widgets.Button.Label
+    commentId: P:Tuinet.Widgets.Button.Label
+- code: public ReadOnlySpan<char> Label { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: Style
+  id: Tuinet_Widgets_Button_Style
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L9
+  metadata:
+    uid: Tuinet.Widgets.Button.Style
+    commentId: P:Tuinet.Widgets.Button.Style
+- code: public Style Style { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_Widgets_Button_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L16
+  metadata:
+    uid: Tuinet.Widgets.Button.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.Widgets.Button.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: public void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+- api3: WidthOf(ReadOnlySpan<char>)
+  id: Tuinet_Widgets_Button_WidthOf_System_ReadOnlySpan_System_Char__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Button.cs#L14
+  metadata:
+    uid: Tuinet.Widgets.Button.WidthOf(System.ReadOnlySpan{System.Char})
+    commentId: M:Tuinet.Widgets.Button.WidthOf(System.ReadOnlySpan{System.Char})
+- markdown: Columns a button with <code class="paramref">label</code> occupies.
+- code: public static int WidthOf(ReadOnlySpan<char> label)
+- h4: Parameters
+- parameters:
+  - name: label
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+languageId: csharp
+metadata:
+  description: 'A one-row button: the label padded by two cells each side, filled with its style.'

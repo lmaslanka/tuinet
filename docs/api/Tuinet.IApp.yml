@@ -1,0 +1,118 @@
+### YamlMime:ApiPage
+title: Interface IApp
+body:
+- api1: Interface IApp
+  id: Tuinet_IApp
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/App.cs#L9
+  metadata:
+    uid: Tuinet.IApp
+    commentId: T:Tuinet.IApp
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    An app for <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>: it handles events and draws frames, and the loop decides when. Times are
+
+    milliseconds since <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> started.
+- code: public interface IApp
+- h2: Methods
+- api3: Handle(Event, long)
+  id: Tuinet_IApp_Handle_Tuinet_Event_System_Int64_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/App.cs#L15
+  metadata:
+    uid: Tuinet.IApp.Handle(Tuinet.Event,System.Int64)
+    commentId: M:Tuinet.IApp.Handle(Tuinet.Event,System.Int64)
+- markdown: >-
+    Update state for one event: input, a resize, a posted message, or <xref href="Tuinet.EventKind.Tick" data-throw-if-not-resolved="false"></xref> when an animation
+
+    frame or <xref href="Tuinet.IApp.NextDueMs(System.Int64)" data-throw-if-not-resolved="false"></xref> comes due. Return false to stop the loop.
+- code: bool Handle(Event ev, long nowMs)
+- h4: Parameters
+- parameters:
+  - name: ev
+    type:
+    - text: Event
+      url: Tuinet.Event.html
+  - name: nowMs
+    type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: IsAnimating(long)
+  id: Tuinet_IApp_IsAnimating_System_Int64_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/App.cs#L24
+  metadata:
+    uid: Tuinet.IApp.IsAnimating(System.Int64)
+    commentId: M:Tuinet.IApp.IsAnimating(System.Int64)
+- markdown: >-
+    True while something moves on its own (a spinner, a progress bar): the loop then draws at the frame rate,
+
+    with a <xref href="Tuinet.EventKind.Tick" data-throw-if-not-resolved="false"></xref> before each frame that no input caused. False sleeps until input.
+- code: bool IsAnimating(long nowMs)
+- h4: Parameters
+- parameters:
+  - name: nowMs
+    type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: NextDueMs(long)
+  id: Tuinet_IApp_NextDueMs_System_Int64_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/App.cs#L31
+  metadata:
+    uid: Tuinet.IApp.NextDueMs(System.Int64)
+    commentId: M:Tuinet.IApp.NextDueMs(System.Int64)
+- markdown: >-
+    When the app next needs a frame with no input (e.g. an <xref href="Tuinet.Alarm" data-throw-if-not-resolved="false"></xref>'s <xref href="Tuinet.Alarm.DueMs" data-throw-if-not-resolved="false"></xref> to
+
+    hide a message), or <xref href="System.Int64.MaxValue" data-throw-if-not-resolved="false"></xref> for never. The loop wakes then with a
+
+    <xref href="Tuinet.EventKind.Tick" data-throw-if-not-resolved="false"></xref>; a time that stays in the past wakes it on every pass.
+- code: long NextDueMs(long nowMs)
+- h4: Parameters
+- parameters:
+  - name: nowMs
+    type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+- h4: Returns
+- parameters:
+  - type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+- api3: Render(CellBuffer, long)
+  id: Tuinet_IApp_Render_Tuinet_CellBuffer_System_Int64_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/App.cs#L18
+  metadata:
+    uid: Tuinet.IApp.Render(Tuinet.CellBuffer,System.Int64)
+    commentId: M:Tuinet.IApp.Render(Tuinet.CellBuffer,System.Int64)
+- markdown: Draw the whole UI into <code class="paramref">frame</code>, the cleared back buffer.
+- code: void Render(CellBuffer frame, long nowMs)
+- h4: Parameters
+- parameters:
+  - name: frame
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: nowMs
+    type:
+    - text: long
+      url: https://learn.microsoft.com/dotnet/api/system.int64
+languageId: csharp
+metadata:
+  description: >-
+    An app for : it handles events and draws frames, and the loop decides when. Times are
+
+    milliseconds since  started.

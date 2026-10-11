@@ -1,0 +1,158 @@
+### YamlMime:ApiPage
+title: Struct ListView<TSource>
+body:
+- api1: Struct ListView<TSource>
+  id: Tuinet_Widgets_ListView_1
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L139
+  metadata:
+    uid: Tuinet.Widgets.ListView`1
+    commentId: T:Tuinet.Widgets.ListView`1
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: A scrolling, selectable list over any <xref href="Tuinet.Widgets.IListSource" data-throw-if-not-resolved="false"></xref>.
+- code: 'public readonly ref struct ListView<TSource> : IStatefulWidget<ListState> where TSource : IListSource, allows ref struct'
+- h4: Type Parameters
+- parameters:
+  - name: TSource
+- h4: Implements
+- list:
+  - text: IStatefulWidget<ListState>
+    url: Tuinet.IStatefulWidget-1.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: ListView(TSource)
+  id: Tuinet_Widgets_ListView_1__ctor__0_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L144
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.#ctor(`0)
+    commentId: M:Tuinet.Widgets.ListView`1.#ctor(`0)
+- code: public ListView(TSource source)
+- h4: Parameters
+- parameters:
+  - name: source
+    type:
+    - TSource
+- h2: Properties
+- api3: HighlightSymbol
+  id: Tuinet_Widgets_ListView_1_HighlightSymbol
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L150
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.HighlightSymbol
+    commentId: P:Tuinet.Widgets.ListView`1.HighlightSymbol
+- markdown: Drawn before the selected item (e.g. "&gt; "); other rows are indented by its width.
+- code: public ReadOnlySpan<char> HighlightSymbol { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: HighlightSymbolStyle
+  id: Tuinet_Widgets_ListView_1_HighlightSymbolStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L153
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.HighlightSymbolStyle
+    commentId: P:Tuinet.Widgets.ListView`1.HighlightSymbolStyle
+- markdown: Layered over <xref href="Tuinet.Widgets.ListView%601.SelectedStyle" data-throw-if-not-resolved="false"></xref> for the highlight symbol.
+- code: public Style HighlightSymbolStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Scrollbar
+  id: Tuinet_Widgets_ListView_1_Scrollbar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L156
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.Scrollbar
+    commentId: P:Tuinet.Widgets.ListView`1.Scrollbar
+- markdown: Draw a scrollbar in the rightmost column; items are one column narrower while it shows.
+- code: public ScrollbarMode Scrollbar { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ScrollbarMode
+      url: Tuinet.Widgets.ScrollbarMode.html
+- api3: ScrollbarThumbStyle
+  id: Tuinet_Widgets_ListView_1_ScrollbarThumbStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L158
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.ScrollbarThumbStyle
+    commentId: P:Tuinet.Widgets.ListView`1.ScrollbarThumbStyle
+- code: public Style ScrollbarThumbStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: ScrollbarTrackStyle
+  id: Tuinet_Widgets_ListView_1_ScrollbarTrackStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L159
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.ScrollbarTrackStyle
+    commentId: P:Tuinet.Widgets.ListView`1.ScrollbarTrackStyle
+- code: public Style ScrollbarTrackStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: SelectedStyle
+  id: Tuinet_Widgets_ListView_1_SelectedStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L147
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.SelectedStyle
+    commentId: P:Tuinet.Widgets.ListView`1.SelectedStyle
+- markdown: Layered over the selected row after the item renders.
+- code: public Style SelectedStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer, ref ListState)
+  id: Tuinet_Widgets_ListView_1_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_ListState__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L161
+  metadata:
+    uid: Tuinet.Widgets.ListView`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.ListState@)
+    commentId: M:Tuinet.Widgets.ListView`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.ListState@)
+- code: public void Render(Rect area, CellBuffer buffer, ref ListState state)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: state
+    type:
+    - text: ListState
+      url: Tuinet.Widgets.ListState.html
+languageId: csharp
+metadata:
+  description: A scrolling, selectable list over any .

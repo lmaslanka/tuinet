@@ -1,0 +1,229 @@
+### YamlMime:ApiPage
+title: Struct Block
+body:
+- api1: Struct Block
+  id: Tuinet_Widgets_Block
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L42
+  metadata:
+    uid: Tuinet.Widgets.Block
+    commentId: T:Tuinet.Widgets.Block
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: A frame with optional title and footer on its top and bottom edges.
+- code: 'public readonly ref struct Block : IWidget'
+- h4: Implements
+- list:
+  - text: IWidget
+    url: Tuinet.IWidget.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: Block()
+  id: Tuinet_Widgets_Block__ctor
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L44
+  metadata:
+    uid: Tuinet.Widgets.Block.#ctor
+    commentId: M:Tuinet.Widgets.Block.#ctor
+- code: public Block()
+- h2: Properties
+- api3: BorderStyle
+  id: Tuinet_Widgets_Block_BorderStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L50
+  metadata:
+    uid: Tuinet.Widgets.Block.BorderStyle
+    commentId: P:Tuinet.Widgets.Block.BorderStyle
+- code: public Style BorderStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: BorderType
+  id: Tuinet_Widgets_Block_BorderType
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L49
+  metadata:
+    uid: Tuinet.Widgets.Block.BorderType
+    commentId: P:Tuinet.Widgets.Block.BorderType
+- code: public BorderType BorderType { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: BorderType
+      url: Tuinet.Widgets.BorderType.html
+- api3: Borders
+  id: Tuinet_Widgets_Block_Borders
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L48
+  metadata:
+    uid: Tuinet.Widgets.Block.Borders
+    commentId: P:Tuinet.Widgets.Block.Borders
+- code: public Borders Borders { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Borders
+      url: Tuinet.Widgets.Borders.html
+- api3: Footer
+  id: Tuinet_Widgets_Block_Footer
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L64
+  metadata:
+    uid: Tuinet.Widgets.Block.Footer
+    commentId: P:Tuinet.Widgets.Block.Footer
+- code: public ReadOnlySpan<char> Footer { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: FooterAlignment
+  id: Tuinet_Widgets_Block_FooterAlignment
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L68
+  metadata:
+    uid: Tuinet.Widgets.Block.FooterAlignment
+    commentId: P:Tuinet.Widgets.Block.FooterAlignment
+- code: public Alignment FooterAlignment { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Alignment
+      url: Tuinet.Widgets.Alignment.html
+- api3: Style
+  id: Tuinet_Widgets_Block_Style
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L53
+  metadata:
+    uid: Tuinet.Widgets.Block.Style
+    commentId: P:Tuinet.Widgets.Block.Style
+- markdown: Layered over the whole area before the borders are drawn (keeps existing glyphs).
+- code: public Style Style { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: StyledFooter
+  id: Tuinet_Widgets_Block_StyledFooter
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L67
+  metadata:
+    uid: Tuinet.Widgets.Block.StyledFooter
+    commentId: P:Tuinet.Widgets.Block.StyledFooter
+- markdown: A footer with several styles, used instead of <xref href="Tuinet.Widgets.Block.Footer" data-throw-if-not-resolved="false"></xref>.
+- code: public StyledText StyledFooter { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: StyledText
+      url: Tuinet.StyledText.html
+- api3: StyledTitle
+  id: Tuinet_Widgets_Block_StyledTitle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L62
+  metadata:
+    uid: Tuinet.Widgets.Block.StyledTitle
+    commentId: P:Tuinet.Widgets.Block.StyledTitle
+- markdown: A title with several styles, used instead of <xref href="Tuinet.Widgets.Block.Title" data-throw-if-not-resolved="false"></xref> (layered over <xref href="Tuinet.Widgets.Block.TitleStyle" data-throw-if-not-resolved="false"></xref>).
+- code: public StyledText StyledTitle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: StyledText
+      url: Tuinet.StyledText.html
+- api3: Title
+  id: Tuinet_Widgets_Block_Title
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L55
+  metadata:
+    uid: Tuinet.Widgets.Block.Title
+    commentId: P:Tuinet.Widgets.Block.Title
+- code: public ReadOnlySpan<char> Title { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: TitleAlignment
+  id: Tuinet_Widgets_Block_TitleAlignment
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L56
+  metadata:
+    uid: Tuinet.Widgets.Block.TitleAlignment
+    commentId: P:Tuinet.Widgets.Block.TitleAlignment
+- code: public Alignment TitleAlignment { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Alignment
+      url: Tuinet.Widgets.Alignment.html
+- api3: TitleStyle
+  id: Tuinet_Widgets_Block_TitleStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L59
+  metadata:
+    uid: Tuinet.Widgets.Block.TitleStyle
+    commentId: P:Tuinet.Widgets.Block.TitleStyle
+- markdown: Title style, layered over <xref href="Tuinet.Widgets.Block.BorderStyle" data-throw-if-not-resolved="false"></xref>.
+- code: public Style TitleStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Inner(Rect)
+  id: Tuinet_Widgets_Block_Inner_Tuinet_Rect_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L71
+  metadata:
+    uid: Tuinet.Widgets.Block.Inner(Tuinet.Rect)
+    commentId: M:Tuinet.Widgets.Block.Inner(Tuinet.Rect)
+- markdown: The area inside the borders.
+- code: public Rect Inner(Rect area)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_Widgets_Block_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L80
+  metadata:
+    uid: Tuinet.Widgets.Block.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.Widgets.Block.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: public void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+languageId: csharp
+metadata:
+  description: A frame with optional title and footer on its top and bottom edges.

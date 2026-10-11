@@ -1,0 +1,290 @@
+### YamlMime:ApiPage
+title: Namespace Tuinet.Widgets
+body:
+- api1: Namespace Tuinet.Widgets
+  id: Tuinet_Widgets
+  metadata:
+    uid: Tuinet.Widgets
+    commentId: N:Tuinet.Widgets
+- h3: Classes
+- parameters:
+  - type:
+      text: EditableText
+      url: Tuinet.Widgets.EditableText.html
+    description: >-
+      The editing core of <xref href="Tuinet.Widgets.TextInputState" data-throw-if-not-resolved="false"></xref> and <xref href="Tuinet.Widgets.TextAreaState" data-throw-if-not-resolved="false"></xref>: the text, a caret with an
+
+      optional selection, movement by grapheme cluster and by word, and undo/redo. Offsets count UTF-16 chars and
+
+      fall on grapheme cluster boundaries. The text lives in a gap buffer, so typing in the middle costs about what
+
+      typing at the end does. Allocates only when the text or the undo history outgrows its buffers, and when
+
+      <xref href="Tuinet.Widgets.EditableText.Text" data-throw-if-not-resolved="false"></xref> is read after an edit.
+  - type:
+      text: Spinner
+      url: Tuinet.Widgets.Spinner.html
+    description: Animation frames for activity indicators. Pick a frame from elapsed time, not frame count.
+  - type:
+      text: Table
+      url: Tuinet.Widgets.Table.html
+    description: Helpers for <xref href="Tuinet.Widgets.Table%601" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: TextAreaState
+      url: Tuinet.Widgets.TextAreaState.html
+    description: >-
+      Editable multi-line text for <xref href="Tuinet.Widgets.TextArea" data-throw-if-not-resolved="false"></xref>: a gap buffer with a line index, caret and selection,
+
+      undo/redo, soft wrap, and the viewport the last render showed (for keys and the mouse). Owned by the app. Lines
+
+      end with '\n'; pasted CR LF and CR become '\n' and tabs four spaces. Rendering only measures the lines on screen,
+
+      so a frame costs the same for 10 lines or 100,000.
+  - type:
+      text: TextInputState
+      url: Tuinet.Widgets.TextInputState.html
+    description: >-
+      Editable single-line text: emacs-style editing keys, Shift+movement selection, undo/redo and optional masking,
+
+      on the shared <xref href="Tuinet.Widgets.EditableText" data-throw-if-not-resolved="false"></xref> core. The caret moves and deletes by grapheme cluster (an emoji sequence
+
+      or a letter with its accents is one step). Line breaks and other control characters are dropped. Owned by the app.
+  - type:
+      text: TreeState
+      url: Tuinet.Widgets.TreeState.html
+    description: >-
+      Expanded nodes, selection and scroll position of a tree, owned by the app. The visible rows are cached as flat
+
+      arrays (node, parent row, depth, guide bits), rebuilt only when the tree's shape changes: expanding, collapsing or
+
+      <xref href="Tuinet.Widgets.TreeState.Invalidate" data-throw-if-not-resolved="false"></xref>. <xref href="Tuinet.Widgets.TreeState.Handle%60%601(Tuinet.KeyEvent%2c%60%600)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Widgets.TreeState.HandleMouse%60%601(Tuinet.MouseEvent%2c%60%600%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Widgets.TreeState.Select%60%601(System.Int32%2c%60%600)" data-throw-if-not-resolved="false"></xref>
+
+      and render take the source and rebuild first, so a frame costs O(visible rows) however deep the view is scrolled.
+
+      The selection follows its node across rebuilds; if an ancestor collapsed, the ancestor is selected.
+- h3: Structs
+- parameters:
+  - type:
+      text: Bar
+      url: Tuinet.Widgets.Bar.html
+    description: One bar of a <xref href="Tuinet.Widgets.BarChart" data-throw-if-not-resolved="false"></xref>. <code class="paramref">Style</code> is layered over <xref href="Tuinet.Widgets.BarChart.BarStyle" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: BarChart
+      url: Tuinet.Widgets.BarChart.html
+    description: >-
+      Bars that compare values, with eighth-block ends. <xref href="Tuinet.Direction.Vertical" data-throw-if-not-resolved="false"></xref> bars grow up from the bottom,
+
+      <xref href="Tuinet.Widgets.BarChart.BarWidth" data-throw-if-not-resolved="false"></xref> wide, with the label under each bar and the value above it (inside its top when the bar is
+
+      full height). <xref href="Tuinet.Direction.Horizontal" data-throw-if-not-resolved="false"></xref> bars grow right, one row each, after a label column as wide as the
+
+      widest label (at most a third of the width), with the value after the bar. Bars that don't fit are dropped from
+
+      the end. Zero, negative and NaN values draw no bar; values over <xref href="Tuinet.Widgets.BarChart.Max" data-throw-if-not-resolved="false"></xref> are clamped.
+  - type:
+      text: Block
+      url: Tuinet.Widgets.Block.html
+    description: A frame with optional title and footer on its top and bottom edges.
+  - type:
+      text: Button
+      url: Tuinet.Widgets.Button.html
+    description: 'A one-row button: the label padded by two cells each side, filled with its style.'
+  - type:
+      text: Checkbox
+      url: Tuinet.Widgets.Checkbox.html
+    description: >-
+      A checkbox: symbol, space, label on one row; or, with <xref href="Tuinet.Widgets.Checkbox.Boxed" data-throw-if-not-resolved="false"></xref>, a 5×3 rounded box
+
+      (about square, since cells are twice as tall as wide) filled when checked, label to its right.
+  - type:
+      text: Clear
+      url: Tuinet.Widgets.Clear.html
+    description: Blanks an area with a style. Render it first to draw a popup over existing content.
+  - type:
+      text: Dropdown<TSource>
+      url: Tuinet.Widgets.Dropdown-1.html
+    description: >-
+      A select box: <xref href="Tuinet.Widgets.Dropdown%601.Render(Tuinet.Rect%2cTuinet.CellBuffer%2cTuinet.Widgets.DropdownState%40)" data-throw-if-not-resolved="false"></xref> draws the closed field (selected item + '▾'); after drawing
+
+      everything else, call <xref href="Tuinet.Widgets.Dropdown%601.RenderPopup(Tuinet.Rect%2cTuinet.CellBuffer%2cTuinet.Widgets.DropdownState%40)" data-throw-if-not-resolved="false"></xref> so the open list sits on top.
+  - type:
+      text: DropdownState
+      url: Tuinet.Widgets.DropdownState.html
+    description: Committed choice, open flag and highlighted row of a <xref href="Tuinet.Widgets.Dropdown%601" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: ListState
+      url: Tuinet.Widgets.ListState.html
+    description: >-
+      Selection and scroll position of a list. Owned by the app, updated by input and by render. Render
+
+      scrolls to keep <xref href="Tuinet.Widgets.ListState.Selected" data-throw-if-not-resolved="false"></xref> visible whenever it changes (or the list is resized); in between,
+
+      <xref href="Tuinet.Widgets.ListState.Offset" data-throw-if-not-resolved="false"></xref> can scroll on its own, e.g. with the mouse wheel.
+  - type:
+      text: ListView<TSource>
+      url: Tuinet.Widgets.ListView-1.html
+    description: A scrolling, selectable list over any <xref href="Tuinet.Widgets.IListSource" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: Menu
+      url: Tuinet.Widgets.Menu.html
+    description: >-
+      A popup list of actions: labels with mnemonics, right-aligned shortcuts, separators joined to the border and
+
+      disabled items. Size it with <xref href="Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan%7bTuinet.Widgets.MenuItem%7d)" data-throw-if-not-resolved="false"></xref> and place it with <xref href="Tuinet.Rect.PlaceNear(Tuinet.Rect%2cTuinet.Size)" data-throw-if-not-resolved="false"></xref>, by the row it
+
+      belongs to or at a 0×0 point at the pointer; render it last so it sits on top. The area is the box: a
+
+      <xref href="Tuinet.Widgets.Popup.Shadow" data-throw-if-not-resolved="false"></xref> hangs off it. A menu taller than its area scrolls to keep the highlight in view.
+  - type:
+      text: MenuItem
+      url: Tuinet.Widgets.MenuItem.html
+    description: >-
+      One row of a <xref href="Tuinet.Widgets.Menu" data-throw-if-not-resolved="false"></xref>. An '&amp;' in <xref href="Tuinet.Widgets.MenuItem.Label" data-throw-if-not-resolved="false"></xref> marks the next letter as its mnemonic (drawn with
+
+      <xref href="Tuinet.Widgets.Menu.MnemonicStyle" data-throw-if-not-resolved="false"></xref>; pressing it activates the item); "&amp;&amp;" is a literal '&amp;'. Items are values: build
+
+      the array once and swap one in with <code>with { Enabled = … }</code> to change it.
+  - type:
+      text: MenuState
+      url: Tuinet.Widgets.MenuState.html
+    description: The highlighted item and scroll position of a <xref href="Tuinet.Widgets.Menu" data-throw-if-not-resolved="false"></xref>, and where it was drawn. Owned by the app.
+  - type:
+      text: Paragraph
+      url: Tuinet.Widgets.Paragraph.html
+    description: Multi-line text ('\n'-separated) with wrapping, alignment and vertical scroll, in one style or styled runs.
+  - type:
+      text: Popup
+      url: Tuinet.Widgets.Popup.html
+    description: >-
+      A box drawn over existing content: an optional drop shadow, a fill and a <xref href="Tuinet.Widgets.Block" data-throw-if-not-resolved="false"></xref>, in one call.
+
+      The area includes the shadow (the last two columns and the last row), so the box itself is
+
+      <xref href="Tuinet.Widgets.Popup.Frame(Tuinet.Rect)" data-throw-if-not-resolved="false"></xref>. Stateless: keep the rect you rendered into for hit-testing, e.g. click outside to close.
+  - type:
+      text: ProgressBar
+      url: Tuinet.Widgets.ProgressBar.html
+    description: >-
+      A horizontal bar filled to <xref href="Tuinet.Widgets.ProgressBar.Ratio" data-throw-if-not-resolved="false"></xref> on the first row of its area. With the default
+
+      '█' fill, the boundary cell uses eighth-blocks (▏▎▍▌▋▊▉) for sub-cell precision.
+  - type:
+      text: Scrollbar
+      url: Tuinet.Widgets.Scrollbar.html
+    description: >-
+      A scroll position indicator: a thumb sized <xref href="Tuinet.Widgets.Scrollbar.Viewport" data-throw-if-not-resolved="false"></xref> / <xref href="Tuinet.Widgets.Scrollbar.Content" data-throw-if-not-resolved="false"></xref> of the track, placed at
+
+      <xref href="Tuinet.Widgets.Scrollbar.Position" data-throw-if-not-resolved="false"></xref>. Drawn along the first column (vertical) or row (horizontal) of its area. With the default
+
+      '█' thumb, its ends use eighth-blocks for sub-cell precision.
+  - type:
+      text: Sparkline
+      url: Tuinet.Widgets.Sparkline.html
+    description: >-
+      A value over time in eighth-block columns (▁▂▃▄▅▆▇█), one value per column, newest on the right. With several
+
+      rows the levels stack, so h rows give 8h levels. Given more values than columns, it shows the last ones.
+
+      Zero draws nothing; NaN and negative values leave a gap; any other positive value shows at least ▁.
+  - type:
+      text: Table<TSource>
+      url: Tuinet.Widgets.Table-1.html
+    description: >-
+      A scrolling, selectable table: a header row over virtualized rows, laid out in columns with
+
+      per-column alignment. Selection and scroll live in a <xref href="Tuinet.Widgets.ListState" data-throw-if-not-resolved="false"></xref>, as for <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: TableColumn
+      url: Tuinet.Widgets.TableColumn.html
+    description: 'One column of a <xref href="Tuinet.Widgets.Table%601" data-throw-if-not-resolved="false"></xref>: header text, width and how cells sit in it.'
+  - type:
+      text: Tabs
+      url: Tuinet.Widgets.Tabs.html
+    description: >-
+      A one-row tab bar: titles with padding, separated by <xref href="Tuinet.Widgets.Tabs.Divider" data-throw-if-not-resolved="false"></xref>. When they don't fit, it scrolls
+
+      to keep the selected tab visible and shows ‹ › where tabs are hidden. Only the tabs are drawn; the rest of the
+
+      row is left as it is, so the bar can sit in a <xref href="Tuinet.Widgets.Block" data-throw-if-not-resolved="false"></xref>'s top border.
+  - type:
+      text: TabsState
+      url: Tuinet.Widgets.TabsState.html
+    description: >-
+      Selected tab and scroll position of a <xref href="Tuinet.Widgets.Tabs" data-throw-if-not-resolved="false"></xref> bar. Owned by the app. Render scrolls to keep
+
+      <xref href="Tuinet.Widgets.TabsState.Selected" data-throw-if-not-resolved="false"></xref> visible whenever it changes (or the bar is resized); in between, <xref href="Tuinet.Widgets.TabsState.Offset" data-throw-if-not-resolved="false"></xref>
+
+      can scroll on its own, e.g. with the overflow arrows or the wheel.
+  - type:
+      text: TextArea
+      url: Tuinet.Widgets.TextArea.html
+    description: >-
+      Draws a <xref href="Tuinet.Widgets.TextAreaState" data-throw-if-not-resolved="false"></xref>: the lines in view, soft-wrapped or scrolled sideways, with optional line
+
+      numbers, a placeholder, and when <xref href="Tuinet.Widgets.TextArea.Focused" data-throw-if-not-resolved="false"></xref> the selection and the real terminal cursor at the caret.
+
+      Only visible lines are measured.
+  - type:
+      text: TextInput
+      url: Tuinet.Widgets.TextInput.html
+    description: >-
+      Draws a <xref href="Tuinet.Widgets.TextInputState" data-throw-if-not-resolved="false"></xref> on the first row of its area, scrolled to keep the caret visible. When
+
+      <xref href="Tuinet.Widgets.TextInput.Focused" data-throw-if-not-resolved="false"></xref>, places the real terminal cursor at the caret and shows the selection.
+  - type:
+      text: TextItems
+      url: Tuinet.Widgets.TextItems.html
+    description: A list source over strings, drawn in one style and clipped with an ellipsis.
+  - type:
+      text: TextRows
+      url: Tuinet.Widgets.TextRows.html
+    description: A table source over rows of strings (row-major), drawn in one style. Missing cells are blank.
+  - type:
+      text: TreeView<TSource>
+      url: Tuinet.Widgets.TreeView-1.html
+    description: >-
+      A scrolling, selectable tree over any <xref href="Tuinet.Widgets.ITreeSource" data-throw-if-not-resolved="false"></xref>. Each row is its guides (<code>├─</code>, <code>└─</code>,
+
+      <code>│</code>), an expander for nodes with children (<code>[+]</code> collapsed, <code>[-]</code> expanded), then the label. Only
+
+      visible rows are drawn. Selection, the highlight symbol and the scrollbar work as in <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>.
+- h3: Interfaces
+- parameters:
+  - type:
+      text: IListSource
+      url: Tuinet.Widgets.IListSource.html
+    description: Items for a <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>. Only visible rows are rendered (virtualized).
+  - type:
+      text: ITableSource
+      url: Tuinet.Widgets.ITableSource.html
+    description: Rows for a <xref href="Tuinet.Widgets.Table%601" data-throw-if-not-resolved="false"></xref>. Only visible rows are asked for (virtualized).
+  - type:
+      text: ITreeSource
+      url: Tuinet.Widgets.ITreeSource.html
+    description: >-
+      A hierarchy for a <xref href="Tuinet.Widgets.TreeView%601" data-throw-if-not-resolved="false"></xref>: app-owned data addressed by integer node ids the app chooses
+
+      (an index into its own array, or a key into a dictionary). The tree must not have cycles.
+- h3: Enums
+- parameters:
+  - type:
+      text: Alignment
+      url: Tuinet.Widgets.Alignment.html
+  - type:
+      text: BorderType
+      url: Tuinet.Widgets.BorderType.html
+  - type:
+      text: Borders
+      url: Tuinet.Widgets.Borders.html
+  - type:
+      text: MenuResult
+      url: Tuinet.Widgets.MenuResult.html
+    description: What a <xref href="Tuinet.Widgets.MenuState" data-throw-if-not-resolved="false"></xref> did with an event.
+  - type:
+      text: ScrollbarMode
+      url: Tuinet.Widgets.ScrollbarMode.html
+    description: When <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Widgets.Table%601" data-throw-if-not-resolved="false"></xref> and <xref href="Tuinet.Widgets.Paragraph" data-throw-if-not-resolved="false"></xref> draw a scrollbar.
+  - type:
+      text: TextWrap
+      url: Tuinet.Widgets.TextWrap.html
+languageId: csharp

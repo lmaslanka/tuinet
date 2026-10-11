@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct Menu | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct Menu | TUI.NET ">
+      
+      <meta name="description" content="A popup list of actions: labels with mnemonics, right-aligned shortcuts, separators joined to the border and
+disabled items. Size it with  and place it with , by the row it
+belongs to or at a 0&#215;0 point at the pointer; render it last so it sits on top. The area is the box: a
+ hangs off it. A menu taller than its area scrolls to keep the highlight in view.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Widgets.Menu' data-commentid='T:Tuinet.Widgets.Menu' id='Tuinet_Widgets_Menu'>Struct Menu    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L239'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.Widgets.html'>Tuinet.Widgets</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>A popup list of actions: labels with mnemonics, right-aligned shortcuts, separators joined to the border and
+disabled items. Size it with <span class="xref">Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})</span> and place it with <span class="xref">Tuinet.Rect.PlaceNear(Tuinet.Rect,Tuinet.Size)</span>, by the row it
+belongs to or at a 0×0 point at the pointer; render it last so it sits on top. The area is the box: a
+<span class="xref">Tuinet.Widgets.Popup.Shadow</span> hangs off it. A menu taller than its area scrolls to keep the highlight in view.</p>
+<pre><code class='lang-csharp'>public readonly ref struct Menu : IStatefulWidget&lt;MenuState&gt;</code></pre><h4 class='section'>Implements</h4><dl class="typelist"><dd>
+<div>
+<a href='Tuinet.IStatefulWidget-1.html'>IStatefulWidget&lt;MenuState&gt;</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Examples</h2><pre><code class="lang-csharp">Rect box = frame.Area.PlaceNear(new Rect(mouse.X, mouse.Y, 0, 0), Menu.Measure(items));
+frame.Render(new Menu(items) { Popup = popup, SelectedStyle = highlight }, box, ref menu);</code></pre>
+<h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.Widgets.Menu.#ctor(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})' data-commentid='M:Tuinet.Widgets.Menu.#ctor(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})' id='Tuinet_Widgets_Menu__ctor_System_ReadOnlySpan_Tuinet_Widgets_MenuItem__'>Menu(ReadOnlySpan&lt;MenuItem&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L244'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Menu(ReadOnlySpan&lt;MenuItem&gt; items)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>items</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='Tuinet.Widgets.MenuItem.html'>MenuItem</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Widgets.Menu.DisabledStyle' data-commentid='P:Tuinet.Widgets.Menu.DisabledStyle' id='Tuinet_Widgets_Menu_DisabledStyle'>DisabledStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L253'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style DisabledStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Menu.MnemonicStyle' data-commentid='P:Tuinet.Widgets.Menu.MnemonicStyle' id='Tuinet_Widgets_Menu_MnemonicStyle'>MnemonicStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L256'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over each item's mnemonic letter.</p>
+<pre><code class='lang-csharp'>public Style MnemonicStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Menu.Popup' data-commentid='P:Tuinet.Widgets.Menu.Popup' id='Tuinet_Widgets_Menu_Popup'>Popup    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L247'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The border, fill and shadow. Its <span class="xref">Tuinet.Widgets.Popup.Padding</span> is ignored: rows have one blank column on each side.</p>
+<pre><code class='lang-csharp'>public Popup Popup { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Widgets.Popup.html'>Popup</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Menu.SelectedStyle' data-commentid='P:Tuinet.Widgets.Menu.SelectedStyle' id='Tuinet_Widgets_Menu_SelectedStyle'>SelectedStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L250'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over the highlighted row.</p>
+<pre><code class='lang-csharp'>public Style SelectedStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Menu.ShortcutStyle' data-commentid='P:Tuinet.Widgets.Menu.ShortcutStyle' id='Tuinet_Widgets_Menu_ShortcutStyle'>ShortcutStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L252'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style ShortcutStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})' data-commentid='M:Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})' id='Tuinet_Widgets_Menu_Measure_System_ReadOnlySpan_Tuinet_Widgets_MenuItem__'>Measure(ReadOnlySpan&lt;MenuItem&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L259'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The box for <code class="paramref">items</code>: a border, a blank column each side, the widest label, a gap and the widest shortcut.</p>
+<pre><code class='lang-csharp'>public static Size Measure(ReadOnlySpan&lt;MenuItem&gt; items)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>items</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='Tuinet.Widgets.MenuItem.html'>MenuItem</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Size.html'>Size</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Menu.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.MenuState@)' data-commentid='M:Tuinet.Widgets.Menu.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.MenuState@)' id='Tuinet_Widgets_Menu_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_MenuState__'>Render(Rect, CellBuffer, ref MenuState)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L272'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void Render(Rect area, CellBuffer buffer, ref MenuState state)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>buffer</code> <a href='Tuinet.CellBuffer.html'>CellBuffer</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>state</code> <a href='Tuinet.Widgets.MenuState.html'>MenuState</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

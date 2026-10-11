@@ -1,0 +1,256 @@
+### YamlMime:ApiPage
+title: Struct TreeView<TSource>
+body:
+- api1: Struct TreeView<TSource>
+  id: Tuinet_Widgets_TreeView_1
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L357
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1
+    commentId: T:Tuinet.Widgets.TreeView`1
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A scrolling, selectable tree over any <xref href="Tuinet.Widgets.ITreeSource" data-throw-if-not-resolved="false"></xref>. Each row is its guides (<code>├─</code>, <code>└─</code>,
+
+    <code>│</code>), an expander for nodes with children (<code>[+]</code> collapsed, <code>[-]</code> expanded), then the label. Only
+
+    visible rows are drawn. Selection, the highlight symbol and the scrollbar work as in <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>.
+- code: 'public readonly ref struct TreeView<TSource> : IStatefulWidget<TreeState> where TSource : ITreeSource, allows ref struct'
+- h4: Type Parameters
+- parameters:
+  - name: TSource
+- h4: Implements
+- list:
+  - text: IStatefulWidget<TreeState>
+    url: Tuinet.IStatefulWidget-1.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: TreeView(TSource)
+  id: Tuinet_Widgets_TreeView_1__ctor__0_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L365
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.#ctor(`0)
+    commentId: M:Tuinet.Widgets.TreeView`1.#ctor(`0)
+- code: public TreeView(TSource source)
+- h4: Parameters
+- parameters:
+  - name: source
+    type:
+    - TSource
+- h2: Properties
+- api3: CollapsedSymbol
+  id: Tuinet_Widgets_TreeView_1_CollapsedSymbol
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L376
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.CollapsedSymbol
+    commentId: P:Tuinet.Widgets.TreeView`1.CollapsedSymbol
+- markdown: Before a collapsed node's label.
+- code: public ReadOnlySpan<char> CollapsedSymbol { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: ExpandedSymbol
+  id: Tuinet_Widgets_TreeView_1_ExpandedSymbol
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L373
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.ExpandedSymbol
+    commentId: P:Tuinet.Widgets.TreeView`1.ExpandedSymbol
+- markdown: Before an expanded node's label.
+- code: public ReadOnlySpan<char> ExpandedSymbol { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: ExpanderStyle
+  id: Tuinet_Widgets_TreeView_1_ExpanderStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L382
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.ExpanderStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.ExpanderStyle
+- markdown: Layered over the expander.
+- code: public Style ExpanderStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: GuideStyle
+  id: Tuinet_Widgets_TreeView_1_GuideStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L370
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.GuideStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.GuideStyle
+- code: public Style GuideStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Guides
+  id: Tuinet_Widgets_TreeView_1_Guides
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L368
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.Guides
+    commentId: P:Tuinet.Widgets.TreeView`1.Guides
+- markdown: Draw guide lines from each node to its children.
+- code: public bool Guides { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: HighlightSymbol
+  id: Tuinet_Widgets_TreeView_1_HighlightSymbol
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L388
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.HighlightSymbol
+    commentId: P:Tuinet.Widgets.TreeView`1.HighlightSymbol
+- markdown: Drawn before the selected row (e.g. "&gt; "); other rows are indented by its width.
+- code: public ReadOnlySpan<char> HighlightSymbol { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: HighlightSymbolStyle
+  id: Tuinet_Widgets_TreeView_1_HighlightSymbolStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L390
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.HighlightSymbolStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.HighlightSymbolStyle
+- code: public Style HighlightSymbolStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: LeafSymbol
+  id: Tuinet_Widgets_TreeView_1_LeafSymbol
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L379
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.LeafSymbol
+    commentId: P:Tuinet.Widgets.TreeView`1.LeafSymbol
+- markdown: Before a leaf's label (none by default; e.g. four spaces to line leaves up with their siblings' labels).
+- code: public ReadOnlySpan<char> LeafSymbol { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: Scrollbar
+  id: Tuinet_Widgets_TreeView_1_Scrollbar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L393
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.Scrollbar
+    commentId: P:Tuinet.Widgets.TreeView`1.Scrollbar
+- markdown: Draw a scrollbar in the rightmost column; rows are one column narrower while it shows.
+- code: public ScrollbarMode Scrollbar { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ScrollbarMode
+      url: Tuinet.Widgets.ScrollbarMode.html
+- api3: ScrollbarThumbStyle
+  id: Tuinet_Widgets_TreeView_1_ScrollbarThumbStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L395
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.ScrollbarThumbStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.ScrollbarThumbStyle
+- code: public Style ScrollbarThumbStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: ScrollbarTrackStyle
+  id: Tuinet_Widgets_TreeView_1_ScrollbarTrackStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L396
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.ScrollbarTrackStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.ScrollbarTrackStyle
+- code: public Style ScrollbarTrackStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: SelectedStyle
+  id: Tuinet_Widgets_TreeView_1_SelectedStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L385
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.SelectedStyle
+    commentId: P:Tuinet.Widgets.TreeView`1.SelectedStyle
+- markdown: Layered over the selected row after it renders.
+- code: public Style SelectedStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer, ref TreeState)
+  id: Tuinet_Widgets_TreeView_1_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_TreeState__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TreeView.cs#L398
+  metadata:
+    uid: Tuinet.Widgets.TreeView`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.TreeState@)
+    commentId: M:Tuinet.Widgets.TreeView`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.TreeState@)
+- code: public void Render(Rect area, CellBuffer buffer, ref TreeState state)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: state
+    type:
+    - text: TreeState
+      url: Tuinet.Widgets.TreeState.html
+languageId: csharp
+metadata:
+  description: >-
+    A scrolling, selectable tree over any . Each row is its guides (├─, └─,
+
+    │), an expander for nodes with children ([+] collapsed, [-] expanded), then the label. Only
+
+    visible rows are drawn. Selection, the highlight symbol and the scrollbar work as in .

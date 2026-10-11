@@ -1,0 +1,61 @@
+### YamlMime:ApiPage
+title: Interface IListSource
+body:
+- api1: Interface IListSource
+  id: Tuinet_Widgets_IListSource
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L4
+  metadata:
+    uid: Tuinet.Widgets.IListSource
+    commentId: T:Tuinet.Widgets.IListSource
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: Items for a <xref href="Tuinet.Widgets.ListView%601" data-throw-if-not-resolved="false"></xref>. Only visible rows are rendered (virtualized).
+- code: public interface IListSource
+- h2: Properties
+- api3: Count
+  id: Tuinet_Widgets_IListSource_Count
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L6
+  metadata:
+    uid: Tuinet.Widgets.IListSource.Count
+    commentId: P:Tuinet.Widgets.IListSource.Count
+- code: int Count { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: RenderItem(int, Rect, CellBuffer, bool)
+  id: Tuinet_Widgets_IListSource_RenderItem_System_Int32_Tuinet_Rect_Tuinet_CellBuffer_System_Boolean_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ListView.cs#L9
+  metadata:
+    uid: Tuinet.Widgets.IListSource.RenderItem(System.Int32,Tuinet.Rect,Tuinet.CellBuffer,System.Boolean)
+    commentId: M:Tuinet.Widgets.IListSource.RenderItem(System.Int32,Tuinet.Rect,Tuinet.CellBuffer,System.Boolean)
+- markdown: Draw item <code class="paramref">index</code> into a one-row <code class="paramref">area</code>.
+- code: void RenderItem(int index, Rect area, CellBuffer buffer, bool selected)
+- h4: Parameters
+- parameters:
+  - name: index
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: selected
+    type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+languageId: csharp
+metadata:
+  description: Items for a . Only visible rows are rendered (virtualized).

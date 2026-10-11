@@ -1,0 +1,195 @@
+### YamlMime:ApiPage
+title: Struct BarChart
+body:
+- api1: Struct BarChart
+  id: Tuinet_Widgets_BarChart
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L13
+  metadata:
+    uid: Tuinet.Widgets.BarChart
+    commentId: T:Tuinet.Widgets.BarChart
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Bars that compare values, with eighth-block ends. <xref href="Tuinet.Direction.Vertical" data-throw-if-not-resolved="false"></xref> bars grow up from the bottom,
+
+    <xref href="Tuinet.Widgets.BarChart.BarWidth" data-throw-if-not-resolved="false"></xref> wide, with the label under each bar and the value above it (inside its top when the bar is
+
+    full height). <xref href="Tuinet.Direction.Horizontal" data-throw-if-not-resolved="false"></xref> bars grow right, one row each, after a label column as wide as the
+
+    widest label (at most a third of the width), with the value after the bar. Bars that don't fit are dropped from
+
+    the end. Zero, negative and NaN values draw no bar; values over <xref href="Tuinet.Widgets.BarChart.Max" data-throw-if-not-resolved="false"></xref> are clamped.
+- code: 'public readonly ref struct BarChart : IWidget'
+- h4: Implements
+- list:
+  - text: IWidget
+    url: Tuinet.IWidget.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: BarChart(ReadOnlySpan<Bar>)
+  id: Tuinet_Widgets_BarChart__ctor_System_ReadOnlySpan_Tuinet_Widgets_Bar__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L17
+  metadata:
+    uid: Tuinet.Widgets.BarChart.#ctor(System.ReadOnlySpan{Tuinet.Widgets.Bar})
+    commentId: M:Tuinet.Widgets.BarChart.#ctor(System.ReadOnlySpan{Tuinet.Widgets.Bar})
+- code: public BarChart(ReadOnlySpan<Bar> bars)
+- h4: Parameters
+- parameters:
+  - name: bars
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: Bar
+      url: Tuinet.Widgets.Bar.html
+    - '>'
+- h2: Properties
+- api3: BarStyle
+  id: Tuinet_Widgets_BarChart_BarStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L32
+  metadata:
+    uid: Tuinet.Widgets.BarChart.BarStyle
+    commentId: P:Tuinet.Widgets.BarChart.BarStyle
+- markdown: The style under each <xref href="Tuinet.Widgets.Bar.Style" data-throw-if-not-resolved="false"></xref>.
+- code: public Style BarStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: BarWidth
+  id: Tuinet_Widgets_BarChart_BarWidth
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L26
+  metadata:
+    uid: Tuinet.Widgets.BarChart.BarWidth
+    commentId: P:Tuinet.Widgets.BarChart.BarWidth
+- markdown: Columns per bar (vertical only; horizontal bars are one row).
+- code: public int BarWidth { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Direction
+  id: Tuinet_Widgets_BarChart_Direction
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L20
+  metadata:
+    uid: Tuinet.Widgets.BarChart.Direction
+    commentId: P:Tuinet.Widgets.BarChart.Direction
+- markdown: 'Vertical: bars grow up. Horizontal: bars grow right.'
+- code: public Direction Direction { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Direction
+      url: Tuinet.Direction.html
+- api3: Gap
+  id: Tuinet_Widgets_BarChart_Gap
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L29
+  metadata:
+    uid: Tuinet.Widgets.BarChart.Gap
+    commentId: P:Tuinet.Widgets.BarChart.Gap
+- markdown: Columns (vertical) or rows (horizontal) between bars.
+- code: public int Gap { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: LabelStyle
+  id: Tuinet_Widgets_BarChart_LabelStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L34
+  metadata:
+    uid: Tuinet.Widgets.BarChart.LabelStyle
+    commentId: P:Tuinet.Widgets.BarChart.LabelStyle
+- code: public Style LabelStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Max
+  id: Tuinet_Widgets_BarChart_Max
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L23
+  metadata:
+    uid: Tuinet.Widgets.BarChart.Max
+    commentId: P:Tuinet.Widgets.BarChart.Max
+- markdown: 'The value of a full-length bar. NaN: the largest value drawn.'
+- code: public double Max { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+- api3: ValueFormat
+  id: Tuinet_Widgets_BarChart_ValueFormat
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L38
+  metadata:
+    uid: Tuinet.Widgets.BarChart.ValueFormat
+    commentId: P:Tuinet.Widgets.BarChart.ValueFormat
+- markdown: A numeric format for the values (<code>"0"</code>, <code>"F1"</code>, <code>"N0"</code>…), in the current culture. Null hides them.
+- code: public string? ValueFormat { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    - '?'
+- api3: ValueStyle
+  id: Tuinet_Widgets_BarChart_ValueStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L35
+  metadata:
+    uid: Tuinet.Widgets.BarChart.ValueStyle
+    commentId: P:Tuinet.Widgets.BarChart.ValueStyle
+- code: public Style ValueStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_Widgets_BarChart_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/BarChart.cs#L49
+  metadata:
+    uid: Tuinet.Widgets.BarChart.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.Widgets.BarChart.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: public void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+languageId: csharp
+metadata:
+  description: >-
+    Bars that compare values, with eighth-block ends.  bars grow up from the bottom,
+     wide, with the label under each bar and the value above it (inside its top when the bar is
+    full height).  bars grow right, one row each, after a label column as wide as the
+
+    widest label (at most a third of the width), with the value after the bar. Bars that don't fit are dropped from
+
+    the end. Zero, negative and NaN values draw no bar; values over  are clamped.

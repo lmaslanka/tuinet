@@ -1,0 +1,203 @@
+### YamlMime:ApiPage
+title: Class CellBufferTesting
+body:
+- api1: Class CellBufferTesting
+  id: Tuinet_Testing_CellBufferTesting
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L10
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting
+    commentId: T:Tuinet.Testing.CellBufferTesting
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Testing
+      url: Tuinet.Testing.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Test assertions and dumps for a <xref href="Tuinet.CellBuffer" data-throw-if-not-resolved="false"></xref>: a styled text format for snapshot files, ANSI for
+
+    eyeballing in a terminal, and finding text on screen. Allocates freely: these are for tests, not frames.
+- code: public static class CellBufferTesting
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: CellBufferTesting
+    url: Tuinet.Testing.CellBufferTesting.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.MemberwiseClone()
+    url: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Methods
+- api3: FindText(CellBuffer, string)
+  id: Tuinet_Testing_CellBufferTesting_FindText_Tuinet_CellBuffer_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L139
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.FindText(Tuinet.CellBuffer,System.String)
+    commentId: M:Tuinet.Testing.CellBufferTesting.FindText(Tuinet.CellBuffer,System.String)
+- markdown: >-
+    Where <code class="paramref">text</code> first appears, reading rows top to bottom: the cells it covers (one row; wide
+
+    glyphs count two columns). Throws <xref href="Tuinet.Testing.ScreenAssertionException" data-throw-if-not-resolved="false"></xref>, showing the screen, when it isn't there.
+- code: public static Rect FindText(this CellBuffer buffer, string text)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: text
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: StyleAt(CellBuffer, int, int)
+  id: Tuinet_Testing_CellBufferTesting_StyleAt_Tuinet_CellBuffer_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L186
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.StyleAt(Tuinet.CellBuffer,System.Int32,System.Int32)
+    commentId: M:Tuinet.Testing.CellBufferTesting.StyleAt(Tuinet.CellBuffer,System.Int32,System.Int32)
+- markdown: The style of cell (<code class="paramref">x</code>, <code class="paramref">y</code>); the right half of a wide glyph has the glyph's style.
+- code: public static Style StyleAt(this CellBuffer buffer, int x, int y)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: x
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: y
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: StyleOf(CellBuffer, string)
+  id: Tuinet_Testing_CellBufferTesting_StyleOf_Tuinet_CellBuffer_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L193
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.StyleOf(Tuinet.CellBuffer,System.String)
+    commentId: M:Tuinet.Testing.CellBufferTesting.StyleOf(Tuinet.CellBuffer,System.String)
+- markdown: The style of the first cell of <code class="paramref">text</code> (see <xref href="Tuinet.Testing.CellBufferTesting.FindText(Tuinet.CellBuffer%2cSystem.String)" data-throw-if-not-resolved="false"></xref>).
+- code: public static Style StyleOf(this CellBuffer buffer, string text)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: text
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- h4: Returns
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: ToAnsi(CellBuffer)
+  id: Tuinet_Testing_CellBufferTesting_ToAnsi_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L101
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.ToAnsi(Tuinet.CellBuffer)
+    commentId: M:Tuinet.Testing.CellBufferTesting.ToAnsi(Tuinet.CellBuffer)
+- markdown: >-
+    The buffer as ANSI text (SGR colors and attributes, 24-bit where the cell is), one line per row, each ending
+
+    with a reset. Print it to look at a frame in a real terminal: <code>Console.WriteLine(buffer.ToAnsi())</code>.
+- code: public static string ToAnsi(this CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- api3: ToStyledString(CellBuffer)
+  id: Tuinet_Testing_CellBufferTesting_ToStyledString_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L25
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.ToStyledString(Tuinet.CellBuffer)
+    commentId: M:Tuinet.Testing.CellBufferTesting.ToStyledString(Tuinet.CellBuffer)
+- markdown: >-
+    The buffer as <xref href="Tuinet.Markup" data-throw-if-not-resolved="false"></xref>, one line per row: text in the default style is plain, styled text is
+
+    wrapped in a tag, e.g. <code>[fg=#F5A623 b]ITEMS[/]</code>, and a literal <code>[</code> is <code>[[</code>. When a row is mostly
+
+    one style with a background (a panel), that style opens the row and tags inside it hold only what differs. Stable, so
+
+    it suits snapshot files (see <xref href="Tuinet.Testing.Snapshot" data-throw-if-not-resolved="false"></xref>), and <xref href="Tuinet.Testing.Snapshot.Parse(System.String)" data-throw-if-not-resolved="false"></xref> reads it back exactly.
+
+    Rows are full width, like <xref href="Tuinet.CellBuffer.ToString" data-throw-if-not-resolved="false"></xref>. Hyperlinks and the cursor aren't included.
+- code: public static string ToStyledString(this CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+- api3: TryFindText(CellBuffer, string, out Rect)
+  id: Tuinet_Testing_CellBufferTesting_TryFindText_Tuinet_CellBuffer_System_String_Tuinet_Rect__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/CellBufferTesting.cs#L145
+  metadata:
+    uid: Tuinet.Testing.CellBufferTesting.TryFindText(Tuinet.CellBuffer,System.String,Tuinet.Rect@)
+    commentId: M:Tuinet.Testing.CellBufferTesting.TryFindText(Tuinet.CellBuffer,System.String,Tuinet.Rect@)
+- markdown: Where <code class="paramref">text</code> first appears, as in <xref href="Tuinet.Testing.CellBufferTesting.FindText(Tuinet.CellBuffer%2cSystem.String)" data-throw-if-not-resolved="false"></xref>; false when it isn't there.
+- code: public static bool TryFindText(this CellBuffer buffer, string text, out Rect area)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: text
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+languageId: csharp
+metadata:
+  description: >-
+    Test assertions and dumps for a : a styled text format for snapshot files, ANSI for
+
+    eyeballing in a terminal, and finding text on screen. Allocates freely: these are for tests, not frames.

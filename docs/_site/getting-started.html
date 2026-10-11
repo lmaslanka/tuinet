@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Getting started | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Getting started | TUI.NET ">
+      
+      
+      <link rel="icon" href="favicon.ico">
+      <link rel="stylesheet" href="public/docfx.min.css">
+      <link rel="stylesheet" href="public/main.css">
+      <meta name="docfx:navrel" content="toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="">
+      
+      
+      <meta name="docfx:docurl" content="https://github.com/lmaslanka/tuinet/blob/main/docs/getting-started.md/#L1">
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="index.html">
+            <img id="logo" class="svg" src="logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+
+      <div class="content">
+        <div class="actionbar">
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 id="getting-started">Getting started</h1>
+
+<p><strong>Requirements:</strong> the .NET 10 SDK and a terminal with VT support. That covers essentially every modern terminal on Linux and macOS, plus Windows Terminal and conhost on Windows 10+.</p>
+<p>TUI.NET isn't on NuGet yet. Reference the project directly, or pack it locally (the package and namespace are <code>Tuinet</code>):</p>
+<pre><code class="lang-sh">git clone https://github.com/lmaslanka/tuinet.git
+dotnet pack tuinet/src/Tuinet -c Release -o ./packages
+dotnet add package Tuinet --source ./packages
+</code></pre>
+<p>A complete program:</p>
+<pre><code class="lang-csharp">using Tuinet;
+using Tuinet.Widgets;
+
+using var term = Terminal.Open();
+while (true)
+{
+    CellBuffer frame = term.BeginFrame();
+    var block = new Block { Title = &quot; hello &quot;, BorderType = BorderType.Rounded };
+    frame.Render(block, frame.Area);
+    frame.SetString(2, 2, &quot;Press q to quit&quot;, new Style(Color.Cyan, default, Attr.Bold));
+    term.Present();
+
+    if (term.Poll(out Event ev, Timeout.Infinite) &amp;&amp; ev.Key.IsChar('q'))
+    {
+        break;
+    }
+}
+</code></pre>
+<h2 id="how-it-works">How it works</h2>
+<pre><code>  Poll ──▶ Handle ──▶ BeginFrame ──▶ Render ──▶ Present
+   ▲      (update       (cleared       (draw the     (diff vs screen,
+   │       your state)   back buffer)   whole UI)     one write, swap)
+   └──────────────────────────────────────────────────────┘
+</code></pre>
+<p>Your app owns its state. Each frame it renders that state into a <code>CellBuffer</code>, the same way a game
+engine draws a frame. <code>Present()</code> compares the new buffer with what's on screen, encodes the
+difference as VT bytes, and sends it in a single <code>write</code>, wrapped in synchronized-update markers so
+the terminal never shows half a frame.</p>
+<p>The recommended loop handles every input event that's already waiting before it draws. That way a
+burst of key repeats costs one frame instead of dozens, and the UI never builds a backlog:</p>
+<pre><code class="lang-csharp">bool running = true;
+while (running)
+{
+    Render(term.BeginFrame());   // draw everything, every frame
+    term.Present();              // diff + one write
+
+    if (!term.Poll(out Event ev, Timeout.Infinite))
+    {
+        continue;
+    }
+
+    do
+    {
+        running = Handle(ev);
+    }
+    while (running &amp;&amp; term.Poll(out ev, 0));   // drain the burst, then draw once
+}
+</code></pre>
+<p><code>term.Run(app)</code> is this loop, written once. Your app implements <code>IApp</code>: <code>Handle</code> returns false to quit, and
+<code>Render</code> draws the whole UI. While <code>IsAnimating</code> returns true, the loop draws about 30 frames a second, with an
+<code>EventKind.Tick</code> before each frame that no input caused. <code>NextDueMs</code> wakes an idle app at a given time. The
+<code>nowMs</code> arguments are milliseconds since <code>Run</code> started. <code>Run</code> allocates nothing per frame, and you can still
+write your own loop when you need something else.</p>
+<pre><code class="lang-csharp">using var term = Terminal.Open();
+term.Run(new Counter());
+
+sealed class Counter : IApp
+{
+    private int _count;
+
+    public bool Handle(Event ev, long nowMs)
+    {
+        if (ev.Key.IsChar('+')) _count++;
+        return !ev.Key.IsChar('q');
+    }
+
+    public void Render(CellBuffer frame, long nowMs)
+    {
+        Span&lt;char&gt; text = stackalloc char[40];
+        text.TryWrite($&quot;count: {_count}  (+ adds, q quits)&quot;, out int length);   // no string per frame
+        frame.SetString(0, 0, text[..length], default);
+    }
+}
+</code></pre>
+<p>In inline mode, <code>Run</code> draws the last frame again after the app stops, since that frame stays on screen.
+<code>Terminal.LastFrameBytes</code> and <code>LastFrameTime</code> (from <code>BeginFrame</code> to the end of <code>Present</code>) give the cost of the
+last frame, for a stats overlay.</p>
+<h2 id="samples">Samples</h2>
+<pre><code class="lang-sh">./run           # the showcase: list, stats charts, menu, palette, edit form, progress dialog
+./run gallery   # every widget, one page each, next to the code that draws it
+./run inline    # inline mode: a download with live progress bars under the prompt
+./run stress    # latency harness: hold j on 100k items, or press n for full-screen noise
+</code></pre>
+<p>The samples are small and meant to be read: <a href="https://github.com/lmaslanka/tuinet/tree/main/samples"><code>samples/</code></a>.</p>
+<h2 id="next-steps">Next steps</h2>
+<ul>
+<li><a href="layout.html">Layout and styling</a>: split the screen, colors, attributes, mixed-style text, your own widgets.</li>
+<li><a href="widgets.html">Widgets</a>: lists, tables, trees, forms, dialogs, tabs, menus, charts.</li>
+<li><a href="input.html">Input and the terminal</a>: keys, mouse, paste, background work, clipboard, inline mode.</li>
+<li><a href="testing.html">Testing</a>: test apps without a terminal, snapshot frames.</li>
+<li><a href="performance.html">Performance</a>: what a frame costs, and how it is kept that way.</li>
+</ul>
+<hr>
+<p><a href="getting-started.html">Getting started</a> · <a href="layout.html">Layout and styling</a> · <a href="widgets.html">Widgets</a> ·
+<a href="input.html">Input and the terminal</a> · <a href="testing.html">Testing</a> · <a href="performance.html">Performance</a> · <a href="api/index.html">API reference</a></p>
+
+</article>
+
+        <div class="contribution d-print-none">
+          <a href="https://github.com/lmaslanka/tuinet/blob/main/docs/getting-started.md/#L1" class="edit-link">Edit this page</a>
+        </div>
+
+        <div class="next-article d-print-none border-top" id="nextArticle"></div>
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

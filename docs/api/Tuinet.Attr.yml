@@ -1,0 +1,41 @@
+### YamlMime:ApiPage
+title: Enum Attr
+body:
+- api1: Enum Attr
+  id: Tuinet_Attr
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L5
+  metadata:
+    uid: Tuinet.Attr
+    commentId: T:Tuinet.Attr
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: >-
+    [Flags]
+
+    public enum Attr : ushort
+- h2: Fields
+- parameters:
+  - name: Blink
+    default: "16"
+  - name: Bold
+    default: "1"
+  - name: Dim
+    default: "2"
+  - name: Hidden
+    default: "64"
+  - name: Italic
+    default: "4"
+  - name: None
+    default: "0"
+  - name: Reverse
+    default: "32"
+  - name: Strike
+    default: "128"
+  - name: Underline
+    default: "8"
+languageId: csharp

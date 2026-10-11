@@ -1,0 +1,142 @@
+### YamlMime:ApiPage
+title: Struct Sparkline
+body:
+- api1: Struct Sparkline
+  id: Tuinet_Widgets_Sparkline
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L12
+  metadata:
+    uid: Tuinet.Widgets.Sparkline
+    commentId: T:Tuinet.Widgets.Sparkline
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A value over time in eighth-block columns (▁▂▃▄▅▆▇█), one value per column, newest on the right. With several
+
+    rows the levels stack, so h rows give 8h levels. Given more values than columns, it shows the last ones.
+
+    Zero draws nothing; NaN and negative values leave a gap; any other positive value shows at least ▁.
+- code: 'public readonly ref struct Sparkline : IWidget'
+- h4: Implements
+- list:
+  - text: IWidget
+    url: Tuinet.IWidget.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Remarks
+- markdown: >-
+    The two spans draw an app-owned ring buffer without a copy: pass the older part, then the newer part.
+
+    Only cells with a block are written, so <xref href="Tuinet.Widgets.Sparkline.Style" data-throw-if-not-resolved="false"></xref>'s background shows only behind the bars.
+- h2: Constructors
+- api3: Sparkline(ReadOnlySpan<double>, ReadOnlySpan<double>)
+  id: Tuinet_Widgets_Sparkline__ctor_System_ReadOnlySpan_System_Double__System_ReadOnlySpan_System_Double__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L19
+  metadata:
+    uid: Tuinet.Widgets.Sparkline.#ctor(System.ReadOnlySpan{System.Double},System.ReadOnlySpan{System.Double})
+    commentId: M:Tuinet.Widgets.Sparkline.#ctor(System.ReadOnlySpan{System.Double},System.ReadOnlySpan{System.Double})
+- code: public Sparkline(ReadOnlySpan<double> values, ReadOnlySpan<double> more = default)
+- h4: Parameters
+- parameters:
+  - name: values
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+    - '>'
+    description: The values, oldest first (or the older part of a ring buffer).
+  - name: more
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+    - '>'
+    description: Values after <code class="paramref">values</code> (the newer part of a ring buffer).
+    optional: true
+- h2: Properties
+- api3: Max
+  id: Tuinet_Widgets_Sparkline_Max
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L27
+  metadata:
+    uid: Tuinet.Widgets.Sparkline.Max
+    commentId: P:Tuinet.Widgets.Sparkline.Max
+- markdown: >-
+    The value of a full-height column; larger values are clamped. NaN: the largest visible value,
+        so an old spike stops squashing the scale once it scrolls out.
+- code: public double Max { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+- api3: MaxStyle
+  id: Tuinet_Widgets_Sparkline_MaxStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L32
+  metadata:
+    uid: Tuinet.Widgets.Sparkline.MaxStyle
+    commentId: P:Tuinet.Widgets.Sparkline.MaxStyle
+- markdown: Layered over <xref href="Tuinet.Widgets.Sparkline.Style" data-throw-if-not-resolved="false"></xref> on the column of the largest visible value (the newest, on a tie).
+- code: public Style MaxStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Style
+  id: Tuinet_Widgets_Sparkline_Style
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L29
+  metadata:
+    uid: Tuinet.Widgets.Sparkline.Style
+    commentId: P:Tuinet.Widgets.Sparkline.Style
+- code: public Style Style { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_Widgets_Sparkline_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Sparkline.cs#L34
+  metadata:
+    uid: Tuinet.Widgets.Sparkline.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.Widgets.Sparkline.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: public void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+languageId: csharp
+metadata:
+  description: >-
+    A value over time in eighth-block columns (▁▂▃▄▅▆▇█), one value per column, newest on the right. With several
+
+    rows the levels stack, so h rows give 8h levels. Given more values than columns, it shows the last ones.
+
+    Zero draws nothing; NaN and negative values leave a gap; any other positive value shows at least ▁.

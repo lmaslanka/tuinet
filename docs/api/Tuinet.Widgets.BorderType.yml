@@ -1,0 +1,45 @@
+### YamlMime:ApiPage
+title: Enum BorderType
+body:
+- api1: Enum BorderType
+  id: Tuinet_Widgets_BorderType
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L23
+  metadata:
+    uid: Tuinet.Widgets.BorderType
+    commentId: T:Tuinet.Widgets.BorderType
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public enum BorderType : byte'
+- h2: Fields
+- parameters:
+  - name: Dashed
+    default: "4"
+    description: >+
+      ╭┄╮ rounded corners, dashed edges
+
+  - name: Double
+    default: "2"
+    description: >+
+      ╔═╗
+
+  - name: Plain
+    default: "0"
+    description: >+
+      ┌─┐
+
+  - name: Rounded
+    default: "1"
+    description: >+
+      ╭─╮
+
+  - name: Thick
+    default: "3"
+    description: >+
+      ┏━┓
+
+languageId: csharp
