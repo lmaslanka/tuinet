@@ -249,6 +249,30 @@ public class CellBufferTests
         buffer.SetString(0, 1, "你");
         Assert.Equal("ab \n你 ", buffer.ToString());
     }
+
+    [Fact]
+    public void Copy_to_makes_an_exact_copy_at_the_source_size()
+    {
+        var source = new CellBuffer(6, 2);
+        source.SetString(0, 0, "日本x", new Style(Color.Red, Color.Blue, Attr.Bold));
+        source.SetString(0, 1, "link");
+        source.SetLink(new Rect(0, 1, 4, 1), "https://example.com");
+        source.SetCursor(3, 1, CursorShape.Bar);
+
+        var copy = new CellBuffer(2, 5);
+        source.CopyTo(copy);
+        Assert.Equal(source.Size, copy.Size);
+        for (int y = 0; y < source.Height; y++)
+        {
+            Assert.True(source.Row(y).SequenceEqual(copy.Row(y)));
+        }
+
+        Assert.Equal("https://example.com", copy[0, 1].Link);
+        Assert.Equal((3, 1, CursorShape.Bar), (copy.CursorX, copy.CursorY, copy.CursorShape));
+
+        source.SetString(0, 0, "zz");                                   // a copy, not a view
+        Assert.Equal("日本x ", copy.RowText(0));
+    }
 }
 
 public class LayeringTests

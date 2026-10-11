@@ -485,6 +485,26 @@ public sealed class CellBuffer
         Clear();
     }
 
+    /// <summary>
+    /// Make <paramref name="destination"/> an exact copy of this buffer: size, cells (links included) and cursor.
+    /// Allocates only when the destination has to grow.
+    /// </summary>
+    public void CopyTo(CellBuffer destination)
+    {
+        ArgumentNullException.ThrowIfNull(destination);
+        if (destination == this)
+        {
+            return;
+        }
+
+        destination.Resize(Width, Height);
+        _cells.AsSpan(0, Width * Height).CopyTo(destination._cells);
+        _mayJoin.AsSpan(0, Height).CopyTo(destination._mayJoin);
+        destination.CursorX = CursorX;
+        destination.CursorY = CursorY;
+        destination.CursorShape = CursorShape;
+    }
+
     /// <summary>The glyphs of one row as a string (for tests and debugging).</summary>
     public string RowText(int y)
     {
