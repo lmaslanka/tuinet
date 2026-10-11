@@ -12,20 +12,23 @@ benchmarks: **bytes allocated per frame** (zero in steady state), **bytes writte
 | Scenario | Time | Bytes written |
 |---|---:|---:|
 | Frame with no changes | 4.5 µs | 0 |
-| One cell changed | 4.7 µs | 59 |
-| Full repaint, a different truecolor style on every row | 35 µs | 13.3 KB |
+| One cell changed | 4.5 µs | 59 |
+| Full repaint, a different truecolor style on every row | 34 µs | 13.3 KB |
+| The same repaint in Cyrillic (two UTF-8 bytes per glyph) | 49 µs | 23.1 KB |
 | Scroll by one row, every row different | 7.7 µs | 271 |
 | Scroll by one row beside a 50-column panel, terminal without left/right margins | 31 µs | 10.3 KB |
-| The same, terminal with left/right margins (DECLRMM) | 13 µs | 459 |
-| An 80×24 dialog closes over a themed background | 8.6 µs | 313 |
-| Every row gets shorter (text, then blanks to the right edge) | 12 µs | 698 |
+| The same, terminal with left/right margins (DECLRMM) | 13.6 µs | 392 |
+| An 80×24 dialog closes over a themed background | 8.6 µs | 152 |
+| Every row gets shorter (text, then blanks to the right edge) | 12 µs | 293 |
+| A vertical border changes color on every row | 6.1 µs | 648 |
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
-| `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
-| `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 60 / 39 µs | |
+| `SetString`, 60 rows: ASCII / ASCII with explicit colors / Cyrillic / CJK | 6.8 / 3.8 / 14 / 6.7 µs | |
+| `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 53 / 28 µs | |
+| `Paragraph` of 2,000 lines scrolled to its end: wrapping from the top / with a `ParagraphState` | 356 / 10 µs | |
 | `TreeView` frame, 109,000 rows open in a 1,000,000-node tree, at row 0 / 50,000 / 99,000 | 6.8 / 7.0 / 6.6 µs | |
 | Rebuilding those 109,000 rows after a node opens or closes | 0.47 ms | |
-| Caret down / a keystroke in that text area, then its frame | 61 / 78 µs | |
+| Caret down / a keystroke in that text area, then its frame | 54 / 64 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 | `Fuzzy.Score`, a 3-char pattern against one command name (10,000 names: 0.28 ms) | 28 ns | |
 
@@ -52,16 +55,23 @@ Tests guard these properties too:
 Drawing everything every frame is cheap because the renderer sends only the difference:
 
 - Unchanged rows are skipped with a vectorized memcmp.
-- Gaps inside a row are jumped with relative cursor moves.
+- Gaps inside a row are jumped with relative cursor moves, and the cursor reaches the next changed cell with the
+  shortest sequence there is (BS, LF, CUB/CUF, CHA, CUU/CUD; CUP only when nothing shorter does). A caret moving one
+  cell is one byte.
 - Runs of blanks are erased (to the end of the row, or n cells) instead of written as spaces.
 - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
   On terminals with left/right margins (DECLRMM) this works for a band narrower than the screen too, such as a list beside a panel.
 - Style changes are sent as minimal deltas.
-- Each frame goes out in a single synchronized write.
+- Each frame goes out in a single synchronized write. On terminals that report synchronized output (DEC 2026) the
+  cursor is not hidden and shown again around it.
 
 ## Allocation rules
 
 - Widgets are `readonly ref struct`s built on the stack each frame; their state is a value your app owns.
+- Text in any script without combining marks (Latin, Cyrillic, Greek, Hebrew, Arabic letters, CJK…) is written at
+  1–3 ns per char from a generated table; only grapheme clusters are segmented. A `Paragraph` with a
+  `ParagraphState` renders in O(visible lines) at any scroll (the state verifies its cached layout against the text
+  each frame with a vectorized compare, or on `Invalidate` with `VerifyText = false`).
 - Text is written from spans: format into `stackalloc` buffers with `TryWrite` instead of building strings.
 - `Markup.Parse` and `StyledTextBuilder` write into memory you pass in; `SetMarkup` parses on the stack.
 - `Terminal.Poll` and `Terminal.Run` allocate nothing per event or per frame.

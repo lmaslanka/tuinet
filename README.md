@@ -24,13 +24,14 @@ Zero allocations per frame · one `write` per frame · Native AOT
 - **Immediate mode.** There is no widget tree to keep in sync. Each frame, your app draws its state into a cell buffer. TUI.NET diffs that buffer against the screen and writes the difference.
 - **Fast by design.**
   - Unchanged rows are skipped with a vectorized memcmp.
-  - Gaps inside a row are jumped with relative cursor moves.
+  - Gaps inside a row are jumped with relative cursor moves, and every cursor move is the shortest sequence there is (a caret moving one cell is one byte).
   - Runs of blanks are erased (to the end of the row, or n cells) instead of written as spaces.
   - On terminals with REP (xterm, kitty, foot, WezTerm, Ghostty), borders, rules and bars are drawn as one glyph and a repeat count.
   - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
     On terminals with left/right margins (DECLRMM) this works for a band narrower than the screen too, such as a list beside a panel.
   - Style changes are sent as minimal deltas.
-  - Each frame goes out in a single synchronized write.
+  - Each frame goes out in a single synchronized write; on terminals that report synchronized output, the cursor isn't hidden and shown around it.
+  - Text in any script without combining marks (Cyrillic, Greek, Hebrew, Arabic, CJK…) is written as fast as ASCII, from a generated table; only grapheme clusters are segmented.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
   - Widgets: blocks, paragraphs, virtualized lists, tables and trees, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars and spinners.
@@ -969,22 +970,25 @@ public void Key_in_frame_out()
 | Scenario | Time | Bytes written |
 |---|---:|---:|
 | Frame with no changes | 4.5 µs | 0 |
-| One cell changed | 4.7 µs | 59 |
-| Full repaint, a different truecolor style on every row | 35 µs | 13.3 KB |
+| One cell changed | 4.5 µs | 59 |
+| Full repaint, a different truecolor style on every row | 34 µs | 13.3 KB |
+| The same repaint in Cyrillic (two UTF-8 bytes per glyph) | 49 µs | 23.1 KB |
 | Scroll by one row, every row different | 7.7 µs | 271 |
 | Scroll by one row beside a 50-column panel, terminal without left/right margins | 31 µs | 10.3 KB |
-| The same, terminal with left/right margins (DECLRMM) | 13 µs | 459 |
-| An 80×24 dialog closes over a themed background | 8.6 µs | 313 |
-| Every row gets shorter (text, then blanks to the right edge) | 12 µs | 698 |
+| The same, terminal with left/right margins (DECLRMM) | 13.6 µs | 392 |
+| An 80×24 dialog closes over a themed background | 8.6 µs | 152 |
+| Every row gets shorter (text, then blanks to the right edge) | 12 µs | 293 |
+| A vertical border changes color on every row | 6.1 µs | 648 |
 | First paint of a screen with a rule every third row, terminal without REP | 33 µs | 14.9 KB |
 | The same, terminal with REP | 17 µs | 3.1 KB |
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
-| `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
-| `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 60 / 39 µs | |
+| `SetString`, 60 rows: ASCII / ASCII with explicit colors / Cyrillic / CJK | 6.8 / 3.8 / 14 / 6.7 µs | |
+| `TextArea` over a 100,000-line text, wrapped / unwrapped, with line numbers | 53 / 28 µs | |
+| `Paragraph` of 2,000 lines scrolled to its end: wrapping from the top / with a `ParagraphState` | 356 / 10 µs | |
 | `TreeView` frame, 109,000 rows open in a 1,000,000-node tree, at row 0 / 50,000 / 99,000 | 6.8 / 7.0 / 6.6 µs | |
 | Rebuilding those 109,000 rows after a node opens or closes | 0.47 ms | |
-| Caret down / a keystroke in that text area, then its frame | 61 / 78 µs | |
+| Caret down / a keystroke in that text area, then its frame | 54 / 64 µs | |
 | Parse 9,000 input events (keys, CSI, mouse, UTF-8) | 121 µs | |
 | `Fuzzy.Score`, a 3-char pattern against one command name (10,000 names: 0.28 ms) | 28 ns | |
 
