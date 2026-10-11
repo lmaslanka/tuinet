@@ -270,6 +270,97 @@ public class VtParserTests
     [Fact]
     public void Csi_R_without_a_query_is_f3() => Assert.True(Key("\u001b[1;5R").Is(KeyCode.F3, Modifiers.Ctrl));
 
+    [Fact]
+    public void Cursor_report_is_clamped_to_the_largest_screen()
+    {
+        var parser = new VtParser { ExpectCursorReport = true };
+        parser.Feed("\u001b[1000000;99999999999R"u8);
+        Assert.True(parser.TryTakeCursorReport(out int row, out int column));
+        Assert.Equal((Terminal.MaxHeight - 1, Terminal.MaxWidth - 1), (row, column));
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Theory]
+    [InlineData(0x80)]
+    [InlineData(0x85)]   // NEL
+    [InlineData(0x9B)]   // CSI
+    [InlineData(0x9F)]
+    public void Kitty_c1_code_points_are_not_keys(int codePoint)
+    {
+        var parser = new VtParser();
+        parser.Feed(Encoding.ASCII.GetBytes($"\u001b[{codePoint};5uz"));
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.True(ev.Key.IsChar('z'), $"U+{codePoint:X4} was delivered as a key");
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Kitty_code_point_after_c1_is_a_key() => Assert.Equal(new Rune(0xA0), Key("\u001b[160u").Rune);
+
+    [Fact]
+    public void Utf8_c1_code_points_are_not_keys()
+    {
+        var parser = new VtParser();
+        parser.Feed([0xC2, 0x85, (byte)'a', 0xC2, 0x9B, (byte)'b', 0xC2, 0xA0]);   // NEL, then CSI, then NBSP
+        Assert.True(parser.TryTake(out Event a));
+        Assert.True(a.Key.IsChar('a'));
+        Assert.True(parser.TryTake(out Event b));
+        Assert.True(b.Key.IsChar('b'));
+        Assert.True(parser.TryTake(out Event nbsp));
+        Assert.Equal(new Rune(0xA0), nbsp.Key.Rune);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Alt_prefix_does_not_outlive_a_dropped_c1()
+    {
+        var parser = new VtParser();
+        parser.Feed([0x1B, 0xC2, 0x85, (byte)'a']);
+        Assert.True(parser.TryTake(out Event a));
+        Assert.Equal(KeyEvent.Char('a'), a.Key);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Theory]
+    [InlineData("\u001bP>|kitty(0.3")]            // reply cut mid-payload
+    [InlineData("\u001bP>|kitty(0.36.4)\u001b")]   // reply cut inside ST
+    [InlineData("\u001bP>")]                       // reply cut right after the introducer
+    public void Unterminated_terminal_reply_is_dropped_not_typed(string input)
+    {
+        var parser = new VtParser();
+        parser.Feed(Encoding.UTF8.GetBytes(input));
+        Assert.True(parser.IsIncomplete);
+        parser.FlushIncomplete();
+        Assert.False(parser.IsIncomplete);
+        Assert.False(parser.TryTake(out _));
+        Assert.False(parser.RepeatSequences);
+        parser.Feed("x"u8);
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.Equal(KeyEvent.Char('x'), ev.Key);
+    }
+
+    [Fact]
+    public void Esc_P_alone_flushes_as_alt_shift_p()
+    {
+        var parser = new VtParser();
+        parser.Feed("\u001bP"u8);
+        parser.FlushIncomplete();
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.Equal(KeyEvent.Char('P', Modifiers.Alt), ev.Key);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Esc_P_followed_by_a_key_is_alt_shift_p_and_the_key()
+    {
+        var parser = new VtParser();
+        parser.Feed("\u001bPx"u8);
+        Assert.True(parser.TryTake(out Event p));
+        Assert.Equal(KeyEvent.Char('P', Modifiers.Alt), p.Key);
+        Assert.True(parser.TryTake(out Event x));
+        Assert.Equal(KeyEvent.Char('x'), x.Key);
+    }
+
     private static KeyEvent Key(string input) => Key(Encoding.UTF8.GetBytes(input));
 
     private static KeyEvent Key(byte[] input)

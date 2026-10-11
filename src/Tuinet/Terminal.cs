@@ -638,6 +638,10 @@ public sealed partial class Terminal : IDisposable
             }
         }
 
+        // The reply is the terminal's to make up: keep it on the screen, so the band is never placed (and the
+        // screen never scrolled) by more than the screen's height.
+        row = Math.Min(row, _screen.Height - 1);
+        column = Math.Min(column, _screen.Width - 1);
         return true;
     }
 

@@ -47,6 +47,21 @@ public class InlineTests
     }
 
     [Fact]
+    public void A_cursor_report_beyond_the_screen_is_treated_as_its_last_row()
+    {
+        // A hostile or confused terminal reports row 1,000,000: the band is placed as for the last row (two line
+        // feeds), not after a million newlines that would scroll the scrollback away.
+        var tty = new TestTty(20, 10);
+        using var terminal = Start(tty, height: 3, row: 999_999);
+        Assert.EndsWith("\u001b[0m\u001b[10H\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
+        Assert.True(tty.Written.Length < 200);
+
+        var wide = new TestTty(20, 10);
+        using var second = Start(wide, height: 3, row: 999_999, column: 999_999);   // text on that row: next row
+        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", wide.WrittenText);
+    }
+
+    [Fact]
     public void Without_a_cursor_report_the_band_goes_at_the_bottom()
     {
         var tty = new TestTty(20, 10);

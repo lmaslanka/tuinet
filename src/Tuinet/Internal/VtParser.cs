@@ -155,9 +155,13 @@ internal sealed class VtParser
                 _alt = true;
                 Key(KeyCode.Char, 'O');
                 break;
-            case State.Dcs or State.DcsEsc:
-                NotDcs();
+            case State.Dcs or State.DcsEsc when _dcsLen == 0:
+                NotDcs();   // ESC P and then nothing: Alt+Shift+P
                 return;
+            case State.Dcs or State.DcsEsc:
+                // A reply (ESC P >) that never reached ST, e.g. an XTVERSION reply split by a slow link: drop it.
+                // Re-typing its payload as keys would put the terminal's name into whatever has focus.
+                break;
             case State.Paste:
                 // The end marker never came (a dropped connection, a terminal that lost it): what did arrive is
                 // the paste. Delivered as paste text, never as keys, so it can't type anything.
@@ -357,9 +361,11 @@ internal sealed class VtParser
             case (byte)'P': Key(KeyCode.F1, 0, mods, kind); return;
             case (byte)'Q': Key(KeyCode.F2, 0, mods, kind); return;
             case (byte)'R' when ExpectCursorReport && count == 2:
+                // The terminal's answer is clamped to the largest screen there can be; Terminal clamps it to the
+                // actual screen. A row of 10^6 would otherwise scroll the screen that many lines to place the band.
                 ExpectCursorReport = false;
-                _reportRow = Math.Max(0, p[0] - 1);
-                _reportColumn = Math.Max(0, p[1] - 1);
+                _reportRow = Math.Clamp(p[0] - 1, 0, Terminal.MaxHeight - 1);
+                _reportColumn = Math.Clamp(p[1] - 1, 0, Terminal.MaxWidth - 1);
                 return;
             case (byte)'R': Key(KeyCode.F3, 0, mods, kind); return;
             case (byte)'S': Key(KeyCode.F4, 0, mods, kind); return;
@@ -415,7 +421,9 @@ internal sealed class VtParser
             return;
         }
 
-        if (Rune.IsValid(codePoint) && codePoint >= 0x20)
+        // No key is a control character: C0 and DEL were handled above, and C1 (U+0080–U+009F) is dropped like a
+        // C0 byte with no key, so an app that appends KeyEvent.Rune to its own text never collects one.
+        if (Rune.IsValid(codePoint) && codePoint >= 0x20 && codePoint is not (>= 0x7F and <= 0x9F))
         {
             Key(KeyCode.Char, codePoint, mods, kind);
         }
@@ -543,7 +551,8 @@ internal sealed class VtParser
     }
 
     /// <summary>
-    /// <c>ESC P</c> didn't start a reply (or one never ended): it was Alt+Shift+P, and what came after it was typed.
+    /// <c>ESC P</c> didn't start a reply: it was Alt+Shift+P, and what came after it was typed. (A reply that never
+    /// ended is dropped by <see cref="FlushIncomplete"/> instead.)
     /// </summary>
     private void NotDcs()
     {
@@ -605,12 +614,14 @@ internal sealed class VtParser
         }
 
         _state = State.Ground;
-        if (Rune.DecodeFromUtf8(_utf8.AsSpan(0, _utf8Len), out Rune rune, out _) == System.Buffers.OperationStatus.Done)
+        if (Rune.DecodeFromUtf8(_utf8.AsSpan(0, _utf8Len), out Rune rune, out _) == System.Buffers.OperationStatus.Done
+            && rune.Value is not (>= 0x80 and <= 0x9F))
         {
             Key(KeyCode.Char, rune.Value);
         }
         else
         {
+            // Invalid UTF-8, or a C1 control (C2 80–C2 9F): no key, as for a C0 byte with no key.
             _alt = false;
         }
     }
