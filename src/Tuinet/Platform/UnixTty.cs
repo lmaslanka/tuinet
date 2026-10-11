@@ -151,10 +151,23 @@ internal sealed class UnixTty : ITty
         fds[0] = new PollFd { Fd = _inFd, Events = LibC.PollIn };
         fds[1] = new PollFd { Fd = _wakeRead, Events = LibC.PollIn };
         int ready = LibC.poll(ref fds[0], 2, timeoutMs);
-        if (ready <= 0)
+        if (ready == 0)
         {
-            // Timeout, or EINTR (e.g. SIGWINCH): either way the caller re-checks size and messages.
-            return 0;
+            return 0;   // timeout
+        }
+
+        if (ready < 0)
+        {
+            // EINTR (a signal, e.g. SIGWINCH or SIGTSTP) is reported as "nothing yet" so the caller re-checks size and
+            // signals at once. Any other failure (EBADF once the tty is closed under us, ENOMEM) is permanent: with
+            // an infinite timeout a silent 0 would spin the loop on a core forever, so throw as Write does.
+            int pollErrno = Marshal.GetLastPInvokeError();
+            if (pollErrno == LibC.EINTR || LibC.IsEAgain(pollErrno))
+            {
+                return 0;
+            }
+
+            throw new IOException($"poll on terminal failed (errno {pollErrno})");
         }
 
         if ((fds[1].Revents & LibC.PollIn) != 0)
