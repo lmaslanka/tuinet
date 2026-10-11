@@ -144,6 +144,7 @@ public readonly ref struct Tabs : IStatefulWidget<TabsState>
 
         bool overflow = Width > row.Width;
         Rect strip = Strip(row, overflow);
+        int divider = DividerWidth;
         int offset = state.Offset;
         if (state.NeedsFollow(row) && state.Selected >= 0)
         {
@@ -152,10 +153,17 @@ public readonly ref struct Tabs : IStatefulWidget<TabsState>
                 offset = state.Selected;
             }
 
-            while (offset < state.Selected && !Fits(offset, state.Selected, strip.Width))
+            // The smallest offset, not before the current one, from which the tabs up to the selected one fit
+            // whole: walk left from the selected tab while they still do (one pass, not a measure per candidate).
+            int first = state.Selected;
+            int used = TabWidth(first);
+            while (first > offset && used + divider + TabWidth(first - 1) <= strip.Width)
             {
-                offset++;
+                first--;
+                used += divider + TabWidth(first);
             }
+
+            offset = first;
         }
 
         int maxOffset = MaxOffset(strip.Width);
@@ -163,7 +171,6 @@ public readonly ref struct Tabs : IStatefulWidget<TabsState>
         state.Rendered(row, offset);
 
         int x = strip.X;
-        int divider = DividerWidth;
         int padding = Math.Max(0, Padding);
         for (int i = offset; i < count && x < strip.Right; i++)
         {
@@ -277,18 +284,6 @@ public readonly ref struct Tabs : IStatefulWidget<TabsState>
     /// <summary>Where the titles go: the whole row, or between the arrow cells when they overflow.</summary>
     private static Rect Strip(Rect row, bool overflow) =>
         overflow ? new Rect(row.X + 1, row.Y, row.Width - 2, row.Height) : row;
-
-    /// <summary>Tabs <paramref name="first"/>…<paramref name="last"/> fit whole in <paramref name="width"/> columns.</summary>
-    private bool Fits(int first, int last, int width)
-    {
-        int used = -DividerWidth;
-        for (int i = first; i <= last; i++)
-        {
-            used += DividerWidth + TabWidth(i);
-        }
-
-        return used <= width;
-    }
 
     /// <summary>The smallest offset from which every remaining tab fits whole (no point scrolling further).</summary>
     private int MaxOffset(int width)

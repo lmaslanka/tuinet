@@ -66,6 +66,50 @@ public class TabsTests
     }
 
     [Fact]
+    public void Following_the_selection_scrolls_the_least_that_shows_it_whole()
+    {
+        // 120 tabs of varying widths in a 40-column bar: for every selection, the selected tab is fully visible and
+        // one tab less of scrolling would not have shown it (or the offset didn't need to move at all).
+        string[] titles = [.. Enumerable.Range(0, 120).Select(i => new string((char)('a' + i % 26), 1 + i * 7 % 9))];
+        var bar = new Tabs(titles);
+        var buffer = new CellBuffer(40, 1);
+        var state = new TabsState();
+        for (int selected = 0; selected < titles.Length; selected++)
+        {
+            int before = state.Offset;
+            state.Selected = selected;
+            buffer.Render(bar, buffer.Area, ref state);
+            int offset = state.Offset;
+            Assert.InRange(offset, 0, selected);
+            int width = TabsWidth(bar, titles, offset, selected);
+            Assert.True(width <= 38 || offset == selected, $"tab {selected}: offset {offset} shows {width} columns");
+            if (offset > before && offset < selected)
+            {
+                Assert.True(TabsWidth(bar, titles, offset - 1, selected) > 38, $"tab {selected}: offset {offset - 1} would do");
+            }
+        }
+
+        for (int selected = titles.Length - 1; selected >= 0; selected--)
+        {
+            state.Selected = selected;
+            buffer.Render(bar, buffer.Area, ref state);
+            Assert.True(state.Offset <= selected);
+        }
+    }
+
+    /// <summary>Columns tabs <paramref name="first"/>..<paramref name="last"/> take with their dividers.</summary>
+    private static int TabsWidth(Tabs bar, string[] titles, int first, int last)
+    {
+        int width = -TextWidth.Of(bar.Divider);
+        for (int i = first; i <= last; i++)
+        {
+            width += TextWidth.Of(bar.Divider) + 2 * bar.Padding + TextWidth.Of(titles[i]);
+        }
+
+        return width;
+    }
+
+    [Fact]
     public void Offset_only_follows_the_selection_when_it_changes()
     {
         var buffer = new CellBuffer(12, 1);

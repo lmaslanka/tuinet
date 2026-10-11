@@ -47,6 +47,7 @@ internal sealed class Renderer
     private VtBuffer _out = null!;
     private Cell[] _blank = [];
     private Cell[] _shown = [];   // rows a column shift left on screen: old row outside the band, moved cells inside
+    private int[] _rows = [];     // source and prefix (see Frame) for screens taller than the stackalloc limit
     private bool _started;
     private int _width;
     private int _cx = -1;
@@ -163,8 +164,8 @@ internal sealed class Renderer
 
         // source[y]: the previous row the terminal shows at y (-1: a blank row left by a scroll).
         // prefix[y]: cells row y has in common with that row; the width when clean, -1 when unknown.
-        Span<int> source = height <= 256 ? stackalloc int[height] : new int[height];
-        Span<int> prefix = height <= 256 ? stackalloc int[height] : new int[height];
+        Span<int> source = height <= 256 ? stackalloc int[height] : Rows(height, 0);
+        Span<int> prefix = height <= 256 ? stackalloc int[height] : Rows(height, 1);
         for (int y = 0; y < height; y++)
         {
             source[y] = y;
@@ -311,6 +312,17 @@ internal sealed class Renderer
         }
 
         _started = true;
+    }
+
+    /// <summary>Scratch rows for a tall screen, kept between frames so no frame allocates (a 4K monitor in a small font).</summary>
+    private Span<int> Rows(int height, int which)
+    {
+        if (_rows.Length < 2 * height)
+        {
+            _rows = new int[2 * height];
+        }
+
+        return _rows.AsSpan(which * height, height);
     }
 
     private static int CommonPrefix(ReadOnlySpan<Cell> a, ReadOnlySpan<Cell> b) =>

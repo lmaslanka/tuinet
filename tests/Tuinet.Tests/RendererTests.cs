@@ -357,6 +357,31 @@ public class RendererTests
         return text[8..^8];
     }
 
+    [Fact]
+    public void Frames_of_a_screen_taller_than_the_stack_limit_allocate_nothing_after_the_first()
+    {
+        var renderer = new Renderer(ColorMode.TrueColor);
+        renderer.AfterClear();
+        var output = new VtBuffer(1 << 16);
+        var prev = new CellBuffer(80, 300);
+        var cur = new CellBuffer(80, 300);
+        for (int y = 0; y < 300; y += 7)
+        {
+            cur.SetString(0, y, "a row");
+        }
+
+        renderer.Render(cur, prev, output);
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 20; i++)
+        {
+            output.Clear();
+            renderer.Render(i % 2 == 0 ? prev : cur, i % 2 == 0 ? cur : prev, output);
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Assert.Contains("a row", Encoding.UTF8.GetString(output.Written));
+    }
+
     /// <summary>A 4-wide buffer with one line of text per row.</summary>
     private static CellBuffer Lines(params string[] rows)
     {

@@ -1,4 +1,6 @@
+using System.Buffers;
 using System.Collections.Concurrent;
+using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Tuinet;
@@ -26,6 +28,10 @@ internal static class Links
 
     private static Entry[] _entries = new Entry[16];
 
+    /// <summary>Chars a URL is sent as they are: printable ASCII other than space (everything else is percent-encoded).</summary>
+    private static readonly SearchValues<char> Plain =
+        SearchValues.Create("!\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
+
     /// <summary>
     /// Id of <paramref name="url"/> (interning it on first use), or 0 when it is empty, too long, holds control
     /// characters (which could smuggle escape sequences to the terminal) or the store is full.
@@ -37,6 +43,18 @@ internal static class Links
             return 0;
         }
 
+        // Most URLs need no encoding: look them up as they are, without the 4 KB encode buffer on the stack.
+        if (url.ContainsAnyExcept(Plain))
+        {
+            return InternEncoded(url);
+        }
+
+        return IdsBySpan.TryGetValue(url, out int id) ? id : Add(url);
+    }
+
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private static int InternEncoded(ReadOnlySpan<char> url)
+    {
         Span<char> encoded = stackalloc char[MaxLength];
         if (!Encode(url, encoded, out int length))
         {
@@ -44,11 +62,13 @@ internal static class Links
         }
 
         ReadOnlySpan<char> key = encoded[..length];
-        if (IdsBySpan.TryGetValue(key, out int id))
-        {
-            return id;
-        }
+        return IdsBySpan.TryGetValue(key, out int id) ? id : Add(key);
+    }
 
+    /// <summary>Intern <paramref name="key"/>, already encoded, under the lock.</summary>
+    private static int Add(ReadOnlySpan<char> key)
+    {
+        int id;
         lock (Gate)
         {
             if (IdsBySpan.TryGetValue(key, out id))
