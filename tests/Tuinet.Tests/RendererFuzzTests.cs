@@ -8,7 +8,8 @@ namespace Tuinet.Tests;
 /// Property test for the renderer: random frames are presented through a real <see cref="Terminal"/>,
 /// the emitted bytes are replayed by a minimal VT emulator, and the reconstructed screen must equal
 /// the frame cell for cell (glyph, colors, attributes, hyperlink) and cursor (position and shape). Catches any
-/// bad diff, cursor move, wide-glyph, SGR-delta or OSC 8 decision.
+/// bad diff, cursor move, wide-glyph, SGR-delta or OSC 8 decision. With repeat, the terminal names itself as one
+/// with REP, the emulator implements it strictly, and the frames get runs of one glyph (rules, bars, blanks).
 /// </summary>
 public class RendererFuzzTests
 {
@@ -23,6 +24,11 @@ public class RendererFuzzTests
         new(Color.Rgb(10, 20, 30), Color.Rgb(200, 210, 220), Attr.Reverse | Attr.Strike),
     ];
 
+    /// <summary>Glyphs for runs: box drawing, a block, ASCII, 2-byte UTF-8, a blank; and some never repeated.</summary>
+    private static readonly string[] RunGlyphs = ["─", "━", "█", "=", "é", " ", "世", "e\u0301", "👍"];
+
+    private const string Kitty = "\u001bP>|kitty(0.36.4)\u001b\\";
+
     private static readonly string[] Urls = ["https://a.example/1", "https://b.example/2", "file:///tmp/x y"];
 
     private static readonly string[] Words =
@@ -34,26 +40,34 @@ public class RendererFuzzTests
     ];
 
     [Theory]
-    [InlineData(1, true, false)]
-    [InlineData(2, true, false)]
-    [InlineData(3, true, false)]
-    [InlineData(4, true, false)]
-    [InlineData(5, true, false)]
-    [InlineData(6, true, false)]
-    [InlineData(7, true, false)]
-    [InlineData(8, true, false)]
-    [InlineData(1, false, false)]
-    [InlineData(2, false, false)]
-    [InlineData(1, true, true)]
-    [InlineData(2, true, true)]
-    [InlineData(3, true, true)]
-    [InlineData(4, true, true)]
-    public void Screen_matches_every_frame(int seed, bool scrollRegions, bool legacyTerminal)
+    [InlineData(1, true, false, false)]
+    [InlineData(2, true, false, false)]
+    [InlineData(3, true, false, false)]
+    [InlineData(4, true, false, false)]
+    [InlineData(5, true, false, false)]
+    [InlineData(6, true, false, false)]
+    [InlineData(7, true, false, false)]
+    [InlineData(8, true, false, false)]
+    [InlineData(1, false, false, false)]
+    [InlineData(2, false, false, false)]
+    [InlineData(1, true, true, false)]
+    [InlineData(2, true, true, false)]
+    [InlineData(3, true, true, false)]
+    [InlineData(4, true, true, false)]
+    [InlineData(31, true, false, true)]
+    [InlineData(32, true, false, true)]
+    [InlineData(33, true, false, true)]
+    [InlineData(34, true, false, true)]
+    [InlineData(35, false, false, true)]
+    [InlineData(36, true, true, true)]
+    [InlineData(37, true, true, true)]
+    public void Screen_matches_every_frame(int seed, bool scrollRegions, bool legacyTerminal, bool repeat)
     {
         var random = new Random(seed);
         var tty = new TestTty(23, 7);
         using var terminal = new Terminal(tty, new TerminalOptions { ScrollRegions = scrollRegions });
-        var screen = new VtEmulator(23, 7, legacyTerminal);
+        var screen = new VtEmulator(23, 7, legacyTerminal, repeat: repeat);
+        Detect(terminal, tty, repeat);
         screen.Feed(tty.Written);
         var model = new CellBuffer(23, 7);
 
@@ -70,6 +84,14 @@ public class RendererFuzzTests
             for (int i = 0; i < edits; i++)
             {
                 Mutate(model, random);
+            }
+
+            if (repeat)
+            {
+                for (int i = random.Next(3); i > 0; i--)
+                {
+                    DrawRun(model, random);
+                }
             }
 
             if (random.Next(4) == 0)
@@ -92,6 +114,7 @@ public class RendererFuzzTests
         // The band shifts above must have gone through the scroll path (and never without it).
         Assert.True(scrollRegions ? screen.LineMoves > 0 : screen.LineMoves == 0, $"{screen.LineMoves} IL/DL");
         Assert.True(screen.LinkOpens > 50 && screen.ShapeChanges > 20, $"{screen.LinkOpens} links, {screen.ShapeChanges} shapes");
+        Assert.True(repeat ? screen.Repeats > 50 : screen.Repeats == 0, $"{screen.Repeats} REP");
     }
 
     [Theory]
@@ -138,19 +161,25 @@ public class RendererFuzzTests
     }
 
     [Theory]
-    [InlineData(21, true, false)]
-    [InlineData(22, true, false)]
-    [InlineData(23, true, false)]
-    [InlineData(24, true, false)]
-    [InlineData(25, true, true)]
-    [InlineData(26, true, true)]
-    [InlineData(21, false, false)]
-    public void Screen_matches_while_dialogs_close_and_rows_shorten(int seed, bool eraseSequences, bool legacyTerminal)
+    [InlineData(21, true, false, false)]
+    [InlineData(22, true, false, false)]
+    [InlineData(23, true, false, false)]
+    [InlineData(24, true, false, false)]
+    [InlineData(25, true, true, false)]
+    [InlineData(26, true, true, false)]
+    [InlineData(21, false, false, false)]
+    [InlineData(41, true, false, true)]
+    [InlineData(42, true, false, true)]
+    [InlineData(43, true, false, true)]
+    [InlineData(44, true, true, true)]
+    [InlineData(45, false, false, true)]
+    public void Screen_matches_while_dialogs_close_and_rows_shorten(int seed, bool eraseSequences, bool legacyTerminal, bool repeat)
     {
         var random = new Random(seed);
         var tty = new TestTty(40, 12);
         using var terminal = new Terminal(tty, new TerminalOptions { EraseSequences = eraseSequences });
-        var screen = new VtEmulator(40, 12, legacyTerminal);
+        var screen = new VtEmulator(40, 12, legacyTerminal, repeat: repeat);
+        Detect(terminal, tty, repeat);
         screen.Feed(tty.Written);
         var model = new CellBuffer(40, 12);
         for (int frame = 0; frame < 300; frame++)
@@ -177,6 +206,14 @@ public class RendererFuzzTests
                     int x = random.Next(model.Width);
                     model.Fill(new Rect(x, y, model.Width - x, 1), random.Next(2) == 0 ? model[Math.Max(0, x - 1), y].Style : Styles[random.Next(Styles.Length)]);
                     break;
+                case 3 when repeat:
+                    // Borders, rules and bars: runs of one glyph, some to the right edge, over whatever was there.
+                    for (int i = random.Next(1, 4); i > 0; i--)
+                    {
+                        DrawRun(model, random);
+                    }
+
+                    break;
                 default:
                     for (int i = random.Next(1, 6); i > 0; i--)
                     {
@@ -196,6 +233,7 @@ public class RendererFuzzTests
 
         Assert.True(eraseSequences ? screen.LineErases > 50 && screen.ErasedCells > 0 : screen.LineErases == 0,
             $"{screen.LineErases} EL/ECH, {screen.ErasedCells} cells by ECH");
+        Assert.True(repeat ? screen.Repeats > 50 : screen.Repeats == 0, $"{screen.Repeats} REP");
     }
 
     [Fact]
@@ -225,6 +263,33 @@ public class RendererFuzzTests
             screen.Feed(tty.Written);
             screen.AssertMatches(buffer, $"frame {frame}");
         }
+    }
+
+    /// <summary>With <paramref name="repeat"/>, the terminal names itself as one with REP (kitty) before any frame.</summary>
+    private static void Detect(Terminal terminal, TestTty tty, bool repeat)
+    {
+        if (repeat)
+        {
+            tty.Enqueue(Kitty);
+            terminal.Poll(out _, 0);
+        }
+
+        Assert.Equal(repeat, terminal.RepeatSequencesActive);
+    }
+
+    /// <summary>A horizontal run of one glyph in one style (a border, a rule, a bar), sometimes to the right edge.</summary>
+    private static void DrawRun(CellBuffer buffer, Random random)
+    {
+        string glyph = RunGlyphs[random.Next(RunGlyphs.Length)];
+        int x = random.Next(-2, buffer.Width);
+        int length = random.Next(3) == 0 ? buffer.Width - x : random.Next(1, 16);
+        var text = new StringBuilder();
+        for (int i = 0; i < length; i++)
+        {
+            text.Append(glyph);
+        }
+
+        buffer.SetString(x, random.Next(buffer.Height), text.ToString(), Styles[random.Next(Styles.Length)]);
     }
 
     private static void Mutate(CellBuffer buffer, Random random)

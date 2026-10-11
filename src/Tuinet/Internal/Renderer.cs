@@ -11,7 +11,8 @@ namespace Tuinet;
 /// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
 /// (scroll margins + delete/insert line) and only the rows that are really new get painted. On terminals with
 /// left/right margins (DECLRMM) a band narrower than the screen moves too: a list beside a fixed panel.
-/// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
+/// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes. On terminals known
+/// to have REP, a glyph followed by more of the same (a border, a rule, a bar) is drawn once and repeated.
 /// Hyperlinks (OSC 8) open and close around runs of cells with the same link; none stays open between writes.
 /// </summary>
 internal sealed class Renderer
@@ -36,6 +37,12 @@ internal sealed class Renderer
 
     /// <summary>Rows sampled for the median column run (the match count still checks every row).</summary>
     private const int ColumnSamples = 9;
+
+    /// <summary>
+    /// A run of repeatable cells may hold up to this many clean cells in a row (rewritten by REP, which costs at most a
+    /// digit more than jumping over them). Past that the run ends: it bounds the scan for cells that aren't repeated.
+    /// </summary>
+    private const int MaxRepeatGap = 32;
 
     // Frame's source[y] for a row the terminal shows as left by a column shift: the row in _shown.
     private const int ShownRow = -2;
@@ -76,6 +83,12 @@ internal sealed class Renderer
     /// bands narrower than the screen are moved by the terminal too.
     /// </summary>
     public bool LeftRightMargins { get; set; }
+
+    /// <summary>
+    /// The terminal has REP (<c>CSI n b</c>, repeat the character just printed; it said who it is in reply to
+    /// XTVERSION): a glyph followed by more of the same is drawn once, then repeated, when that is fewer bytes.
+    /// </summary>
+    public bool Repeat { get; set; }
 
     /// <summary>
     /// Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
@@ -837,6 +850,13 @@ internal sealed class Renderer
                 forceUntil = Math.Max(forceUntil, x + 1);
             }
 
+            // The same glyph again (a border, a rule, a bar): REP, right after the glyph it repeats (never after a
+            // cluster, which leaves the cursor to be placed again).
+            if (Repeat && advance == 1 && x + 1 < width && cur[x + 1].Equals(cell) && positioned)
+            {
+                advance += EmitRepeat(cur, prev, x, last, ref forceUntil);
+            }
+
             x += advance;
         }
     }
@@ -863,6 +883,7 @@ internal sealed class Renderer
         Style style = cur[x].Style;
         int end = x + 1;
         int changed = x;   // the run's last cell that differs from the screen
+        int uniform = x;   // the run's cells up to here are the same blank as the first
         while (end < width && IsErasable(in cur[end]) && cur[end].Style.Bg.Equals(style.Bg))
         {
             if (end <= forceUntil || (end <= last && !cur[end].Equals(prev[end])))
@@ -870,16 +891,26 @@ internal sealed class Renderer
                 changed = end;
             }
 
+            if (Repeat && uniform == end - 1 && cur[end].Equals(cur[x]))
+            {
+                uniform = end;
+            }
+
             end++;
         }
 
-        // Writing the run as spaces stops at its last changed cell.
+        // Writing the run as spaces stops at its last changed cell; with REP, one space and a repeat of the rest. A
+        // space needs the pen to match its whole style, erasing only its background: count REP only when both need the
+        // same SGR, since an extra one costs more than REP saves (and the next text may need another to undo it).
         int spaces = changed - x + 1;
+        int written = Repeat && uniform >= changed && (PenMatches(in cur[x]) || ErasePenDiffers(style))
+            ? Math.Min(spaces, 1 + RepeatCost(spaces - 1))
+            : spaces;
         bool toEnd = end == width;
         int count = toEnd ? width - x : spaces;
         bool more = !toEnd && (last > changed || forceUntil > changed);
         int cost = toEnd ? 3 : 3 + Digits(count) + (more ? 3 + Digits(count) : 0);
-        if (cost >= spaces)
+        if (cost >= written)
         {
             spacesUntil = changed;
             return x;
@@ -892,7 +923,7 @@ internal sealed class Renderer
 
         EndLink();
         _out.Reserve(80);
-        if (!_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode)))
+        if (ErasePenDiffers(style))
         {
             SetPen(style);
         }
@@ -918,7 +949,68 @@ internal sealed class Renderer
         return x + count;
     }
 
+    /// <summary>Erasing blanks of <paramref name="style"/> needs a new pen: it has another background, or reverse video.</summary>
+    private bool ErasePenDiffers(Style style) =>
+        !_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode));
+
     private static int Digits(int n) => n < 10 ? 1 : n < 100 ? 2 : n < 1000 ? 3 : 4;
+
+    /// <summary>Bytes of <c>CSI n b</c> repeating a glyph <paramref name="count"/> times.</summary>
+    private static int RepeatCost(int count) => 3 + Digits(count);
+
+    /// <summary>
+    /// Cell <paramref name="x"/>, a narrow glyph, was just printed and the next cell is the same: repeat it with REP
+    /// (<c>CSI n b</c>) up to the last cell of the run that must be written, when that is fewer bytes than the glyphs
+    /// (5+ for ASCII, 3+ for 2-byte UTF-8, 2+ for box drawing and blocks). REP repeats the character printed just
+    /// before it, so it must follow the glyph directly: no cursor move, style change or erase in between. Only
+    /// single code points that never join a neighbour (no clusters, no marks, no emoji) and no links are repeated.
+    /// Returns the cells repeated, 0 for none.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private int EmitRepeat(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int x, int last, ref int forceUntil)
+    {
+        ref readonly Cell cell = ref cur[x];
+        Rune rune = cell.RawRune;
+        if (cell.Tail != Cell.PlainNarrow || !Graphemes.Simple(rune.Value))
+        {
+            return 0;
+        }
+
+        // The run: the same cell over and over, ending at the last one that differs from the screen (or must be
+        // repainted). Clean cells inside it are rewritten with the rest, which is cheaper than jumping over them.
+        int limit = Math.Min(cur.Length - 1, Math.Max(last, forceUntil));
+        int end = x;
+        for (int i = x + 1; i <= limit && i - end <= MaxRepeatGap && cur[i].Equals(cell); i++)
+        {
+            if (i <= forceUntil || !cell.Equals(prev[i]))
+            {
+                end = i;
+            }
+        }
+
+        int count = end - x;
+        if (count == 0 || RepeatCost(count) >= count * rune.Utf8SequenceLength)
+        {
+            return 0;
+        }
+
+        _out.Bytes("\u001b["u8);
+        _out.Int(count);
+        _out.Byte((byte)'b');
+        _cx += count;
+        if (_cx >= _width)
+        {
+            _cx = -1;   // last column: the cursor may be in the pending-wrap state
+        }
+
+        // A wide glyph on screen across the run's right edge loses its right half: repaint the cell after the run.
+        if (prev[end].Width == 2)
+        {
+            forceUntil = Math.Max(forceUntil, end + 1);
+        }
+
+        return count;
+    }
 
     /// <summary>
     /// Emit a cell that is a cluster, or that could join the cell drawn just before it into one cluster

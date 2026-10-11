@@ -91,6 +91,15 @@ public sealed record TerminalOptions
     public bool EraseSequences { get; init; } = true;
 
     /// <summary>
+    /// Draw a glyph followed by more of the same (a border, a rule, a bar) once, then repeat it with REP
+    /// (<c>CSI n b</c>), when that is fewer bytes: a 198-cell <c>─</c> rule is 9 bytes instead of 594. Used only on
+    /// terminals that name themselves in reply to XTVERSION (asked at startup) as one known to have it: xterm, kitty,
+    /// foot, WezTerm, Ghostty (see <see cref="Terminal.RepeatSequencesActive"/>); elsewhere nothing changes. Turn off to
+    /// skip the query and never use it.
+    /// </summary>
+    public bool RepeatSequences { get; init; } = true;
+
+    /// <summary>
     /// Handle Ctrl+Z inside <see cref="Terminal.Poll"/> by calling <see cref="Terminal.Suspend"/>, so the app can
     /// be backgrounded like a shell command. Off by default: Ctrl+Z is a normal key. Where suspending isn't
     /// supported (Windows) the key is delivered as usual.
