@@ -149,7 +149,7 @@ public sealed class PopupPage : Page
                 ShadowStyle = Theme.Shadow,
             };
             Span<char> text = stackalloc char[24];
-            text.TryWrite($"clicked {point.X - area.X},{point.Y - area.Y}", out int length);
+            int length = new SpanText(text).Append("clicked ").Append(point.X - area.X).Append(',').Append(point.Y - area.Y).Text.Length;
             Rect box = area.PlaceNear(point, popup.Outer(length, 1));
             buffer.Render(popup, box);
             Rect inner = popup.Inner(box);

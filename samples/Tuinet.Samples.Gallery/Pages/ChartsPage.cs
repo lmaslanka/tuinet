@@ -111,7 +111,7 @@ public sealed class ChartsPage : Page
 
         Span<char> text = stackalloc char[24];
         double last = _samples[(_head + History - 1) % History];
-        text.TryWrite($"last {last:F0}", out int length);
+        int length = new SpanText(text).Append("last ").Append(last, "F0").Text.Length;
         Caption(buffer, parts[0], "LIVE · every 100 ms", Theme.Green, text[..length]);
         Caption(buffer, parts[3], "BY DAY", Theme.Blue, "↑/↓ changes the amber bar");
 

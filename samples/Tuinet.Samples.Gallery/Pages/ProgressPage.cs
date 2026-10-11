@@ -100,7 +100,7 @@ public sealed class ProgressPage : Page
                 FilledStyle = Theme.Accent(Colors[i]),
                 EmptyStyle = Theme.Faded,
             }, bar);
-            text.TryWrite($"{ratio * 100,5:F1}%", out int length);
+            int length = new SpanText(text).Append(ratio * 100, "F1", width: 5).Append('%').Text.Length;
             Caption(buffer, area, y, Tasks[i], Colors[i], text[..length]);
         }
 
@@ -108,7 +108,7 @@ public sealed class ProgressPage : Page
         double load = 0.5 + 0.45 * Math.Sin(elapsed / 900.0);
         if (y + 1 < area.Bottom)
         {
-            text.TryWrite($"{(int)Math.Round(load * 10)} / 10", out int length);
+            int length = new SpanText(text).Append((int)Math.Round(load * 10)).Append(" / 10").Text.Length;
             Caption(buffer, area, y, "load", Theme.Green, text[..length]);
             var meter = new Rect(area.X, y + 1, Math.Min(area.Width, 20), 1);
             buffer.Render(new ProgressBar(load)
@@ -132,7 +132,7 @@ public sealed class ProgressPage : Page
 
         if (y + 2 < area.Bottom)
         {
-            text.TryWrite($"{elapsed / 1000.0:F1} s", out int length);
+            int length = new SpanText(text).Append(elapsed / 1000.0, "F1").Append(" s").Text.Length;
             int end = buffer.SetString(area.X, y + 2, _paused ? "paused · " : "running · ", _paused ? Theme.Accent(Theme.Amber) : Theme.Accent(Theme.Green));
             buffer.SetString(end, y + 2, text[..length], Theme.Dim, area.Right - end);
         }

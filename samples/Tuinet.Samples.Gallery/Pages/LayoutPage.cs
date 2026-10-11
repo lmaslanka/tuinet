@@ -55,7 +55,7 @@ public sealed class LayoutPage() : Page("Layout", "Layout · Constraint", Snippe
     public override void Render(CellBuffer buffer, Rect area, long nowMs)
     {
         Span<char> percent = stackalloc char[16];
-        percent.TryWrite($"Percent({_percent})", out int length);
+        int length = new SpanText(percent).Append("Percent(").Append(_percent).Append(')').Text.Length;
         percent = percent[..length];
 
         Span<Rect> rows = stackalloc Rect[3];
