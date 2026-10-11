@@ -4,9 +4,10 @@ namespace Tuinet.Samples.Showcase;
 
 /// <summary>
 /// Main screen: a tabbed panel (the 20-item list, stats, the items as a tree of groups) with a details panel, plus the
-/// edit and progress dialogs, a context menu on the rows and a command palette over every action.
+/// edit and progress dialogs, a context menu on the rows and a command palette over every action. An <see cref="IApp"/>,
+/// so tests drive it with Tuinet.Testing's <c>TestTerminal</c>; Program.cs wraps it to reach the terminal.
 /// </summary>
-public sealed class ShowcaseApp
+public sealed class ShowcaseApp : IApp
 {
     private readonly Item[] _items = Item.Samples();
     private ListState _list;
@@ -138,6 +139,8 @@ public sealed class ShowcaseApp
 
     /// <summary>When the message hides: the loop wakes then with a tick, even when idle.</summary>
     public long NextDueMs => _flashAlarm.DueMs;
+
+    long IApp.NextDueMs(long nowMs) => NextDueMs;
 
     /// <summary>Returns false when the app should exit.</summary>
     public bool Handle(Event ev, long nowMs)
