@@ -113,14 +113,14 @@ public readonly struct ItemTree(Item[] items) : ITreeSource
                 : Theme.Accent(Theme.PriorityColor(priority));
             x = buffer.SetString(x, area.Y, kindGroup ? Item.Kinds[kind] : Item.Priorities[priority], style, right - x);
             Span<char> count = stackalloc char[8];
-            count.TryWrite($" ({Count(kind, priority)})", out int length);
+            int length = new SpanText(count).Append(" (").Append(Count(kind, priority)).Append(')').Text.Length;
             buffer.SetString(x, area.Y, count[..length], Theme.Faded, right - x);
             return;
         }
 
         Item item = Find(node);
         Span<char> number = stackalloc char[4];
-        number.TryWrite($"{item.Number:D2} ", out int digits);
+        int digits = new SpanText(number).Append(item.Number, "D2").Append(' ').Text.Length;
         x = buffer.SetString(x, area.Y, number[..digits], Theme.Faded, right - x);
         int ownerX = right - item.Owner.Length;
         int nameEnd = buffer.SetString(x, area.Y, item.Name, item.Enabled ? Theme.Body : Theme.Dim, right - x, Overflow.Ellipsis);

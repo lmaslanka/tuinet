@@ -11,6 +11,9 @@
     <Project Path="bench/Tuinet.Benchmarks/Tuinet.Benchmarks.csproj" />
     <Project Path="bench/Tuinet.Comparisons/Tuinet.Comparisons.csproj" />
   </Folder>
+  <Folder Name="/tools/">
+    <Project Path="tools/screenshots/Screenshots.csproj" />
+  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tuinet.Tests/Tuinet.Tests.csproj" />
     <Project Path="tests/Tuinet.Samples.Showcase.Tests/Tuinet.Samples.Showcase.Tests.csproj" />
