@@ -87,6 +87,12 @@ internal sealed class VtParser
     public bool LeftRightMargins { get; private set; }
 
     /// <summary>
+    /// The terminal reported synchronized output (mode 2026) as one it knows: <c>CSI ? 2026 ; Ps $ y</c> with Ps 1-3,
+    /// the reply to <c>CSI ? 2026 $ p</c>. False before any reply, and after a reply of 0 (unknown) or 4.
+    /// </summary>
+    public bool SynchronizedOutput { get; private set; }
+
+    /// <summary>
     /// The terminal named itself as one known to have REP (repeat the last character, <c>CSI n b</c>): an XTVERSION
     /// reply <c>DCS &gt; | name(version) ST</c> to <c>CSI &gt; 0 q</c>, with a name on the allow-list. False before
     /// any reply, for any other name, and on terminals that don't answer.
@@ -320,6 +326,10 @@ internal sealed class VtParser
             if (count >= 2 && p[0] == 69)
             {
                 LeftRightMargins = p[1] is >= 1 and <= 3;
+            }
+            else if (count >= 2 && p[0] == 2026)
+            {
+                SynchronizedOutput = p[1] is >= 1 and <= 3;
             }
 
             return;

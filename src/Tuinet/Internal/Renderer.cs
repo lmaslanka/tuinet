@@ -85,6 +85,13 @@ internal sealed class Renderer
     public bool Repeat { get; set; }
 
     /// <summary>
+    /// The terminal has synchronized output (DEC 2026; it said so in reply to DECRQM): a frame is displayed only once
+    /// its update ends, so a visible cursor stays shown while the frame paints instead of being hidden and shown again
+    /// (12 bytes on every keystroke frame of a focused input).
+    /// </summary>
+    public bool SynchronizedOutput { get; set; }
+
+    /// <summary>
     /// Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
     /// All cursor addressing and scroll margins are offset by it.
     /// </summary>
@@ -296,8 +303,9 @@ internal sealed class Renderer
 
         _out.Reserve(32);
         _out.Bytes(SyncStart);
-        if (_cursorShown)
+        if (_cursorShown && !SynchronizedOutput)
         {
+            // Without synchronized output the terminal may paint mid-frame: keep the cursor from flickering across it.
             _out.Bytes(HideCursor);
             _cursorShown = false;
         }

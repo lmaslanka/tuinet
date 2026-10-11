@@ -139,6 +139,68 @@ public class TerminalTests
     }
 
     [Fact]
+    public void A_keystroke_frame_in_a_focused_input_hides_and_shows_the_cursor_without_synchronized_output()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        CellBuffer frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "ab");
+        frame.SetCursor(2, 0);
+        terminal.Present();
+        tty.ClearWritten();
+
+        frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "abc");
+        frame.SetCursor(3, 0);
+        terminal.Present();
+        Assert.Equal("\u001b[?2026h\u001b[?25lc\u001b[?25h\u001b[?2026l", tty.WrittenText);
+    }
+
+    [Theory]
+    [InlineData("\u001b[?2026;1$y", true)]
+    [InlineData("\u001b[?2026;2$y", true)]
+    [InlineData("\u001b[?2026;0$y", false)]   // not recognized
+    [InlineData("\u001b[?2026;4$y", false)]   // permanently reset
+    public void With_synchronized_output_the_cursor_stays_shown_while_a_frame_paints(string reply, bool supported)
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        Assert.Contains("\u001b[?2026$p", tty.WrittenText);
+        tty.Enqueue(reply);
+        Assert.False(terminal.Poll(out _, 0));
+        Assert.Equal(supported, terminal.SynchronizedOutputActive);
+
+        CellBuffer frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "ab");
+        frame.SetCursor(2, 0);
+        terminal.Present();
+        tty.ClearWritten();
+
+        // Typing a character: the frame is inside a synchronized update, so the cursor needn't be hidden across it.
+        frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "abc");
+        frame.SetCursor(3, 0);
+        terminal.Present();
+        Assert.Equal(supported ? "\u001b[?2026hc\u001b[?2026l" : "\u001b[?2026h\u001b[?25lc\u001b[?25h\u001b[?2026l", tty.WrittenText);
+
+        // A change elsewhere: move there, paint, move back. The cursor is hidden only when the frame hides it.
+        tty.ClearWritten();
+        frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "abc");
+        frame.SetRune(5, 5, new Rune('x'));
+        frame.SetCursor(3, 0);
+        terminal.Present();
+        Assert.Equal(supported ? "\u001b[?2026h\u001b[6;6Hx\u001b[1;4H\u001b[?2026l" : "\u001b[?2026h\u001b[?25l\u001b[6;6Hx\u001b[1;4H\u001b[?25h\u001b[?2026l", tty.WrittenText);
+
+        tty.ClearWritten();
+        frame = terminal.BeginFrame();
+        frame.SetString(0, 0, "abc");
+        frame.SetRune(5, 5, new Rune('x'));
+        terminal.Present();
+        Assert.Equal("\u001b[?25l", tty.WrittenText);
+    }
+
+    [Fact]
     public void Poll_reads_j_as_char_j()
     {
         var tty = new TestTty();

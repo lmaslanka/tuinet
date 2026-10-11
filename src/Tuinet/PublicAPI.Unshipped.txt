@@ -419,6 +419,7 @@ Tuinet.Terminal.Post(object! message) -> void
 Tuinet.Terminal.Present() -> void
 Tuinet.Terminal.PrintAbove(Tuinet.StyledText text) -> void
 Tuinet.Terminal.RepeatSequencesActive.get -> bool
+Tuinet.Terminal.SynchronizedOutputActive.get -> bool
 Tuinet.Terminal.SetTitle(System.ReadOnlySpan<char> title) -> void
 Tuinet.Terminal.Size.get -> Tuinet.Size
 Tuinet.Terminal.Suspend() -> bool

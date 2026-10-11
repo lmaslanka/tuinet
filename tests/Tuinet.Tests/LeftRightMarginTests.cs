@@ -36,7 +36,7 @@ public class LeftRightMarginTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty);
-        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
+        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[?2026$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class LeftRightMarginTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty, new TerminalOptions { ScrollRegions = false });
-        Assert.DoesNotContain("$p", tty.WrittenText);
+        Assert.DoesNotContain("?69$p", tty.WrittenText);
         tty.Enqueue(Supported);
         terminal.Poll(out _, 0);
         Assert.False(terminal.LeftRightMarginsActive);
@@ -177,7 +177,7 @@ public class LeftRightMarginTests
         var tty = new TestTty(20, 10);
         tty.Enqueue("\u001b[5;1R");
         using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(3) });
-        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
+        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p{Esc}[?2026$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
     }
 
     [Fact]
