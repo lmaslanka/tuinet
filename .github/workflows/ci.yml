@@ -63,8 +63,8 @@ jobs:
           path: TestResults/*.trx
           if-no-files-found: ignore
 
-  # Packs the library the way release.yml does and inspects the result, so packaging breaks show up in
-  # review rather than at release time.
+  # Packs the library and Tuinet.Testing the way release.yml does and inspects the result, so packaging breaks
+  # show up in review rather than at release time.
   pack:
     name: Pack check
     runs-on: ubuntu-latest
@@ -85,7 +85,9 @@ jobs:
           restore-keys: nuget-${{ runner.os }}-
 
       - name: Pack
-        run: dotnet pack src/Tuinet -c Release -p:VersionSuffix=ci.${{ github.run_number }} -o artifacts/packages
+        run: |
+          dotnet pack src/Tuinet -c Release -p:VersionSuffix=ci.${{ github.run_number }} -o artifacts/packages
+          dotnet pack src/Tuinet.Testing -c Release -p:VersionSuffix=ci.${{ github.run_number }} -o artifacts/packages
 
       - name: Verify package
         run: tools/pack/verify.sh artifacts/packages

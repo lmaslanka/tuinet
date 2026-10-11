@@ -107,6 +107,16 @@ The first release.
   every action, filtered as you type with the matches highlighted.
 - `CellBuffer.SetStyle` and `SetLink` no longer throw for an area entirely to the right of the buffer.
 - `TestTty` for driving a `Terminal` in tests.
+- `Tuinet.Testing`, a test-helper package for apps (any test framework; failures throw `ScreenAssertionException`):
+  `TestTerminal` runs an `IApp` over a real `Terminal` on a `TestTty` with a test clock (`Press("jj")`, `Key`,
+  `Click(x, y)` or `Click("Save")`, `Wheel`, `Mouse`, `Paste`, `Resize`, `Post`, raw `Input`, `Advance`), a frame
+  after each input and `Screen` as a stable copy. `buffer.ToStyledString()` writes a frame as markup
+  (`[fg=#F5A623 b]ITEMS[/]`) that `Snapshot.Parse` reads back; `ToAnsi()` prints it in color.
+  `Snapshot.Verify(buffer, name)` compares with `__snapshots__/name.txt` next to the test, writes
+  `name.received.txt` on a mismatch, and `TUINET_ACCEPT_SNAPSHOTS=1` accepts. `FindText`, `StyleAt`, `StyleOf` and
+  `Allocations.AssertNone` (the steady-state zero-allocation check). The sample tests use it, with styled snapshots
+  of the Showcase screens and every Gallery page.
+- `CellBuffer.CopyTo`: an exact copy of the cells, links and cursor, allocating only when the destination grows.
 - Native AOT and trimming compatible.
 
 [Unreleased]: https://github.com/lmaslanka/tuinet/commits/main
