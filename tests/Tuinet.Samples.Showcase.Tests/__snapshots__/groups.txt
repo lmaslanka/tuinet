@@ -1,0 +1,33 @@
+
+  TUINET SHOWCASE
+  immediate mode → zero allocations per frame → one write per frame                                 github ↗
+
+  ╭─ List ─ Stats ─ Groups ────────────────────────── ITEMS · 20 ─╮   SELECTED · 04
+  │                                                               │   verify & return diff
+  │  [-] feature (4)                                            █ │   graders read the diff and exit codes,
+  │   ├─ [+] critical (1)                                       █ │   never the prose
+  │   ├─ [+] high (1)                                           █ │
+  │   ├─ [+] medium (1)                                         █ │   1 · OWNER
+  │   └─ [+] low (1)                                            █ │   ken
+  │  [-] bugfix (4)                                             █ │
+  │   ├─ [+] critical (1)                                       █ │   2 · KIND
+  │   ├─ [+] high (1)                                           █ │   docs
+  │   ├─ [+] medium (1)                                         █ │
+  │   └─ [+] low (1)                                            █ │   3 · PRIORITY
+  │  [-] chore (4)                                              █ │   medium
+  │   ├─ [+] critical (1)                                       █ │
+  │   ├─ [+] high (1)                                           █ │   4 · FLAGS
+  │   ├─ [+] medium (1)                                         █ │   ■ enabled  ■ notify
+  │   └─ [+] low (1)                                            █ │
+  │  [-] docs (4)                                               █ │
+  │   ├─ [+] critical (1)                                       █ │
+  │   ├─ [+] high (1)                                           █ │
+  │   ├─ [-] medium (1)                                         █ │
+  │ ▌ │   └─ 04 verify & return diff                         ken█ │
+  │   └─ [+] low (1)                                            █ │
+  │  [-] spike (4)                                              █ │
+  │   ├─ [+] critical (1)                                       ▇ │
+  │   ├─ [+] high (1)                                           │ │
+  │                                                               │
+  ╰───────────────────────────────────────────────────────────────╯
+  j/k move  ·  ←/→ fold  ·  enter edit  ·  space toggle  ·  [ ] tabs  ·  ctrl+p commands  ·  q quit

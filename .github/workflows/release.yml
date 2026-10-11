@@ -76,10 +76,12 @@ jobs:
         run: dotnet test tuinet.slnx -c Release --no-build
 
       - name: Pack
-        run: >
-          dotnet pack src/Tuinet -c Release --no-build
-          -p:Version=${{ steps.version.outputs.version }}
-          -o artifacts/packages
+        run: |
+          for project in src/Tuinet src/Tuinet.Testing; do
+            dotnet pack "$project" -c Release --no-build \
+              -p:Version=${{ steps.version.outputs.version }} \
+              -o artifacts/packages
+          done
 
       - name: Verify package
         run: tools/pack/verify.sh artifacts/packages

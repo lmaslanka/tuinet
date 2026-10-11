@@ -15,7 +15,8 @@ project re-implements key injection and rendering helpers (see the Showcase test
 - Assertions: `buffer.FindText("Save")` → position; `buffer.StyleAt(x, y)`.
 
 ## Files
-`src/Tuinet/Testing/*.cs`, Showcase tests migrated, README testing section.
+`src/Tuinet.Testing/*.cs` (a separate package; `TestTty` stays in `src/Tuinet/Testing`), Showcase and Gallery
+tests migrated, README testing section.
 
 ## Tests
 Round-trip of the styled format, snapshot accept/compare flow, `TestTerminal` key and mouse injection.

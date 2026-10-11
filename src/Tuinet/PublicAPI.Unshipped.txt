@@ -139,6 +139,7 @@ Tuinet.CellBuffer
 Tuinet.CellBuffer.Area.get -> Tuinet.Rect
 Tuinet.CellBuffer.CellBuffer(int width, int height) -> void
 Tuinet.CellBuffer.Clear() -> void
+Tuinet.CellBuffer.CopyTo(Tuinet.CellBuffer! destination) -> void
 Tuinet.CellBuffer.CursorShape.get -> Tuinet.CursorShape
 Tuinet.CellBuffer.CursorVisible.get -> bool
 Tuinet.CellBuffer.CursorX.get -> int

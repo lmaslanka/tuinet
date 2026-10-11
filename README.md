@@ -853,11 +853,10 @@ text.TryWrite($"{count} new", out int length);           // formatted on the sta
 frame.Render(new Badge(text[..length], Color.Red), area);
 ```
 
-### Testing
+### Testing your app
 
 UI code is just a function from state to cells, so you can test it without a terminal. Render
-into a `CellBuffer` and assert on its text and styles. To test end to end, drive a real `Terminal`
-over the in-memory `TestTty`.
+into a `CellBuffer` and assert on its text and styles:
 
 ```csharp
 [Fact]
@@ -868,7 +867,57 @@ public void Shows_the_title()
     Assert.Contains("ITEMS · 20", buffer.ToString());
     Assert.Equal(Color.Hex(0xF5A623), buffer[2, 4].Style.Fg);   // the list's amber border
 }
+```
 
+The `Tuinet.Testing` package (`dotnet pack src/Tuinet.Testing`, next to `Tuinet`) drives whole apps and
+snapshots their screens. It works with any test framework: a failed check throws `ScreenAssertionException`.
+`TestTerminal` runs an `IApp` the way `Terminal.Run` does, over a real `Terminal` on the in-memory `TestTty`,
+with a frame after each input and a clock the test sets. Calls chain, and `Click("Close")` clicks wherever
+that text is on screen:
+
+```csharp
+using Tuinet.Testing;
+
+[Fact]
+public void Enter_edits_the_selected_item()
+{
+    using var term = new TestTerminal(new ShowcaseApp(), 110, 34);
+    term.Press("jj").Key(KeyCode.Enter);
+    Assert.Contains("EDIT ITEM · 03", term.Text);
+    term.Click("Close");
+    Assert.DoesNotContain("EDIT ITEM", term.Text);
+    Assert.Equal(Color.Hex(0xF5A623), term.Screen.StyleOf("ITEMS · 20").Fg);
+}
+
+[Fact]
+public void Main_screen_matches_its_snapshot()
+{
+    using var term = new TestTerminal(new ShowcaseApp(), 110, 34);
+    Snapshot.Verify(term.Screen, "main");   // __snapshots__/main.txt next to this file
+}
+```
+
+| Helper | Does |
+|---|---|
+| `term.Press("jj")`, `Press('s', Modifiers.Ctrl)`, `Key(KeyCode.Tab, Modifiers.Shift)` | Key presses, a frame after each (`\n` is Enter, `\t` Tab, `\u001b` Esc) |
+| `term.Click(x, y)`, `Click("Save")`, `Wheel(x, y, notches)`, `Mouse(kind, x, y, button)` | Mouse reports |
+| `term.Paste(text)`, `Resize(w, h)`, `Post(message)`, `Input("\u001b[1;5C")` | Paste, resize and message events; raw bytes through the input parser |
+| `term.NowMs`, `Advance(ms)` | The clock; `Advance` sends a tick only when `Run` would wake (animating, or `NextDueMs` due) |
+| `term.Screen`, `Text`, `IsRunning`, `Terminal`, `Tty` | The last frame (a copy), its text, whether `Handle` returned false, frame and byte counters |
+| `buffer.FindText("Save")`, `StyleAt(x, y)`, `StyleOf("Save")` | Where text is (the cells it covers; the screen is shown when it isn't there) and styles |
+| `buffer.ToStyledString()`, `ToAnsi()` | The frame as markup, one line per row (`[fg=#F5A623 b]ITEMS[/] · 20`), or in color for your terminal |
+| `Snapshot.Verify(buffer, "name")` | Compare with `__snapshots__/name.txt` next to the test file |
+| `Allocations.AssertNone(i => { app.Handle(…); app.Render(buffer, 0); })` | Some round of 500 steps must allocate nothing (call the app directly: `TestTerminal` copies every frame) |
+
+A missing or different snapshot fails the test and writes `name.received.txt` beside it (add `*.received.txt`
+to your ignore file). To accept the new output, rename that file, or run `TUINET_ACCEPT_SNAPSHOTS=1 dotnet test`,
+then review the diff. Trailing spaces and blank lines don't count; `styled: false` compares the plain text, and
+`Snapshot.Parse` reads a snapshot back into a `CellBuffer`. Hyperlinks and the cursor aren't in snapshots: assert
+those with `buffer[x, y].Link` and `buffer.CursorX`/`CursorY`.
+
+To test the bytes themselves, use a `Terminal` over a `TestTty` directly:
+
+```csharp
 [Fact]
 public void Key_in_frame_out()
 {
@@ -975,10 +1024,10 @@ tools/gen-width/gen.py [17.0.0]  # regenerate the Unicode width table from the U
 
 CI ([`.github/workflows/ci.yml`](https://github.com/lmaslanka/tuinet/blob/main/.github/workflows/ci.yml)) builds with warnings as errors and runs
 the tests on Linux, macOS and Windows. It also checks that both samples still publish as Native AOT
-with no trim or AOT warnings, then runs the end-to-end checks, and packs the library and inspects the
-package ([`tools/pack/verify.sh`](https://github.com/lmaslanka/tuinet/blob/main/tools/pack/verify.sh)).
+with no trim or AOT warnings, then runs the end-to-end checks, and packs the library and `Tuinet.Testing` and
+inspects the packages ([`tools/pack/verify.sh`](https://github.com/lmaslanka/tuinet/blob/main/tools/pack/verify.sh)).
 
-Every public API is listed in `src/Tuinet/PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt`. Adding,
+Every public API is listed in `PublicAPI.Shipped.txt` and `PublicAPI.Unshipped.txt` (in `src/Tuinet` and `src/Tuinet.Testing`). Adding,
 changing or removing a public member fails the build (RS0016/RS0017) until the change is recorded in
 `PublicAPI.Unshipped.txt`, so API changes show up in review. The IDE code fix adds the entries for you;
 otherwise copy the symbol text from each RS0016 error into the file.
@@ -1015,7 +1064,7 @@ Trusted Publishing, so no API key is stored. One-time setup:
 1. Set `<VersionPrefix>` in `Directory.Build.props` to the new version. The tag must match it.
 2. In `CHANGELOG.md`, rename `## [Unreleased]` to `## [x.y.z] - YYYY-MM-DD` and add a fresh, empty
    `## [Unreleased]` above it.
-3. Move the entries from `src/Tuinet/PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
+3. In `src/Tuinet` and `src/Tuinet.Testing`, move the entries from `PublicAPI.Unshipped.txt` into `PublicAPI.Shipped.txt`.
 4. Commit, then `git tag vx.y.z && git push origin vx.y.z`.
 
 For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from `## [Unreleased]`.
@@ -1026,11 +1075,13 @@ src/Tuinet/                      the library
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty
+src/Tuinet.Testing/              test helpers package: TestTerminal, Snapshot, FindText, ToStyledString, Allocations
+samples/Tuinet.Samples.Gallery   every widget, live, beside the code that draws it
 samples/Tuinet.Samples.Showcase  list, stats charts, context menu, command palette, edit form and progress dialog (the screenshots)
 samples/Tuinet.Samples.Inline    inline mode: download progress under the prompt, logs above it
 samples/Tuinet.Samples.Stress    latency and throughput harness
 bench/Tuinet.Benchmarks          BenchmarkDotNet suite
-tests/                           unit, widget, allocation, renderer fuzz and sample tests
+tests/                           unit, widget, allocation, renderer fuzz, test-helper and sample tests (with snapshots)
 tools/e2e/                       end-to-end checks in tmux
 tools/gen-width/                 Unicode width table generator
 tools/pack/                      package check (CI and release)
