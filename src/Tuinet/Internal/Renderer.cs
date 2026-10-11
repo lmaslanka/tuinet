@@ -193,14 +193,7 @@ internal sealed class Renderer
 
             Begin();
             _out.Reserve((last - first + 2) * MaxCellBytes + 64);
-            if (current.RowMayJoin(y))
-            {
-                RenderRow<JoinChecks>(cur, prev, y, first, last);
-            }
-            else
-            {
-                RenderRow<NoJoinChecks>(cur, prev, y, first, last);
-            }
+            RenderRow(current.RowMayJoin(y), cur, prev, y, first, last);
         }
 
         EndLink();
@@ -272,7 +265,7 @@ internal sealed class Renderer
 
         Begin();
         _out.Reserve((last - first + 2) * MaxCellBytes + 64);
-        RenderRow<JoinChecks>(row, blank, y, first, last);
+        RenderRow(mayJoin: true, row, blank, y, first, last);
     }
 
     /// <summary>
@@ -735,10 +728,34 @@ internal sealed class Renderer
     /// <summary>
     /// Rows whose glyphs could merge with a neighbour on the terminal (CellBuffer tracks it per row) take
     /// <see cref="JoinChecks"/>; all others take <see cref="NoJoinChecks"/>, which the JIT compiles to the
-    /// plain loop with no cluster logic at all.
+    /// plain loop with no cluster logic at all. Likewise, without <see cref="Repeat"/> there is no REP logic.
     /// </summary>
-    private void RenderRow<TJoin>(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+    private void RenderRow(bool mayJoin, ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+    {
+        if (mayJoin)
+        {
+            if (Repeat)
+            {
+                RenderRow<JoinChecks, Repeats>(cur, prev, y, first, last);
+            }
+            else
+            {
+                RenderRow<JoinChecks, NoRepeats>(cur, prev, y, first, last);
+            }
+        }
+        else if (Repeat)
+        {
+            RenderRow<NoJoinChecks, Repeats>(cur, prev, y, first, last);
+        }
+        else
+        {
+            RenderRow<NoJoinChecks, NoRepeats>(cur, prev, y, first, last);
+        }
+    }
+
+    private void RenderRow<TJoin, TRepeat>(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
         where TJoin : struct, IJoinPolicy
+        where TRepeat : struct, IRepeatPolicy
     {
         int width = cur.Length;
         int x = first;
@@ -847,7 +864,7 @@ internal sealed class Renderer
             // The same glyph again (a border, a rule, a bar): REP, right after the glyph it repeats (never after a
             // cluster, which leaves the cursor to be placed again). The next cell's glyph and foreground are compared
             // here, in one word; EmitRepeat checks the rest.
-            if (Repeat && advance == 1 && positioned && x + 1 < width
+            if (TRepeat.Enabled && advance == 1 && positioned && x + 1 < width
                 && Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cur[x + 1])) == Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cell)))
             {
                 advance += EmitRepeat(cur, prev, x, last, ref forceUntil);
@@ -1054,10 +1071,25 @@ internal sealed class Renderer
         return advance;
     }
 
-    /// <summary>Compile-time switch for <see cref="RenderRow{TJoin}"/> (folded away by the JIT).</summary>
+    /// <summary>Compile-time switches for <see cref="RenderRow{TJoin, TRepeat}"/> (folded away by the JIT).</summary>
     private interface IJoinPolicy
     {
         static abstract bool Enabled { get; }
+    }
+
+    private interface IRepeatPolicy
+    {
+        static abstract bool Enabled { get; }
+    }
+
+    private readonly struct Repeats : IRepeatPolicy
+    {
+        public static bool Enabled => true;
+    }
+
+    private readonly struct NoRepeats : IRepeatPolicy
+    {
+        public static bool Enabled => false;
     }
 
     private readonly struct JoinChecks : IJoinPolicy
