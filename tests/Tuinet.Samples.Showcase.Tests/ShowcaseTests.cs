@@ -356,8 +356,9 @@ public class ShowcaseTests
     public void Stats_page_says_when_the_terminal_repeats_glyphs()
     {
         var app = new ShowcaseApp { RepeatSequences = true };
-        Press(app, ']');
-        string screen = Render(app).ToString();
+        using var term = new TestTerminal(app, 110, 34);
+        term.Press("]");
+        string screen = term.Text;
         Assert.Matches(@"■ repeat \(REP\) +on", screen);
         Assert.Matches(@"■ L/R margins +off", screen);
         Assert.Matches(@"BY PRIORITY", screen);   // the flag fits above the next chart
