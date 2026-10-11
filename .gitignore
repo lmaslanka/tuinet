@@ -10,3 +10,10 @@ artifacts/
 
 # Snapshot test output (Tuinet.Testing.Snapshot)
 *.received.txt
+# Claude Code agent worktrees (local checkouts; never commit them)
+.claude/worktrees/
+
+# Docs site (docfx): generated API pages and the built site; sources are docs/*.md, docs/toc.yml, docs/api/index.md
+docs/_site/
+docs/api/*.yml
+docs/api/.manifest
