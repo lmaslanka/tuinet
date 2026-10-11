@@ -10,3 +10,5 @@ artifacts/
 
 # Snapshot test output (Tuinet.Testing.Snapshot)
 *.received.txt
+# Claude Code agent worktrees (local checkouts; never commit them)
+.claude/worktrees/
