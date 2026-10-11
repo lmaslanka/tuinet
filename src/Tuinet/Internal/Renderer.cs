@@ -38,12 +38,6 @@ internal sealed class Renderer
     /// <summary>Rows sampled for the median column run (the match count still checks every row).</summary>
     private const int ColumnSamples = 9;
 
-    /// <summary>
-    /// A run of repeatable cells may hold up to this many clean cells in a row (rewritten by REP, which costs at most a
-    /// digit more than jumping over them). Past that the run ends: it bounds the scan for cells that aren't repeated.
-    /// </summary>
-    private const int MaxRepeatGap = 32;
-
     // Frame's source[y] for a row the terminal shows as left by a column shift: the row in _shown.
     private const int ShownRow = -2;
 
@@ -851,8 +845,10 @@ internal sealed class Renderer
             }
 
             // The same glyph again (a border, a rule, a bar): REP, right after the glyph it repeats (never after a
-            // cluster, which leaves the cursor to be placed again).
-            if (Repeat && advance == 1 && x + 1 < width && cur[x + 1].Equals(cell) && positioned)
+            // cluster, which leaves the cursor to be placed again). The next cell's glyph and foreground are compared
+            // here, in one word; EmitRepeat checks the rest.
+            if (Repeat && advance == 1 && positioned && x + 1 < width
+                && Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cur[x + 1])) == Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cell)))
             {
                 advance += EmitRepeat(cur, prev, x, last, ref forceUntil);
             }
@@ -883,7 +879,6 @@ internal sealed class Renderer
         Style style = cur[x].Style;
         int end = x + 1;
         int changed = x;   // the run's last cell that differs from the screen
-        int uniform = x;   // the run's cells up to here are the same blank as the first
         while (end < width && IsErasable(in cur[end]) && cur[end].Style.Bg.Equals(style.Bg))
         {
             if (end <= forceUntil || (end <= last && !cur[end].Equals(prev[end])))
@@ -891,26 +886,16 @@ internal sealed class Renderer
                 changed = end;
             }
 
-            if (Repeat && uniform == end - 1 && cur[end].Equals(cur[x]))
-            {
-                uniform = end;
-            }
-
             end++;
         }
 
-        // Writing the run as spaces stops at its last changed cell; with REP, one space and a repeat of the rest. A
-        // space needs the pen to match its whole style, erasing only its background: count REP only when both need the
-        // same SGR, since an extra one costs more than REP saves (and the next text may need another to undo it).
+        // Writing the run as spaces stops at its last changed cell.
         int spaces = changed - x + 1;
-        int written = Repeat && uniform >= changed && (PenMatches(in cur[x]) || ErasePenDiffers(style))
-            ? Math.Min(spaces, 1 + RepeatCost(spaces - 1))
-            : spaces;
         bool toEnd = end == width;
         int count = toEnd ? width - x : spaces;
         bool more = !toEnd && (last > changed || forceUntil > changed);
         int cost = toEnd ? 3 : 3 + Digits(count) + (more ? 3 + Digits(count) : 0);
-        if (cost >= written)
+        if (cost >= spaces || (Repeat && cost > 1 + RepeatCost(spaces - 1) && RepeatsBlanks(cur, x, spaces, style)))
         {
             spacesUntil = changed;
             return x;
@@ -949,6 +934,14 @@ internal sealed class Renderer
         return x + count;
     }
 
+    /// <summary>
+    /// Will <paramref name="spaces"/> blanks from <paramref name="x"/> be written as one space and a REP? Only if they
+    /// are all the same cell, and the space needs no SGR that erasing wouldn't: erasing needs only the background,
+    /// and an extra SGR costs more than REP saves (the next text may need another to undo it).
+    /// </summary>
+    private bool RepeatsBlanks(ReadOnlySpan<Cell> cur, int x, int spaces, Style style) =>
+        Same(cur.Slice(x + 1, spaces - 1), cur.Slice(x, spaces - 1)) && (PenMatches(in cur[x]) || ErasePenDiffers(style));
+
     /// <summary>Erasing blanks of <paramref name="style"/> needs a new pen: it has another background, or reverse video.</summary>
     private bool ErasePenDiffers(Style style) =>
         !_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode));
@@ -976,16 +969,14 @@ internal sealed class Renderer
             return 0;
         }
 
-        // The run: the same cell over and over, ending at the last one that differs from the screen (or must be
-        // repainted). Clean cells inside it are rewritten with the rest, which is cheaper than jumping over them.
+        // The run: the same cell over and over (each cell equals the one before it: a vectorized compare of the row with
+        // itself shifted by one), up to the last one that differs from the screen or must be repainted. Clean cells
+        // inside it are rewritten with the rest, which is cheaper than jumping over them.
         int limit = Math.Min(cur.Length - 1, Math.Max(last, forceUntil));
-        int end = x;
-        for (int i = x + 1; i <= limit && i - end <= MaxRepeatGap && cur[i].Equals(cell); i++)
+        int end = x + CommonPrefix(cur[(x + 1)..(limit + 1)], cur[x..limit]);
+        while (end > x && end > forceUntil && cell.Equals(prev[end]))
         {
-            if (i <= forceUntil || !cell.Equals(prev[i]))
-            {
-                end = i;
-            }
+            end--;
         }
 
         int count = end - x;
