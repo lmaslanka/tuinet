@@ -4,16 +4,32 @@
 // deterministic) or if they differ from the file in outdir (stale). --sheet renders a sheet of everything the renderer
 // draws instead of the shots, for checking renderer changes.
 using Tuinet;
+using Tuinet.Samples.Gallery;
 using Tuinet.Samples.Showcase;
 using Tuinet.Screenshots;
 using static Tuinet.Screenshots.Shot;
 
 const string ShowcaseTitle = "tuinet · showcase";
-static IApp Showcase()
+static IApp Showcase() => new ShowcaseApp();
+
+const string GalleryTitle = "tuinet · gallery";
+static IApp Gallery() => new GalleryApp();
+
+// Gallery setup: show page T, then run the rest of the setup.
+static Action<IApp> GalleryPage<T>(Action<IApp>? then = null) where T : Page => app =>
 {
-    var app = new ShowcaseApp();
-    return new DelegateApp(app.Handle, app.Render);
-}
+    ((GalleryApp)app).Show<T>();
+    then?.Invoke(app);
+};
+
+// Ticks every 100 ms up to ms, as Terminal.Run sends them while a page animates.
+static Action<IApp> Ticks(long ms) => app =>
+{
+    for (long t = 100; t <= ms; t += 100)
+    {
+        app.Handle(Event.Tick, t);
+    }
+};
 
 // The shots: name (file name), title bar, size, app, setup, frame time. One line per screenshot.
 Shot[] shots =
@@ -25,6 +41,11 @@ Shot[] shots =
         Input(Char('j'), Key(KeyCode.Enter), Key(KeyCode.Tab), Key(KeyCode.Tab), Key(KeyCode.Tab), Key(KeyCode.Tab), Key(KeyCode.Enter))),
     // The progress dialog two thirds of the way through its run.
     new("showcase-progress", ShowcaseTitle, 110, 34, Showcase, Keys("jjp"), NowMs: 4650),
+    // Gallery pages: the live widget beside the code that draws it.
+    new("gallery-table", GalleryTitle, 110, 34, Gallery, GalleryPage<TablePage>()),
+    new("gallery-forms", GalleryTitle, 110, 34, Gallery, GalleryPage<FormsPage>()),
+    new("gallery-charts", GalleryTitle, 110, 34, Gallery, GalleryPage<ChartsPage>(Ticks(8000)), NowMs: 8000),
+    new("gallery-tree", GalleryTitle, 110, 34, Gallery, GalleryPage<TreePage>()),
 ];
 
 string? outDir = null;

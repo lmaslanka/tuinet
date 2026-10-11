@@ -1,7 +1,9 @@
 # Testing
 
-The `Tuinet.Testing` namespace ships in the library: an in-memory tty, a driver for whole apps, styled snapshots
-and screen assertions.
+Testing helpers come in two parts. The library itself has `TestTty`, an in-memory tty for testing the bytes a
+`Terminal` writes. The separate `Tuinet.Testing` package, released next to `Tuinet` with the same version, adds a
+driver for whole apps, styled snapshots, screen assertions and an allocation check. Both use the `Tuinet.Testing`
+namespace. The package works with any test framework: a failed check throws `ScreenAssertionException`.
 
 ## Rendering into a buffer
 
@@ -43,7 +45,7 @@ public void Enter_edits_the_selected_item()
 | `Press("jj")`, `Press('s', Modifiers.Ctrl)`, `Key(KeyCode.Tab, Modifiers.Shift)` | Key presses, a frame after each (`\n` is Enter, `\t` Tab, `\u001b` Esc) |
 | `Click(x, y)`, `Click("Save")`, `Wheel(x, y, notches)`, `Mouse(kind, x, y, button)` | Mouse reports |
 | `Paste(text)`, `Resize(w, h)`, `Post(message)` | Paste, resize and message events |
-| `Input("\u001b[1;5C")` | Raw bytes through the terminal's input parser |
+| `Input("\u001b[1;5C")` | Raw bytes through the terminal's input parser. A sequence cut off at the end, such as a lone ESC, resolves after `TerminalOptions.EscapeTimeoutMs` (20 ms), as on a real terminal; use `Key(KeyCode.Escape)` to press Escape without the wait |
 | `NowMs`, `Advance(ms)` | The clock; `Advance` sends a tick only when `Run` would wake (animating, or `NextDueMs` due) |
 | `Screen`, `Text`, `IsRunning`, `Terminal`, `Tty` | The last frame (a copy), its text, whether `Handle` returned false, and frame and byte counters |
 
@@ -74,9 +76,26 @@ A snapshot is plain [markup](layout.md#mixed-style-text). When most of a row has
 doesn't repeat its background on every run. Hyperlinks and the cursor aren't part of the snapshot; assert
 those with `buffer[x, y].Link` and `buffer.CursorX`/`CursorY`.
 
-The allocation guarantee is easy to test in your own app too: render into one `CellBuffer` in a loop and
-compare `GC.GetAllocatedBytesForCurrentThread()` before and after. Call the app directly for that, not through
-`TestTerminal`, which copies every frame.
+## No allocations per frame
+
+`Allocations.AssertNone` checks the zero-allocation guarantee for your own app. It runs a step 50 times to warm up,
+then fails unless some round of steps allocates nothing on the test's thread. It tries up to 5 rounds, because
+one-time runtime work (JIT tiering on a slow CI runner) can land in the first. In the step, call the app directly,
+not through `TestTerminal`, which copies every frame:
+
+```csharp
+[Fact]
+public void Scrolling_allocates_nothing()
+{
+    var app = new ShowcaseApp();
+    var buffer = new CellBuffer(110, 34);
+    Allocations.AssertNone(i =>
+    {
+        app.Handle(Event.FromKey(i % 2 == 0 ? KeyCode.Down : KeyCode.Up), 0);
+        app.Render(buffer, 0);
+    });
+}
+```
 
 ## Bytes on the wire
 

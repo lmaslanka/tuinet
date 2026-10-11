@@ -25,7 +25,7 @@ One plan per gap found in the 2026-10-03 review. Priority 1 is next.
 | 14 | [Repeat-character sequence](14-repeat-glyph.md) ✅ done | performance | S | 7 |
 | 15 | [Main-loop and focus helpers](15-loop-and-focus-helpers.md) ✅ done | nice to have | S | 6 |
 | 16 | [Test helpers for library users](16-test-helpers.md) ✅ done | nice to have | S | 6 |
-| 17 | [Docs, gallery, comparison benchmarks](17-docs-and-comparisons.md) | nice to have | M | 6 |
+| 17 | [Docs, gallery, comparison benchmarks](17-docs-and-comparisons.md) ✅ done | nice to have | M | 6 |
 | 18 | [Images](18-images.md) | nice to have | L | 8 |
 
 Ground rules for every plan: 0 bytes allocated per steady-state frame, bytes written per frame as a
