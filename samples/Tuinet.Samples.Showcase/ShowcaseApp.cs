@@ -124,6 +124,12 @@ public sealed class ShowcaseApp : IApp
     /// </summary>
     public bool LeftRightMargins { get; set; }
 
+    /// <summary>
+    /// The terminal repeats glyphs itself (REP; see <see cref="Terminal.RepeatSequencesActive"/>): the borders and rules
+    /// cost a few bytes each instead of a glyph per cell. Shown on the stats page.
+    /// </summary>
+    public bool RepeatSequences { get; set; }
+
     /// <summary>What a frame cost, charted on the stats page (the loop reports it after each <see cref="Terminal.Present"/>).</summary>
     public void RecordFrame(long bytes, TimeSpan time)
     {
@@ -678,7 +684,7 @@ public sealed class ShowcaseApp : IApp
 
         // Top to bottom; on a short screen the sections at the bottom are cut.
         Span<Rect> top = stackalloc Rect[2];
-        Layout.Horizontal(new Rect(area.X, area.Y, area.Width, 6), [Constraint.Length(KindChartWidth), Constraint.Fill()], top, spacing: 3);
+        Layout.Horizontal(new Rect(area.X, area.Y, area.Width, 7), [Constraint.Length(KindChartWidth), Constraint.Fill()], top, spacing: 3);
         Heading(buffer, top[0], top[0].Y, "BY KIND", Theme.Blue);
         buffer.Render(new BarChart(_kindBars)
         {
@@ -695,7 +701,8 @@ public sealed class ShowcaseApp : IApp
         length = new SpanText(value).Append(notify, width: 2).Append(" of ").Append(_items.Length).Text.Length;
         y = Flag(buffer, top[1], y, "notify", value[..length]);
         y = Heading(buffer, top[1], y + 1, "TERMINAL", Theme.Blue);
-        Flag(buffer, top[1], y, "L/R margins", LeftRightMargins ? "on" : "off");
+        y = Flag(buffer, top[1], y, "L/R margins", LeftRightMargins ? "on" : "off");
+        Flag(buffer, top[1], y, "repeat (REP)", RepeatSequences ? "on" : "off");
 
         y = Heading(buffer, area, area.Y + 7, "BY PRIORITY", Theme.Violet);
         buffer.Render(new BarChart(_priorityBars)

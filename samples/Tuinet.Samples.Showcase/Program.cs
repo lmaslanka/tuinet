@@ -41,7 +41,8 @@ internal sealed class ShowcaseLoop(Terminal terminal, ShowcaseApp app) : IApp
 
         _title.AsSpan().TryWrite($"tuinet showcase · {app.Items[app.Selected].Name}", out int titleLength);
         terminal.SetTitle(_title.AsSpan(0, titleLength));   // sent only when it changes
-        app.LeftRightMargins = terminal.LeftRightMarginsActive;   // the terminal's reply arrives with the first input
+        app.LeftRightMargins = terminal.LeftRightMarginsActive;   // the terminals' replies arrive with the first input
+        app.RepeatSequences = terminal.RepeatSequencesActive;
         app.Render(frame, nowMs);
     }
 
