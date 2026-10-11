@@ -51,6 +51,7 @@ public sealed partial class Terminal : IDisposable
     private bool _resumed;
     private bool _inFrame;
     private long _frameStart;
+    private long _pasteSince;   // tick of the last byte read while a paste was in progress
     private bool _disposed;
 
     public Terminal(ITty tty, TerminalOptions? options = null)
@@ -64,6 +65,7 @@ public sealed partial class Terminal : IDisposable
         _ownsTty = ownsTty;
         _options = options;
         _inline = options.Inline;
+        _parser.BracketedPaste = options.BracketedPaste;
         _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions, options.EraseSequences)
         {
             ParkCursor = _inline is not null,
@@ -102,6 +104,13 @@ public sealed partial class Terminal : IDisposable
     /// font is 540 rows); with <see cref="MaxWidth"/> it caps the frame buffers at about 160 MB.
     /// </summary>
     public const int MaxHeight = 1024;
+
+    /// <summary>
+    /// Longest paste delivered, in UTF-8 bytes (16 MB); a longer one is cut here, on a character boundary, and the
+    /// rest is read and dropped. Paste text is the one input the parser must buffer in full, and its length is the
+    /// terminal's (or the clipboard's) choice, so without a cap a paste is an unbounded allocation.
+    /// </summary>
+    public const int MaxPasteBytes = 16 << 20;
 
     /// <summary>Open the process's controlling terminal (stdin/stdout, or /dev/tty when redirected).</summary>
     public static Terminal Open(TerminalOptions? options = null)
@@ -403,10 +412,25 @@ public sealed partial class Terminal : IDisposable
             }
 
             int remaining = timeoutMs < 0 ? -1 : (int)Math.Max(0, deadline - Environment.TickCount64);
+            if (_parser.InPaste && timeoutMs != 0)
+            {
+                // A paste whose end marker never comes must not swallow every later key: once it has been quiet for
+                // PasteTimeoutMs, what arrived is the paste. Wait no longer than that (or the caller's deadline).
+                long idle = Environment.TickCount64 - _pasteSince;
+                if (idle >= _options.PasteTimeoutMs)
+                {
+                    _parser.FlushIncomplete();
+                    continue;
+                }
+
+                int wait = (int)(_options.PasteTimeoutMs - idle);
+                remaining = remaining < 0 ? wait : Math.Min(remaining, wait);
+            }
+
             int n = _tty.Read(_readBuf, remaining);
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
                 continue;
             }
 
@@ -414,6 +438,16 @@ public sealed partial class Terminal : IDisposable
             {
                 return TryNext(out ev);
             }
+        }
+    }
+
+    /// <summary>Parse the first <paramref name="n"/> bytes of <see cref="_readBuf"/>, noting when a paste last got bytes.</summary>
+    private void Feed(int n)
+    {
+        _parser.Feed(_readBuf.AsSpan(0, n));
+        if (_parser.InPaste)
+        {
+            _pasteSince = Environment.TickCount64;
         }
     }
 
@@ -504,7 +538,7 @@ public sealed partial class Terminal : IDisposable
 
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
                 continue;
             }
 
@@ -600,7 +634,7 @@ public sealed partial class Terminal : IDisposable
             int n = _tty.Read(_readBuf, remaining);
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
             }
         }
 

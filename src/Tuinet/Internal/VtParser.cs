@@ -44,13 +44,27 @@ internal sealed class VtParser
     private int _utf8Len;
     private int _utf8Needed;
     private int _dcsLen;
-    private int _pasteLen;
+    private int _pasteLen;          // paste bytes seen so far, kept or not
+    private int _pasteEndMatched;   // bytes of PasteEnd matched by the latest paste bytes
     private bool _alt;
     private int _reportRow = -1;
     private int _reportColumn;
 
     /// <summary>True while a partial escape or UTF-8 sequence is buffered (a paste in progress is not "incomplete").</summary>
     public bool IsIncomplete => _state is State.Esc or State.Csi or State.Ss3 or State.Utf8 or State.Dcs or State.DcsEsc;
+
+    /// <summary>
+    /// True between a paste start (<c>CSI 200 ~</c>) and its end marker. The caller times this out (see
+    /// <see cref="TerminalOptions.PasteTimeoutMs"/>) by calling <see cref="FlushIncomplete"/>, since a paste whose
+    /// end never arrives would otherwise swallow every later key, Ctrl+C included.
+    /// </summary>
+    public bool InPaste => _state == State.Paste;
+
+    /// <summary>
+    /// Whether <c>CSI 200 ~</c> starts a paste. Off, it is ignored like any unknown key code: an app that didn't ask
+    /// for bracketed paste (mode 2004) must not be put into paste mode by a terminal that has it on anyway.
+    /// </summary>
+    public bool BracketedPaste { get; set; }
 
     public int Pending => _events.Count;
 
@@ -143,6 +157,11 @@ internal sealed class VtParser
                 break;
             case State.Dcs or State.DcsEsc:
                 NotDcs();
+                return;
+            case State.Paste:
+                // The end marker never came (a dropped connection, a terminal that lost it): what did arrive is
+                // the paste. Delivered as paste text, never as keys, so it can't type anything.
+                EndPaste(_pasteLen);
                 return;
         }
 
@@ -367,8 +386,9 @@ internal sealed class VtParser
             case >= 17 and <= 21: key = (KeyCode)((int)KeyCode.F6 + code - 17); break;
             case 23: key = KeyCode.F11; break;
             case 24: key = KeyCode.F12; break;
-            case 200:
+            case 200 when BracketedPaste:
                 _pasteLen = 0;
+                _pasteEndMatched = 0;
                 _state = State.Paste;
                 return;
             default:
@@ -595,29 +615,94 @@ internal sealed class VtParser
         }
     }
 
-    /// <summary>Consume paste bytes up to and including the end marker. Returns bytes consumed (at least 1).</summary>
+    /// <summary>
+    /// Consume paste bytes up to and including the end marker. Returns bytes consumed (at least 1). Bytes past
+    /// <see cref="Terminal.MaxPasteBytes"/> are counted but not kept, so a runaway paste (or one with no end) costs
+    /// no more memory than that, while the end marker is still watched for.
+    /// </summary>
     private int PasteChunk(ReadOnlySpan<byte> data)
     {
         int n = 0;
         while (n < data.Length)
         {
-            if (_pasteLen == _paste.Length)
+            byte b = data[n++];
+            if (_pasteLen < Terminal.MaxPasteBytes)
             {
-                Array.Resize(ref _paste, Math.Max(256, _paste.Length * 2));
+                if (_pasteLen == _paste.Length)
+                {
+                    Array.Resize(ref _paste, Math.Min(Terminal.MaxPasteBytes, Math.Max(256, _paste.Length * 2)));
+                }
+
+                _paste[_pasteLen] = b;
             }
 
-            _paste[_pasteLen++] = data[n++];
-            if (_pasteLen >= PasteEnd.Length && _paste.AsSpan(_pasteLen - PasteEnd.Length, PasteEnd.Length).SequenceEqual(PasteEnd))
+            _pasteLen++;
+
+            // Streaming match of the end marker. Its only ESC is its first byte, so after a mismatch the match
+            // restarts at 1 (this byte is an ESC) or 0.
+            _pasteEndMatched = b == PasteEnd[_pasteEndMatched] ? _pasteEndMatched + 1 : b == 0x1B ? 1 : 0;
+            if (_pasteEndMatched == PasteEnd.Length)
             {
-                string text = Encoding.UTF8.GetString(_paste, 0, _pasteLen - PasteEnd.Length);
-                _events.Enqueue(Event.FromPaste(text.ReplaceLineEndings("\n")));
-                _pasteLen = 0;
-                _state = State.Ground;
+                EndPaste(_pasteLen - PasteEnd.Length);
                 break;
             }
         }
 
         return n;
+    }
+
+    /// <summary>
+    /// Deliver the first <paramref name="length"/> paste bytes (fewer if the paste outgrew the buffer: it is cut at
+    /// <see cref="Terminal.MaxPasteBytes"/>, on a UTF-8 boundary) and return to Ground.
+    /// </summary>
+    private void EndPaste(int length)
+    {
+        length = Math.Min(length, Math.Min(_pasteLen, Terminal.MaxPasteBytes));
+        if (length == Terminal.MaxPasteBytes)
+        {
+            length = TrimIncompleteUtf8(_paste.AsSpan(0, length));
+        }
+
+        if (length > 0)
+        {
+            string text = Encoding.UTF8.GetString(_paste, 0, length);
+            _events.Enqueue(Event.FromPaste(text.ReplaceLineEndings("\n")));
+        }
+
+        if (_paste.Length > 1 << 16)
+        {
+            _paste = [];   // don't keep a huge paste's buffer for the rest of the session
+        }
+
+        _pasteLen = 0;
+        _pasteEndMatched = 0;
+        _alt = false;
+        _state = State.Ground;
+    }
+
+    /// <summary>Length of <paramref name="bytes"/> without a UTF-8 sequence that was cut short at its end.</summary>
+    private static int TrimIncompleteUtf8(ReadOnlySpan<byte> bytes)
+    {
+        // Walk back over at most 3 continuation bytes to the lead byte; keep the sequence only if it is whole.
+        int i = bytes.Length - 1;
+        while (i >= 0 && i >= bytes.Length - 4 && (bytes[i] & 0xC0) == 0x80)
+        {
+            i--;
+        }
+
+        if (i < 0 || bytes[i] < 0x80)
+        {
+            return bytes.Length;
+        }
+
+        int needed = bytes[i] switch
+        {
+            >= 0xF0 => 4,
+            >= 0xE0 => 3,
+            >= 0xC0 => 2,
+            _ => 1,   // a stray continuation byte; GetString replaces it
+        };
+        return bytes.Length - i >= needed ? bytes.Length : i;
     }
 
     private void Key(KeyCode code, int rune = 0, Modifiers mods = Modifiers.None, KeyKind kind = KeyKind.Press)

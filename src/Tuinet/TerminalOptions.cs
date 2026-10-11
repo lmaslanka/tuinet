@@ -76,6 +76,15 @@ public sealed record TerminalOptions
     public int EscapeTimeoutMs { get; init; } = 20;
 
     /// <summary>
+    /// With <see cref="BracketedPaste"/>: how long a paste may go quiet before it is taken as finished. A terminal
+    /// sends a paste in one burst, but if the end marker never arrives (a dropped SSH connection, a multiplexer that
+    /// lost it) every later key, Ctrl+C included, would be swallowed as paste text; after this long without a byte the
+    /// text received so far is delivered as the <see cref="EventKind.Paste"/> event. A paste is also cut at
+    /// <see cref="Terminal.MaxPasteBytes"/>.
+    /// </summary>
+    public int PasteTimeoutMs { get; init; } = 2000;
+
+    /// <summary>
     /// When a band of full-width rows scrolls, let the terminal move them (scroll margins plus
     /// insert/delete line) instead of repainting every row. On terminals that report left/right margins (DECLRMM,
     /// asked at startup; see <see cref="Terminal.LeftRightMarginsActive"/>) bands narrower than the screen move too,

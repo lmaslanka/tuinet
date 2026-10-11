@@ -132,7 +132,7 @@ public class VtParserTests
     [Fact]
     public void Bracketed_paste_split_across_feeds()
     {
-        var parser = new VtParser();
+        var parser = new VtParser { BracketedPaste = true };
         parser.Feed("\u001b[200~hel"u8);
         Assert.False(parser.IsIncomplete);
         Assert.False(parser.TryTake(out _));
@@ -147,11 +147,101 @@ public class VtParserTests
     [Fact]
     public void Paste_does_not_interpret_escape_sequences()
     {
-        var parser = new VtParser();
+        var parser = new VtParser { BracketedPaste = true };
         parser.Feed("\u001b[200~\u001b[A\u0003\u001b[201~"u8);
         Assert.True(parser.TryTake(out Event paste));
         Assert.Equal("\u001b[A\u0003", paste.Paste);
         Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_with_a_false_start_of_the_end_marker_keeps_it_as_text()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~a\u001b[20\u001bb\u001b[201~"u8);
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal("a\u001b[20\u001bb", paste.Paste);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_start_is_ignored_when_bracketed_paste_is_off()
+    {
+        // A terminal left in mode 2004 by a previous program must not wedge an app that never asked for it.
+        var parser = new VtParser();
+        parser.Feed("\u001b[200~hi\u001b[201~"u8);
+        Assert.False(parser.InPaste);
+        Assert.True(parser.TryTake(out Event h));
+        Assert.True(h.Key.IsChar('h'));
+        Assert.True(parser.TryTake(out Event i));
+        Assert.True(i.Key.IsChar('i'));
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_without_an_end_marker_is_delivered_when_flushed()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~abc"u8);
+        Assert.True(parser.InPaste);
+        Assert.False(parser.IsIncomplete);                             // not subject to the escape timeout
+        parser.FlushIncomplete();
+        Assert.False(parser.InPaste);
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal("abc", paste.Paste);
+        parser.Feed("q"u8);
+        Assert.True(parser.TryTake(out Event key));
+        Assert.True(key.Key.IsChar('q'));
+    }
+
+    [Fact]
+    public void Empty_paste_without_an_end_marker_flushes_to_nothing()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        parser.FlushIncomplete();
+        Assert.False(parser.InPaste);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_is_cut_at_the_cap_and_the_rest_is_dropped()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        byte[] chunk = new byte[1 << 20];
+        chunk.AsSpan().Fill((byte)'a');
+        for (int fed = 0; fed < Terminal.MaxPasteBytes + chunk.Length; fed += chunk.Length)
+        {
+            parser.Feed(chunk);
+        }
+
+        Assert.True(parser.InPaste);
+        Assert.False(parser.TryTake(out _));
+        parser.Feed("\u001b[201~x"u8);                                 // the end marker still ends it past the cap
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal(Terminal.MaxPasteBytes, paste.Paste!.Length);
+        Assert.True(parser.TryTake(out Event key));
+        Assert.True(key.Key.IsChar('x'));
+    }
+
+    [Fact]
+    public void Paste_cut_at_the_cap_does_not_split_a_character()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        byte[] chunk = new byte[1 << 20];
+        chunk.AsSpan().Fill((byte)'a');
+        for (int fed = 0; fed + chunk.Length < Terminal.MaxPasteBytes; fed += chunk.Length)
+        {
+            parser.Feed(chunk);
+        }
+
+        parser.Feed(chunk.AsSpan(0, (1 << 20) - 1));                   // MaxPasteBytes - 1 bytes so far
+        parser.Feed("你好\u001b[201~"u8);                                // 3-byte characters straddle the cap
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal(Terminal.MaxPasteBytes - 1, paste.Paste!.Length);
+        Assert.EndsWith("aa", paste.Paste);
     }
 
     [Fact]

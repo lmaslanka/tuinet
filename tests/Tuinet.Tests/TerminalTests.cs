@@ -258,6 +258,43 @@ public class TerminalTests
     }
 
     [Fact]
+    public void Paste_whose_end_never_comes_is_delivered_after_the_paste_timeout()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty, new TerminalOptions { BracketedPaste = true, PasteTimeoutMs = 20 });
+        tty.Enqueue("\u001b[200~abc");
+        Assert.False(terminal.Poll(out _, 0));                         // no wait, no flush
+        Assert.True(terminal.Poll(out Event ev, 1000));                 // returns after ~20 ms, not 1000
+        Assert.Equal(EventKind.Paste, ev.Kind);
+        Assert.Equal("abc", ev.Paste);
+
+        tty.Enqueue("\u0003");                                          // keys get through again
+        Assert.True(terminal.Poll(out ev, 0));
+        Assert.True(ev.Key.IsCtrl('c'));
+    }
+
+    [Fact]
+    public void Paste_in_progress_does_not_hold_poll_past_its_deadline()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty, new TerminalOptions { BracketedPaste = true, PasteTimeoutMs = 60_000 });
+        tty.Enqueue("\u001b[200~abc");
+        long start = Environment.TickCount64;
+        Assert.False(terminal.Poll(out _, 10));
+        Assert.True(Environment.TickCount64 - start < 5_000);
+    }
+
+    [Fact]
+    public void Paste_start_is_ignored_without_bracketed_paste()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        tty.Enqueue("\u001b[200~q");
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.True(ev.Key.IsChar('q'));
+    }
+
+    [Fact]
     public void Control_characters_in_text_never_reach_the_terminal()
     {
         var tty = new TestTty();
