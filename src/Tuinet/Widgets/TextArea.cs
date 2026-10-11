@@ -1,3 +1,5 @@
+using System.Text;
+
 namespace Tuinet.Widgets;
 
 /// <summary>
@@ -413,7 +415,7 @@ public sealed class TextAreaState : EditableText
     /// <summary>
     /// End of the visual row of <paramref name="line"/> that starts at <paramref name="start"/>: after the last space
     /// that fits (spaces past the edge hang off the row), mid-word for words longer than the width, and at least
-    /// one cluster.
+    /// one cluster. Runs of printable ASCII and of other letters without marks are measured without segmenting.
     /// </summary>
     internal static int RowEnd(ReadOnlySpan<char> line, int start, int width)
     {
@@ -427,12 +429,56 @@ public sealed class TextAreaState : EditableText
         int lastBreak = -1;
         while (i < line.Length)
         {
-            int n = ClusterLength(line[i..]);
-            int w = TextWidth.Of(line.Slice(i, n));
-            bool space = n == 1 && line[i] == ' ';
+            int room = width - x;
+            ReadOnlySpan<char> rest = line[i..];
+            int run = Graphemes.AsciiRun(rest, room + 1);   // one past the room: the char that doesn't fit
+            int columns = run;
+            if (run == 0)
+            {
+                run = Graphemes.SimpleRun(rest, room, out columns);
+            }
+
+            if (run > 0)
+            {
+                if (columns > room)
+                {
+                    // ASCII up to and past the edge: the char at the edge doesn't fit.
+                    int edge = i + room;
+                    if (line[edge] == ' ')
+                    {
+                        while (edge < line.Length && line[edge] == ' ')
+                        {
+                            edge++;
+                        }
+
+                        return edge;
+                    }
+
+                    int space = line[i..edge].LastIndexOf(' ');
+                    if (space >= 0)
+                    {
+                        lastBreak = i + space + 1;
+                    }
+
+                    return lastBreak > start ? lastBreak : edge > start ? edge : edge + 1;
+                }
+
+                int lastSpace = line.Slice(i, run).LastIndexOf(' ');
+                if (lastSpace >= 0)
+                {
+                    lastBreak = i + lastSpace + 1;
+                }
+
+                x += columns;
+                i += run;
+                continue;
+            }
+
+            int n = Graphemes.Next(rest, out Rune rune, out int w, out _);
+            bool isSpace = n == 1 && rune.Value == ' ';
             if (x + w > width)
             {
-                if (space)
+                if (isSpace)
                 {
                     while (i < line.Length && line[i] == ' ')
                     {
@@ -447,7 +493,7 @@ public sealed class TextAreaState : EditableText
 
             x += w;
             i += n;
-            if (space)
+            if (isSpace)
             {
                 lastBreak = i;
             }
@@ -512,8 +558,22 @@ public sealed class TextAreaState : EditableText
         int last = start;
         for (int i = start; i < end;)
         {
-            int n = ClusterLength(line[i..]);
-            int w = TextWidth.Of(line.Slice(i, n));
+            ReadOnlySpan<char> rest = line[i..];
+            int run = Graphemes.AsciiRun(rest, end - i);
+            if (run > 0)
+            {
+                if (x < at + run)
+                {
+                    return i + Math.Max(0, x - at);
+                }
+
+                at += run;
+                last = i + run - 1;
+                i += run;
+                continue;
+            }
+
+            int n = Graphemes.Next(rest, out _, out int w, out _);
             if (x < at + w)
             {
                 return i;
@@ -675,8 +735,13 @@ public readonly ref struct TextArea : IStatefulWidget<TextAreaState>
     {
         while (skip > 0 && !run.IsEmpty)
         {
-            int n = EditableText.ClusterLength(run);
-            int w = TextWidth.Of(run[..n]);
+            int n = Graphemes.AsciiRun(run, skip);
+            int w = n;
+            if (n == 0)
+            {
+                n = Graphemes.Next(run, out _, out w, out _);
+            }
+
             x += Math.Max(0, w - skip);
             skip = Math.Max(0, skip - w);
             run = run[n..];
@@ -699,8 +764,20 @@ public readonly ref struct TextArea : IStatefulWidget<TextAreaState>
         int width = 0;
         for (int i = 0; i < text.Length;)
         {
-            int n = EditableText.ClusterLength(text[i..]);
-            width += TextWidth.Of(text.Slice(i, n));
+            ReadOnlySpan<char> rest = text[i..];
+            int n = Graphemes.AsciiRun(rest, columns - width + 1);
+            int w = n;
+            if (n == 0)
+            {
+                n = Graphemes.SimpleRun(rest, columns - width, out w);
+            }
+
+            if (n == 0)
+            {
+                n = Graphemes.Next(rest, out _, out w, out _);
+            }
+
+            width += w;
             if (width > columns)
             {
                 return false;

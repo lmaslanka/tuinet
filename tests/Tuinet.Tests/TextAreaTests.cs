@@ -507,6 +507,87 @@ public class TextAreaTests
         Assert.Equal(1500 - undone, state.Length);
     }
 
+    [Fact]
+    public void Row_ends_match_the_cluster_by_cluster_reference_for_any_script()
+    {
+        string[] parts = ["the ", "quick ", "съешь ", "же ", "αβγ", "日本語", "e\u0301", "👨‍👩‍👧", "🇵🇱", " ", "  ", "a", "x\u0301", "\t", "a\uFE0F", "ก", "ิ", "supercalifragilistic"];
+        var random = new Random(17);
+        var text = new StringBuilder();
+        for (int round = 0; round < 2000; round++)
+        {
+            text.Clear();
+            for (int i = random.Next(0, 12); i > 0; i--)
+            {
+                text.Append(parts[random.Next(parts.Length)]);
+            }
+
+            string line = text.ToString();
+            int width = random.Next(1, 16);
+            int start = 0;
+            for (int row = 0; row < 64; row++)
+            {
+                int expected = ReferenceRowEnd(line, start, width);
+                int actual = TextAreaState.RowEnd(line, start, width);
+                Assert.True(expected == actual, $"\"{line}\" width {width} from {start}: {actual}, expected {expected}");
+                if (expected >= line.Length)
+                {
+                    break;
+                }
+
+                start = expected;
+            }
+        }
+    }
+
+    [Theory]
+    [InlineData("съешь же ещё этих", 8, new[] { "съешь же ", "ещё этих" })]
+    [InlineData("слово слово", 5, new[] { "слово ", "слово" })]
+    [InlineData("日本語 テキスト", 7, new[] { "日本語 ", "テキス", "ト" })]
+    [InlineData("ab e\u0301f gh", 5, new[] { "ab e\u0301f ", "gh" })]
+    [InlineData("abcd\u0301 ef", 4, new[] { "abcd\u0301 ", "ef" })]
+    [InlineData("hello   world", 5, new[] { "hello   ", "world" })]
+    public void Rows_wrap_every_script_at_spaces(string line, int width, string[] rows)
+    {
+        Assert.Equal(rows, Rows(line, width));
+    }
+
+    /// <summary>RowEnd as it was written before the run fast paths: one cluster at a time.</summary>
+    private static int ReferenceRowEnd(ReadOnlySpan<char> line, int start, int width)
+    {
+        int x = 0;
+        int i = start;
+        int lastBreak = -1;
+        while (i < line.Length)
+        {
+            int n = EditableText.ClusterLength(line[i..]);
+            int w = TextWidth.Of(line.Slice(i, n));
+            bool space = n == 1 && line[i] == ' ';
+            if (x + w > width)
+            {
+                if (space)
+                {
+                    while (i < line.Length && line[i] == ' ')
+                    {
+                        i++;
+                    }
+
+                    return i;
+                }
+
+                return lastBreak > start ? lastBreak : i > start ? i : i + n;
+            }
+
+            x += w;
+            i += n;
+            if (space)
+            {
+                lastBreak = i;
+            }
+        }
+
+        return line.Length;
+    }
+
     private static void AssertConsistent(TextAreaState state)
     {
         string text = state.Text;

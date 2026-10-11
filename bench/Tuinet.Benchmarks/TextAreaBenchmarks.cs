@@ -14,6 +14,7 @@ public class TextAreaBenchmarks
     private readonly CellBuffer _buffer = new(200, 60);
     private TextAreaState _wrapped = null!;
     private TextAreaState _unwrapped = null!;
+    private TextAreaState _cyrillic = null!;
     private string _screen = null!;
     private string _long = null!;
     private readonly ParagraphState _paragraph = new();
@@ -27,6 +28,8 @@ public class TextAreaBenchmarks
         _long = string.Join('\n', text.Split('\n').Take(2000));
         _wrapped = Middle(new TextAreaState(text));
         _unwrapped = Middle(new TextAreaState(text) { SoftWrap = false });
+        _cyrillic = Middle(new TextAreaState(string.Join('\n', Enumerable.Range(0, 100_000)
+            .Select(i => $"{i:D6} съешь же ещё этих мягких французских булок да выпей чаю · 世界 · и беги дальше пока строка не перенесётся хотя бы раз"))));
     }
 
     [Benchmark(Baseline = true, Description = "render, wrapped")]
@@ -34,6 +37,10 @@ public class TextAreaBenchmarks
 
     [Benchmark(Description = "render, unwrapped")]
     public void RenderUnwrapped() => Render(ref _unwrapped);
+
+    /// <summary>The wrapped render with Cyrillic text: letters outside ASCII, no clusters.</summary>
+    [Benchmark(Description = "render, wrapped, cyrillic")]
+    public void RenderWrappedCyrillic() => Render(ref _cyrillic);
 
     /// <summary>For scale: a paragraph of the lines in view, wrapped the same way.</summary>
     [Benchmark(Description = "paragraph, same lines")]
