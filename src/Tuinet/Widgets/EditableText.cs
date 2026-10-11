@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Globalization;
 using System.Text;
 
 namespace Tuinet.Widgets;
@@ -99,7 +100,8 @@ public abstract class EditableText
     public void Clear() => Set(default);
 
     /// <summary>
-    /// Insert text at the caret in place of the selection (e.g. a paste), as one undo step. Control characters are
+    /// Insert text at the caret in place of the selection (e.g. a paste), as one undo step. Control characters and
+    /// invisible format characters (bidi controls, zero-width space, BOM…; see <see cref="IsInvisibleFormat"/>) are
     /// dropped; a <see cref="TextAreaState"/> keeps line breaks (as '\n') and turns tabs into four spaces.
     /// </summary>
     public void Insert(ReadOnlySpan<char> text)
@@ -109,10 +111,13 @@ public abstract class EditableText
         _sealed = true;
     }
 
-    /// <summary>Type one character in place of the selection. Control characters are ignored; marks and joiners are kept.</summary>
+    /// <summary>
+    /// Type one character in place of the selection. Control characters and invisible format characters are
+    /// ignored; marks and joiners are kept.
+    /// </summary>
     public void Insert(Rune rune)
     {
-        if (Rune.IsControl(rune))
+        if (Rune.IsControl(rune) || IsInvisibleFormat(rune))
         {
             return;
         }
@@ -300,12 +305,13 @@ public abstract class EditableText
         }
     }
 
-    /// <summary>No controls (C0, DEL, C1) and no surrogates to validate.</summary>
+    /// <summary>No controls (C0, DEL, C1), no invisible format characters and no surrogates to validate.</summary>
     private static bool IsClean(ReadOnlySpan<char> text)
     {
         foreach (char c in text)
         {
-            if (c < 0x20 || (uint)(c - 0x7F) <= 0x9F - 0x7F || char.IsSurrogate(c))
+            // Every BMP format character other than the soft hyphen (kept: it has a column) is at U+0600 or above.
+            if (c < 0x20 || (uint)(c - 0x7F) <= 0x9F - 0x7F || char.IsSurrogate(c) || c >= 0x600 && IsInvisibleFormat(new Rune(c)))
             {
                 return false;
             }
@@ -315,9 +321,23 @@ public abstract class EditableText
     }
 
     /// <summary>
+    /// A format character (General Category Cf) that takes no column: the bidi controls (U+202A–U+202E,
+    /// U+2066–U+2069, U+200E, U+200F, U+061C), zero-width space, word joiner, BOM, interlinear annotation marks…
+    /// They are dropped on insertion. Never drawn (width 0: the cell write drops them) and impossible to put the caret
+    /// on, they would still sit in <see cref="Text"/> and reorder or hide what the app does with it next (a file
+    /// name, a command, a URL). Kept: ZWJ and ZWNJ, which join emoji and shape Arabic and Indic text; the tag
+    /// characters of subdivision flags; and the format characters that do take a column (soft hyphen, the prepended
+    /// number signs).
+    /// </summary>
+    internal static bool IsInvisibleFormat(Rune rune) =>
+        rune.Value is not (0x200C or 0x200D) && rune.Value is not (>= 0xE0020 and <= 0xE007F)
+        && UnicodeWidth.Of(rune.Value) == 0
+        && Rune.GetUnicodeCategory(rune) == UnicodeCategory.Format;
+
+    /// <summary>
     /// Writes the cleaned text into <paramref name="output"/> (or only measures it when that is empty) and returns
-    /// its length: controls dropped, invalid UTF-16 replaced, and in multi-line text CR LF / CR made '\n' and tabs
-    /// four spaces.
+    /// its length: controls and invisible format characters dropped, invalid UTF-16 replaced, and in multi-line text
+    /// CR LF / CR made '\n' and tabs four spaces.
     /// </summary>
     private int Clean(ReadOnlySpan<char> text, Span<char> output)
     {
@@ -352,7 +372,7 @@ public abstract class EditableText
 
                 n += 4;
             }
-            else if (!Rune.IsControl(rune))
+            else if (!Rune.IsControl(rune) && !IsInvisibleFormat(rune))
             {
                 n += write ? rune.EncodeToUtf16(output[n..]) : rune.Utf16SequenceLength;
             }
