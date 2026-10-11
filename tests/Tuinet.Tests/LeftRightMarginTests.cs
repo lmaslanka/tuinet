@@ -86,9 +86,9 @@ public class LeftRightMarginTests
     [Fact]
     public void Without_margins_the_list_rows_are_repainted()
     {
-        // Every row's changed digit is rewritten.
+        // Every row's changed digit is rewritten: after each one, BS and LF (2 bytes) reach the next row's digit.
         Assert.Equal(
-            $"{Esc}[?2026h{Esc}[1;10H1{Esc}[2;10H2{Esc}[3;10H3{Esc}[4;10H4{Esc}[5;10H5{Esc}[?2026l",
+            $"{Esc}[?2026h{Esc}[1;10H1\b\n2\b\n3\b\n4\b\n5{Esc}[?2026l",
             Render(Split(first: 1), Split(first: 0), margins: false));
     }
 

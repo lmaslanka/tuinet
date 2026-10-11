@@ -1102,11 +1102,11 @@ internal sealed class Renderer
         public static bool Enabled => false;
     }
 
-    /// <summary>Is writing the clean cells in [from, to) shorter than a CUF jump over them?</summary>
+    /// <summary>Is writing the clean cells in [from, to) shorter than a cursor jump over them?</summary>
     private bool ReemitIsCheaper(ReadOnlySpan<Cell> cur, int from, int to)
     {
         int gap = to - from;
-        int jumpCost = gap == 1 ? 3 : gap < 10 ? 4 : gap < 100 ? 5 : 6;
+        int jumpCost = MoveCost(from, to);
         if (gap >= jumpCost || !_penKnown)
         {
             return false;
@@ -1294,6 +1294,13 @@ internal sealed class Renderer
         }
     }
 
+    /// <summary>
+    /// Move the cursor to (x, y) with the fewest bytes. A relative move is a horizontal part on the current row (CR,
+    /// CUF, BS or CUB, or CHA, which also serves when only the row is known, after a cluster or an emoji) and a
+    /// vertical part in the new column (LF or CUD, CUU: all keep the column); CUP when that is shorter. LF is a plain
+    /// line feed (output post-processing is off) and is only sent above the band's last row, so it never scrolls; BS
+    /// never crosses column 0.
+    /// </summary>
     private void MoveTo(int x, int y)
     {
         if (_cy == y && _cx == x)
@@ -1301,48 +1308,151 @@ internal sealed class Renderer
             return;
         }
 
-        if (_cy == y && _cx >= 0 && x > _cx)
+        if (_cy >= 0 && HorizontalCost(x) + VerticalCost(y) < CupCost(x, y))
         {
-            int n = x - _cx;
-            _out.Bytes("\u001b["u8);
-            if (n > 1)
-            {
-                _out.Int(n);
-            }
-
-            _out.Byte((byte)'C');
-        }
-        else if (x == 0 && _cy >= 0 && y == _cy + 1)
-        {
-            _out.Bytes("\r\n"u8);
-        }
-        else if (x == 0 && y == _cy)
-        {
-            _out.Byte((byte)'\r');
+            MoveHorizontally(x);
+            MoveVertically(y);
         }
         else
         {
-            _out.Bytes("\u001b["u8);
-            if (x == 0 && y + Top == 0)
-            {
-                _out.Byte((byte)'H');
-            }
-            else
-            {
-                _out.Int(y + Top + 1);
-                if (x > 0)
-                {
-                    _out.Byte((byte)';');
-                    _out.Int(x + 1);
-                }
-
-                _out.Byte((byte)'H');
-            }
+            Cup(x, y);
         }
 
         _cx = x;
         _cy = y;
     }
+
+    /// <summary>Bytes to reach column <paramref name="x"/> on the current row (whose column may be unknown).</summary>
+    private int HorizontalCost(int x)
+    {
+        if (x == _cx)
+        {
+            return 0;
+        }
+
+        if (x == 0)
+        {
+            return 1;
+        }
+
+        if (_cx < 0)
+        {
+            return ChaCost(x);
+        }
+
+        int n = Math.Abs(x - _cx);
+        return Math.Min(x < _cx && n <= 2 ? n : RelativeCost(n), ChaCost(x));
+    }
+
+    private void MoveHorizontally(int x)
+    {
+        if (x == _cx)
+        {
+            return;
+        }
+
+        if (x == 0)
+        {
+            _out.Byte((byte)'\r');
+            return;
+        }
+
+        int n = Math.Abs(x - _cx);
+        bool steps = x < _cx && n <= 2;   // one or two BS
+        if (_cx < 0 || ChaCost(x) < (steps ? n : RelativeCost(n)))
+        {
+            Csi(x + 1, 'G');
+        }
+        else if (x > _cx)
+        {
+            Csi(n, 'C');
+        }
+        else if (steps)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                _out.Byte((byte)'\b');
+            }
+        }
+        else
+        {
+            Csi(n, 'D');
+        }
+    }
+
+    /// <summary>Bytes to reach row <paramref name="y"/> in the current column.</summary>
+    private int VerticalCost(int y)
+    {
+        if (y == _cy)
+        {
+            return 0;
+        }
+
+        int n = Math.Abs(y - _cy);
+        return y > _cy && n <= 2 ? n : RelativeCost(n);
+    }
+
+    private void MoveVertically(int y)
+    {
+        if (y == _cy)
+        {
+            return;
+        }
+
+        if (y > _cy && y - _cy <= 2)
+        {
+            for (int i = _cy; i < y; i++)
+            {
+                _out.Byte((byte)'\n');
+            }
+        }
+        else
+        {
+            Csi(Math.Abs(y - _cy), y > _cy ? 'B' : 'A');
+        }
+    }
+
+    private void Cup(int x, int y)
+    {
+        _out.Bytes("\u001b["u8);
+        if (x == 0 && y + Top == 0)
+        {
+            _out.Byte((byte)'H');
+            return;
+        }
+
+        _out.Int(y + Top + 1);
+        if (x > 0)
+        {
+            _out.Byte((byte)';');
+            _out.Int(x + 1);
+        }
+
+        _out.Byte((byte)'H');
+    }
+
+    /// <summary><c>CSI n final</c>, leaving out a count of 1.</summary>
+    private void Csi(int n, char final)
+    {
+        _out.Bytes("\u001b["u8);
+        if (n > 1)
+        {
+            _out.Int(n);
+        }
+
+        _out.Byte((byte)final);
+    }
+
+    /// <summary>Bytes of a relative move by <paramref name="n"/> (CUF, CUB, CUU, CUD).</summary>
+    private static int RelativeCost(int n) => n == 1 ? 3 : 3 + Digits(n);
+
+    /// <summary>Bytes of CHA to column <paramref name="x"/>.</summary>
+    private static int ChaCost(int x) => 3 + Digits(x + 1);
+
+    private int CupCost(int x, int y) => x == 0 && y + Top == 0 ? 3 : 3 + Digits(y + Top + 1) + (x > 0 ? 1 + Digits(x + 1) : 0);
+
+    /// <summary>Bytes of the cheapest same-row move from column <paramref name="from"/> to <paramref name="to"/> (forward).</summary>
+    private static int MoveCost(int from, int to) => to == 0 ? 1 : Math.Min(RelativeCost(to - from), ChaCost(to));
 
     private void SetPen(Style source)
     {

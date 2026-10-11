@@ -23,6 +23,9 @@ if (args is ["bytes"])
     Row("rows shortened", plain.RowsShortened(), repeat.RowsShortened());
     Row("rules", plain.Rules(), repeat.Rules());
     Row("bars", plain.Bars(), repeat.Bars());
+    Row("vertical column", plain.VerticalColumn(), repeat.VerticalColumn());
+    Row("caret left", plain.CaretLeft(), repeat.CaretLeft());
+    Row("caret down", plain.CaretDown(), repeat.CaretDown());
 
     var frame = new FrameBenchmarks { Repeat = false };
     var frameRepeat = new FrameBenchmarks { Repeat = true };

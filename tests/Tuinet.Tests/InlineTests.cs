@@ -104,9 +104,9 @@ public class InlineTests
         terminal.Present();
         tty.ClearWritten();
         terminal.Dispose();
-        // The cursor is parked on band row 0: down to row 1 (screen row 3), then the shell continues on the next
-        // line. No ?1049l.
-        Assert.Equal("\r\n\r\n\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h", tty.WrittenText);
+        // The cursor is parked on band row 0, column 0: a line feed down to row 1 (screen row 3), then the shell
+        // continues on the next line. No ?1049l.
+        Assert.Equal("\n\r\n\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h", tty.WrittenText);
     }
 
     [Fact]

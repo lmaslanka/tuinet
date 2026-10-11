@@ -131,10 +131,12 @@ public class RendererTests
     [Fact]
     public void Last_column_write_does_not_trust_the_cursor_column()
     {
+        // After a glyph in the last column the cursor may be in the pending-wrap state: the next cell is reached
+        // with an absolute column (CHA, which clears that state) and a line feed, never a relative column move.
         var (prev, cur) = Buffers(4, 2);
         cur.SetRune(3, 0, new Rune('a'));
         cur.SetRune(3, 1, new Rune('b'));
-        Assert.Contains("\u001b[1;4Ha\u001b[2;4Hb", Render(cur, prev));
+        Assert.Contains("\u001b[1;4Ha\u001b[4G\nb", Render(cur, prev));
     }
 
     [Theory]
@@ -239,7 +241,7 @@ public class RendererTests
     {
         var (prev, cur) = Buffers(4, 1);
         cur.SetString(0, 0, "e\u0301x");
-        Assert.Equal("\u001b[?2026h\u001b[He\u0301\u001b[1;2Hx\u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[He\u0301\u001b[2Gx\u001b[?2026l", Render(cur, prev));   // CHA: the row is known, the column isn't
     }
 
     [Fact]
@@ -248,7 +250,7 @@ public class RendererTests
         // Without grapheme support the family is three emoji, 6 columns: repaint columns 2-5 afterwards.
         var (prev, cur) = Buffers(8, 1);
         cur.SetString(0, 0, "👨‍👩‍👧y");
-        Assert.Equal("\u001b[?2026h\u001b[H👨‍👩‍👧\u001b[1;3Hy   \u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[H👨‍👩‍👧\u001b[3Gy   \u001b[?2026l", Render(cur, prev));
     }
 
     [Fact]
@@ -257,7 +259,7 @@ public class RendererTests
         // ❤️ is 2 columns; without grapheme support it's 1, so blank both cells before drawing it.
         var (prev, cur) = Buffers(4, 1);
         cur.SetString(0, 0, "❤️z");
-        Assert.Equal("\u001b[?2026h\u001b[H  \r❤️\u001b[1;3Hz\u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[H  \r❤️\u001b[3Gz\u001b[?2026l", Render(cur, prev));
     }
 
     [Fact]
@@ -266,7 +268,7 @@ public class RendererTests
         var (prev, cur) = Buffers(4, 1);
         cur.SetString(0, 0, "🇵");
         cur.SetString(2, 0, "🇱");
-        Assert.Equal("\u001b[?2026h\u001b[H🇵\u001b[1;3H🇱\u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[H🇵\u001b[3G🇱\u001b[?2026l", Render(cur, prev));
     }
 
     [Fact]
@@ -277,7 +279,7 @@ public class RendererTests
         cur.SetString(0, 0, "a");
         cur.SetString(1, 0, "\u093F\u0901");
         Assert.True(cur[1, 0].IsGrapheme);
-        Assert.Equal("\u001b[?2026h\u001b[Ha\u001b[1;2H\u093F\u0901\u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[Ha\u001b[2G\u093F\u0901\u001b[?2026l", Render(cur, prev));
     }
 
     [Fact]
@@ -289,7 +291,70 @@ public class RendererTests
         cur.SetString(0, 0, "👍");
         cur.SetString(2, 0, "🏽");
         cur.SetString(4, 0, "b");
-        Assert.Equal("\u001b[?2026h\u001b[H👍\u001b[1;3H🏽\u001b[1;5Hb\u001b[?2026l", Render(cur, prev));
+        Assert.Equal("\u001b[?2026h\u001b[H👍\u001b[3G🏽\u001b[5Gb\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void A_column_of_changed_cells_at_the_right_edge_uses_cha_and_line_feeds()
+    {
+        // At the last column the cursor's column is unknown afterwards (pending wrap): CHA then LF, 6 bytes per
+        // row instead of a 7-byte CUP (a scrollbar track or a right border).
+        var (prev, cur) = Buffers(10, 5);
+        for (int y = 0; y < 5; y++)
+        {
+            cur.SetRune(9, y, new Rune('│'));
+        }
+
+        Assert.Equal("\u001b[?2026h\u001b[1;10H│\u001b[10G\n│\u001b[10G\n│\u001b[10G\n│\u001b[10G\n│\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void A_column_of_changed_cells_inside_the_row_moves_down_with_line_feeds()
+    {
+        // The renderer runs with output post-processing off, so LF is a 1-byte "cursor down" in the same column.
+        var (prev, cur) = Buffers(10, 5);
+        for (int y = 0; y < 5; y++)
+        {
+            cur.SetRune(4, y, new Rune('│'));
+        }
+
+        // After each glyph the cursor is one past it: BS then LF, 2 bytes per row instead of a 6-byte CUP.
+        Assert.Equal("\u001b[?2026h\u001b[1;5H│\b\n│\b\n│\b\n│\b\n│\u001b[?2026l", Render(cur, prev));
+    }
+
+    [Fact]
+    public void Cursor_moves_pick_the_shortest_sequence()
+    {
+        var renderer = new Renderer(ColorMode.TrueColor);
+        renderer.AfterClear();
+        var output = new VtBuffer(256);
+        var blank = new CellBuffer(120, 30);
+        var cur = new CellBuffer(120, 30);
+        cur.SetRune(50, 10, new Rune('a'));
+        renderer.Render(cur, blank, output);                         // cursor at (51, 10)
+        Assert.Equal("\u001b[?2026h\u001b[11;51Ha\u001b[?2026l", Encoding.UTF8.GetString(output.Written));
+
+        Assert.Equal("\b\bb", Move(cur, renderer, output, 49, 10, 'b'));       // two back: BS BS (2 bytes)
+        Assert.Equal("\u001b[2Cc", Move(cur, renderer, output, 52, 10, 'c'));   // forward: CUF
+        Assert.Equal("\u001b[10Dd", Move(cur, renderer, output, 43, 10, 'd'));  // ten back: CUB beats CHA (ESC[44G)
+        Assert.Equal("\u001b[3Ge", Move(cur, renderer, output, 2, 10, 'e'));    // far back to a low column: CHA
+        Assert.Equal("\u001b[2Af", Move(cur, renderer, output, 3, 8, 'f'));     // same column, up: CUU
+        Assert.Equal("\u001b[5Bg", Move(cur, renderer, output, 4, 13, 'g'));    // same column, far down: CUD
+        Assert.Equal("\r\n\nh", Move(cur, renderer, output, 0, 15, 'h'));     // start of a row two below: CR LF LF
+        Assert.Equal("\u001b[20;21Hi", Move(cur, renderer, output, 20, 19, 'i'));  // anything else: CUP
+    }
+
+    private static string Move(CellBuffer buffer, Renderer renderer, VtBuffer output, int x, int y, char glyph)
+    {
+        var previous = new CellBuffer(buffer.Width, buffer.Height);
+        buffer.CopyTo(previous);
+        buffer.SetRune(x, y, new Rune(glyph));
+        output.Clear();
+        renderer.Render(buffer, previous, output);
+        string text = Encoding.UTF8.GetString(output.Written);
+        Assert.StartsWith("\u001b[?2026h", text);
+        Assert.EndsWith("\u001b[?2026l", text);
+        return text[8..^8];
     }
 
     /// <summary>A 4-wide buffer with one line of text per row.</summary>
