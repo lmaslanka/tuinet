@@ -1,0 +1,30 @@
+### YamlMime:ApiPage
+title: Enum ConstraintKind
+body:
+- api1: Enum ConstraintKind
+  id: Tuinet_ConstraintKind
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Layout.cs#L9
+  metadata:
+    uid: Tuinet.ConstraintKind
+    commentId: T:Tuinet.ConstraintKind
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public enum ConstraintKind : byte'
+- h2: Fields
+- parameters:
+  - name: Fill
+    default: "4"
+  - name: Length
+    default: "0"
+  - name: Max
+    default: "3"
+  - name: Min
+    default: "2"
+  - name: Percent
+    default: "1"
+languageId: csharp

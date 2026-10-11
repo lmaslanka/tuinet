@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class EditableText | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class EditableText | TUI.NET ">
+      
+      <meta name="description" content="The editing core of  and : the text, a caret with an
+optional selection, movement by grapheme cluster and by word, and undo/redo. Offsets count UTF-16 chars and
+fall on grapheme cluster boundaries. The text lives in a gap buffer, so typing in the middle costs about what
+typing at the end does. Allocates only when the text or the undo history outgrows its buffers, and when
+ is read after an edit.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Widgets.EditableText' data-commentid='T:Tuinet.Widgets.EditableText' id='Tuinet_Widgets_EditableText'>Class EditableText    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L13'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.Widgets.html'>Tuinet.Widgets</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>The editing core of <span class="xref">Tuinet.Widgets.TextInputState</span> and <span class="xref">Tuinet.Widgets.TextAreaState</span>: the text, a caret with an
+optional selection, movement by grapheme cluster and by word, and undo/redo. Offsets count UTF-16 chars and
+fall on grapheme cluster boundaries. The text lives in a gap buffer, so typing in the middle costs about what
+typing at the end does. Allocates only when the text or the undo history outgrows its buffers, and when
+<span class="xref">Tuinet.Widgets.EditableText.Text</span> is read after an edit.</p>
+<pre><code class='lang-csharp'>public abstract class EditableText</code></pre><h4 class='section'>Inheritance</h4><dl class="typelist inheritance"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>
+</div>
+<div>
+<a href='Tuinet.Widgets.EditableText.html'>EditableText</a>
+</div>
+
+</dd></dl><h4 class='section'>Derived</h4><dl class="typelist"><dd>
+<div>
+<a href='Tuinet.Widgets.TextAreaState.html'>TextAreaState</a>
+</div>
+<div>
+<a href='Tuinet.Widgets.TextInputState.html'>TextInputState</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone'>object.MemberwiseClone()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Anchor' data-commentid='P:Tuinet.Widgets.EditableText.Anchor' id='Tuinet_Widgets_EditableText_Anchor'>Anchor    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L53'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The other end of the selection; equal to <span class="xref">Tuinet.Widgets.EditableText.Caret</span> when nothing is selected.</p>
+<pre><code class='lang-csharp'>public int Anchor { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.CanRedo' data-commentid='P:Tuinet.Widgets.EditableText.CanRedo' id='Tuinet_Widgets_EditableText_CanRedo'>CanRedo    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L69'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool CanRedo { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.CanUndo' data-commentid='P:Tuinet.Widgets.EditableText.CanUndo' id='Tuinet_Widgets_EditableText_CanUndo'>CanUndo    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L68'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool CanUndo { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Caret' data-commentid='P:Tuinet.Widgets.EditableText.Caret' id='Tuinet_Widgets_EditableText_Caret'>Caret    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L50'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Caret offset, in chars (always at a grapheme cluster boundary).</p>
+<pre><code class='lang-csharp'>public int Caret { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.HasSelection' data-commentid='P:Tuinet.Widgets.EditableText.HasSelection' id='Tuinet_Widgets_EditableText_HasSelection'>HasSelection    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L55'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool HasSelection { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.IsEmpty' data-commentid='P:Tuinet.Widgets.EditableText.IsEmpty' id='Tuinet_Widgets_EditableText_IsEmpty'>IsEmpty    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L47'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool IsEmpty { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Length' data-commentid='P:Tuinet.Widgets.EditableText.Length' id='Tuinet_Widgets_EditableText_Length'>Length    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L45'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Length of the text, in UTF-16 chars.</p>
+<pre><code class='lang-csharp'>public int Length { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Selection' data-commentid='P:Tuinet.Widgets.EditableText.Selection' id='Tuinet_Widgets_EditableText_Selection'>Selection    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L63'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The selected text, e.g. for <span class="xref">Tuinet.Terminal.CopyToClipboard(System.ReadOnlySpan{System.Char})</span>. Empty when nothing is selected. Valid
+until the next edit.</p>
+<pre><code class='lang-csharp'>public ReadOnlySpan&lt;char&gt; Selection { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.SelectionEnd' data-commentid='P:Tuinet.Widgets.EditableText.SelectionEnd' id='Tuinet_Widgets_EditableText_SelectionEnd'>SelectionEnd    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L57'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public int SelectionEnd { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.SelectionStart' data-commentid='P:Tuinet.Widgets.EditableText.SelectionStart' id='Tuinet_Widgets_EditableText_SelectionStart'>SelectionStart    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L56'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public int SelectionStart { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Text' data-commentid='P:Tuinet.Widgets.EditableText.Text' id='Tuinet_Widgets_EditableText_Text'>Text    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L66'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The whole text. Allocates the first time it is read after an edit.</p>
+<pre><code class='lang-csharp'>public string Text { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Clear' data-commentid='M:Tuinet.Widgets.EditableText.Clear' id='Tuinet_Widgets_EditableText_Clear'>Clear()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L99'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Remove all text. Clears the undo history.</p>
+<pre><code class='lang-csharp'>public void Clear()</code></pre><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.CopyTo(System.Int32,System.Span{System.Char})' data-commentid='M:Tuinet.Widgets.EditableText.CopyTo(System.Int32,System.Span{System.Char})' id='Tuinet_Widgets_EditableText_CopyTo_System_Int32_System_Span_System_Char__'>CopyTo(int, Span&lt;char&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L387'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Copy the text from <code class="paramref">start</code> into <code class="paramref">destination</code>, as much as fits; returns the
+chars copied. Unlike <span class="xref">Tuinet.Widgets.EditableText.Text</span>, never allocates: e.g. to filter a list on every keystroke.</p>
+<pre><code class='lang-csharp'>public int CopyTo(int start, Span&lt;char&gt; destination)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>start</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>destination</code> <a href='https://learn.microsoft.com/dotnet/api/system.span-1'>Span</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.DeleteSelection' data-commentid='M:Tuinet.Widgets.EditableText.DeleteSelection' id='Tuinet_Widgets_EditableText_DeleteSelection'>DeleteSelection()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L138'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Delete the selected text. Returns false when nothing is selected.</p>
+<pre><code class='lang-csharp'>public bool DeleteSelection()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Insert(System.ReadOnlySpan{System.Char})' data-commentid='M:Tuinet.Widgets.EditableText.Insert(System.ReadOnlySpan{System.Char})' id='Tuinet_Widgets_EditableText_Insert_System_ReadOnlySpan_System_Char__'>Insert(ReadOnlySpan&lt;char&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L105'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Insert text at the caret in place of the selection (e.g. a paste), as one undo step. Control characters are
+dropped; a <span class="xref">Tuinet.Widgets.TextAreaState</span> keeps line breaks (as '\n') and turns tabs into four spaces.</p>
+<pre><code class='lang-csharp'>public void Insert(ReadOnlySpan&lt;char&gt; text)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Insert(System.Text.Rune)' data-commentid='M:Tuinet.Widgets.EditableText.Insert(System.Text.Rune)' id='Tuinet_Widgets_EditableText_Insert_System_Text_Rune_'>Insert(Rune)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L113'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Type one character in place of the selection. Control characters are ignored; marks and joiners are kept.</p>
+<pre><code class='lang-csharp'>public void Insert(Rune rune)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>rune</code> <a href='https://learn.microsoft.com/dotnet/api/system.text.rune'>Rune</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.MoveCaret(System.Int32,System.Boolean)' data-commentid='M:Tuinet.Widgets.EditableText.MoveCaret(System.Int32,System.Boolean)' id='Tuinet_Widgets_EditableText_MoveCaret_System_Int32_System_Boolean_'>MoveCaret(int, bool)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L126'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Move the caret to <code class="paramref">offset</code> (snapped to a cluster boundary); <code class="paramref">extend</code> keeps the anchor, selecting.</p>
+<pre><code class='lang-csharp'>public void MoveCaret(int offset, bool extend = false)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>offset</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>extend</code> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Redo' data-commentid='M:Tuinet.Widgets.EditableText.Redo' id='Tuinet_Widgets_EditableText_Redo'>Redo()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L166'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool Redo()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Select(System.Int32,System.Int32)' data-commentid='M:Tuinet.Widgets.EditableText.Select(System.Int32,System.Int32)' id='Tuinet_Widgets_EditableText_Select_System_Int32_System_Int32_'>Select(int, int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L129'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Select from <code class="paramref">anchor</code> to <code class="paramref">caret</code> (snapped to cluster boundaries).</p>
+<pre><code class='lang-csharp'>public void Select(int anchor, int caret)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>anchor</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>caret</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.SelectAll' data-commentid='M:Tuinet.Widgets.EditableText.SelectAll' id='Tuinet_Widgets_EditableText_SelectAll'>SelectAll()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L135'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void SelectAll()</code></pre><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Set(System.ReadOnlySpan{System.Char})' data-commentid='M:Tuinet.Widgets.EditableText.Set(System.ReadOnlySpan{System.Char})' id='Tuinet_Widgets_EditableText_Set_System_ReadOnlySpan_System_Char__'>Set(ReadOnlySpan&lt;char&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L81'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Replace the text. Clears the selection and the undo history.</p>
+<pre><code class='lang-csharp'>public void Set(ReadOnlySpan&lt;char&gt; text)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.EditableText.Undo' data-commentid='M:Tuinet.Widgets.EditableText.Undo' id='Tuinet_Widgets_EditableText_Undo'>Undo()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/EditableText.cs#L153'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Undo the last edit, restoring the selection it replaced. Runs of typing, of Backspace and of Delete undo
+together, a word at a time. The history keeps the last 1000 steps.</p>
+<pre><code class='lang-csharp'>public bool Undo()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

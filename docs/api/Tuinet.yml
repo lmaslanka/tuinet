@@ -1,0 +1,311 @@
+### YamlMime:ApiPage
+title: Namespace Tuinet
+body:
+- api1: Namespace Tuinet
+  id: Tuinet
+  metadata:
+    uid: Tuinet
+    commentId: N:Tuinet
+- h3: Namespaces
+- parameters:
+  - type:
+      text: Tuinet.Testing
+      url: Tuinet.Testing.html
+  - type:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+- h3: Classes
+- parameters:
+  - type:
+      text: CellBuffer
+      url: Tuinet.CellBuffer.html
+    description: >-
+      A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
+
+      consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.
+
+
+      <p>
+
+      Text writes (<xref href="Tuinet.CellBuffer.SetString(System.Int32%2cSystem.Int32%2cSystem.ReadOnlySpan%7bSystem.Char%7d%2cTuinet.Style%2cSystem.Int32%2cTuinet.Overflow)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.CellBuffer.SetRune(System.Int32%2cSystem.Int32%2cSystem.Text.Rune%2cTuinet.Style)" data-throw-if-not-resolved="false"></xref>) layer: a default foreground or
+
+      background in the style keeps the color already in the cell, so text drawn on a filled panel
+
+      keeps the panel's background. Attributes are replaced. <xref href="Tuinet.CellBuffer.Fill(Tuinet.Rect%2cTuinet.Style)" data-throw-if-not-resolved="false"></xref> and
+
+      <xref href="Tuinet.CellBuffer.SetCell(System.Int32%2cSystem.Int32%2cTuinet.Cell)" data-throw-if-not-resolved="false"></xref> replace whole cells.
+
+      </p>
+  - type:
+      text: Fuzzy
+      url: Tuinet.Fuzzy.html
+    description: >-
+      Fuzzy matching for filtering lists by what was typed (a command palette, a file picker): the pattern's chars must
+
+      appear in the text in order, not necessarily together. Higher scores are better matches. Allocation-free, O(n).
+  - type:
+      text: InlineOptions
+      url: Tuinet.InlineOptions.html
+    description: >-
+      Inline mode: instead of the alternate screen, draw a live band of <xref href="Tuinet.InlineOptions.Height" data-throw-if-not-resolved="false"></xref> rows under the
+
+      shell prompt. The band stays in the terminal (and its scrollback) after exit.
+  - type:
+      text: Layout
+      url: Tuinet.Layout.html
+    description: >-
+      Splits a rect along one axis. Allocation-free: constraints come in as a span (a collection
+
+      expression stays on the stack) and results go into a caller-provided span.
+
+
+      <pre><code class="lang-csharp">Span&lt;Rect&gt; rows = stackalloc Rect[3];
+
+      Layout.Vertical(area, [Constraint.Length(1), Constraint.Fill(), Constraint.Length(1)], rows);</code></pre>
+  - type:
+      text: Markup
+      url: Tuinet.Markup.html
+    description: >-
+      A small markup for styled text, parsed into caller memory without allocating.
+
+
+      <ul><li><code>[b]</code> bold, <code>[dim]</code>, <code>[i]</code> italic, <code>[u]</code> underline, <code>[blink]</code>, <code>[reverse]</code>,
+
+      <code>[hidden]</code>, <code>[s]</code> strike (long names work too: <code>[bold]</code>, <code>[italic]</code>, …).</li><li><code>[fg=red]</code>, <code>[bg=#1C2433]</code>: a name (<code>black</code> … <code>white</code>, <code>bright-red</code> …,
+
+      <code>default</code>), <code>#RRGGBB</code>, or a palette index 0–255. A bare color name or <code>#RRGGBB</code> sets the
+
+      foreground; a bare number is just text.</li><li>Several in one tag: <code>[b fg=#F5A623]</code>. <code>[/]</code> closes the latest tag.</li><li><code>[[</code> is a literal <code>[</code>. A tag that doesn't parse is kept as text, so <code>[1/3]</code> needs no escaping.</li></ul>
+  - type:
+      text: Terminal
+      url: Tuinet.Terminal.html
+    description: >-
+      An immediate-mode terminal session: the alternate screen (or, with <xref href="Tuinet.TerminalOptions.Inline" data-throw-if-not-resolved="false"></xref>, a
+
+      band under the prompt), raw input, double-buffered output.
+
+
+      <p>
+
+      Single-threaded: call <xref href="Tuinet.Terminal.Poll(Tuinet.Event%40%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Terminal.BeginFrame" data-throw-if-not-resolved="false"></xref> and <xref href="Tuinet.Terminal.Present" data-throw-if-not-resolved="false"></xref>
+
+      from one thread. <xref href="Tuinet.Terminal.Post(System.Object)" data-throw-if-not-resolved="false"></xref> may be called from any thread to wake the loop.
+
+      </p>
+
+
+      <pre><code class="lang-csharp">using var term = Terminal.Open();
+
+      while (running)
+
+      {
+          if (!term.Poll(out Event ev, Timeout.Infinite)) continue;
+          do { running = app.Handle(ev); } while (running &amp;&amp; term.Poll(out ev, 0)); // coalesce bursts
+          CellBuffer frame = term.BeginFrame();
+          app.Render(frame);
+          term.Present();                                                             // one write
+      }</code></pre>
+
+
+      Or implement <xref href="Tuinet.IApp" data-throw-if-not-resolved="false"></xref> and let <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> be that loop.
+  - type:
+      text: TerminalOptions
+      url: Tuinet.TerminalOptions.html
+  - type:
+      text: TextWidth
+      url: Tuinet.TextWidth.html
+    description: Terminal display width of text, in columns.
+  - type:
+      text: WidgetExtensions
+      url: Tuinet.WidgetExtensions.html
+- h3: Structs
+- parameters:
+  - type:
+      text: Alarm
+      url: Tuinet.Alarm.html
+    description: >-
+      A one-shot "at this time" check for time-based changes (hide a message after 3 s, debounce a search) without timers
+
+      or callbacks. Keep it in your state, check it with the loop's time, and return <xref href="Tuinet.Alarm.DueMs" data-throw-if-not-resolved="false"></xref> from
+
+      <xref href="Tuinet.IApp.NextDueMs(System.Int64)" data-throw-if-not-resolved="false"></xref> so <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> wakes for it. <code>default</code> is not set.
+
+
+      <pre><code class="lang-csharp">flashAlarm.Start(nowMs, 3000);                     // when the message is shown
+
+      if (flashAlarm.Fire(nowMs)) flash = "";            // in Handle: true once, when due
+
+      public long NextDueMs(long nowMs) =&gt; flashAlarm.DueMs;</code></pre>
+  - type:
+      text: Cell
+      url: Tuinet.Cell.html
+    description: >-
+      One terminal cell: glyph, style, display width, hyperlink. Exactly 16 bytes, blittable and canonical,
+
+      so the renderer compares whole rows with a vectorized memcmp.
+  - type:
+      text: Color
+      url: Tuinet.Color.html
+    description: >-
+      A terminal color: the terminal default, a palette index (0-255), or 24-bit RGB.
+
+      Four bytes, compared bitwise. Downsampled at emit time to the terminal's <xref href="Tuinet.ColorMode" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: Constraint
+      url: Tuinet.Constraint.html
+    description: How much of the split axis one segment gets. See <xref href="Tuinet.Layout.Split(Tuinet.Rect%2cTuinet.Direction%2cSystem.ReadOnlySpan%7bTuinet.Constraint%7d%2cSystem.Span%7bTuinet.Rect%7d%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>.
+  - type:
+      text: Event
+      url: Tuinet.Event.html
+    description: One input event. Only the members matching <xref href="Tuinet.Event.Kind" data-throw-if-not-resolved="false"></xref> are meaningful.
+  - type:
+      text: FocusRing
+      url: Tuinet.FocusRing.html
+    description: >-
+      Which of <xref href="Tuinet.FocusRing.Count" data-throw-if-not-resolved="false"></xref> controls has focus, as an index that wraps around: Tab and Shift+Tab move it, and a
+
+      click on a control focuses it. A plain value kept in your state; widgets still take <code>Focused = ring.Is(i)</code>.
+
+
+      <pre><code class="lang-csharp">var focus = new FocusRing(3);                        // name, notify, Save
+
+      if (ev.Kind == EventKind.Key &amp;&amp; focus.Handle(ev.Key)) return;
+
+      frame.Render(new Button("Save") { Focused = focus.Is(2) }, saveArea);</code></pre>
+  - type:
+      text: KeyEvent
+      url: Tuinet.KeyEvent.html
+    description: >-
+      A key press. Printable keys are <xref href="Tuinet.KeyCode.Char" data-throw-if-not-resolved="false"></xref> with <xref href="Tuinet.KeyEvent.Rune" data-throw-if-not-resolved="false"></xref> set; Ctrl+letter is the
+
+      lowercase letter with <xref href="Tuinet.Modifiers.Ctrl" data-throw-if-not-resolved="false"></xref>. Releases (<xref href="Tuinet.KeyKind.Release" data-throw-if-not-resolved="false"></xref>, opt-in) never
+
+      match <xref href="Tuinet.KeyEvent.IsChar(System.Char)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.KeyEvent.IsCtrl(System.Char)" data-throw-if-not-resolved="false"></xref> or <xref href="Tuinet.KeyEvent.Is(Tuinet.KeyCode%2cTuinet.Modifiers)" data-throw-if-not-resolved="false"></xref>, so key bindings don't fire twice.
+  - type:
+      text: MouseEvent
+      url: Tuinet.MouseEvent.html
+    description: A mouse report (requires <xref href="Tuinet.TerminalOptions.Mouse" data-throw-if-not-resolved="false"></xref>). Coordinates are 0-based cells.
+  - type:
+      text: Rect
+      url: Tuinet.Rect.html
+    description: A screen rectangle. Width and height are never negative.
+  - type:
+      text: Size
+      url: Tuinet.Size.html
+  - type:
+      text: Style
+      url: Tuinet.Style.html
+    description: Foreground, background and text attributes. Ten bytes, no padding.
+  - type:
+      text: StyledRun
+      url: Tuinet.StyledRun.html
+    description: <code class="paramref">Length</code> chars of a <xref href="Tuinet.StyledText" data-throw-if-not-resolved="false"></xref> drawn in <code class="paramref">Style</code>.
+  - type:
+      text: StyledText
+      url: Tuinet.StyledText.html
+    description: >-
+      Text with several styles: the text, runs that cover it from the start (each run's style is layered over
+
+      <xref href="Tuinet.StyledText.Style" data-throw-if-not-resolved="false"></xref>), and the base style for anything the runs don't cover. A view over caller memory,
+
+      so it costs nothing to build: runs are typically a collection expression on the stack, or come from a
+
+      <xref href="Tuinet.StyledTextBuilder" data-throw-if-not-resolved="false"></xref> or <xref href="Tuinet.Markup.Parse(System.ReadOnlySpan%7bSystem.Char%7d%2cSystem.Span%7bSystem.Char%7d%2cSystem.Span%7bTuinet.StyledRun%7d%2cTuinet.Style)" data-throw-if-not-resolved="false"></xref>.
+
+
+      <pre><code class="lang-csharp">buffer.SetText(x, y, new StyledText("j/k move", [new(3, keyStyle), new(5, dimStyle)]));</code></pre>
+  - type:
+      text: StyledTextBuilder
+      url: Tuinet.StyledTextBuilder.html
+    description: >-
+      Builds a <xref href="Tuinet.StyledText" data-throw-if-not-resolved="false"></xref> into caller memory (usually <code>stackalloc</code>), merging adjacent runs
+
+      with the same style. Never throws when full: what fits is kept and <xref href="Tuinet.StyledTextBuilder.Overflowed" data-throw-if-not-resolved="false"></xref> is set.
+
+
+      <pre><code class="lang-csharp">var keys = new StyledTextBuilder(stackalloc char[64], stackalloc StyledRun[8]);
+
+      keys.Append("j/k", key);
+
+      keys.Append(" move  ", dim);
+
+      keys.Append(count, key);
+
+      buffer.SetText(x, y, keys.Build());</code></pre>
+- h3: Interfaces
+- parameters:
+  - type:
+      text: IApp
+      url: Tuinet.IApp.html
+    description: >-
+      An app for <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>: it handles events and draws frames, and the loop decides when. Times are
+
+      milliseconds since <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> started.
+  - type:
+      text: IStatefulWidget<TState>
+      url: Tuinet.IStatefulWidget-1.html
+    description: A widget whose render reads and updates app-owned state (selection, scroll, caret).
+  - type:
+      text: ITty
+      url: Tuinet.ITty.html
+    description: >-
+      The platform seam: raw byte I/O with a terminal. Implement it to run a <xref href="Tuinet.Terminal" data-throw-if-not-resolved="false"></xref>
+
+      over anything (a pty, a socket, a test double).
+  - type:
+      text: IWidget
+      url: Tuinet.IWidget.html
+    description: >-
+      An immediate-mode widget: a value describing what to draw, rendered into an area of a buffer.
+
+      Widgets hold no state between frames; implement them as <code>readonly ref struct</code>s so they can
+
+      carry spans (e.g. <code>stackalloc</code>-formatted text) at zero allocation cost.
+- h3: Enums
+- parameters:
+  - type:
+      text: Attr
+      url: Tuinet.Attr.html
+  - type:
+      text: ColorKind
+      url: Tuinet.ColorKind.html
+  - type:
+      text: ColorMode
+      url: Tuinet.ColorMode.html
+  - type:
+      text: ConstraintKind
+      url: Tuinet.ConstraintKind.html
+  - type:
+      text: CursorShape
+      url: Tuinet.CursorShape.html
+    description: Terminal cursor shapes (DECSCUSR). <xref href="Tuinet.CursorShape.Default" data-throw-if-not-resolved="false"></xref> is whatever the user's terminal is set to.
+  - type:
+      text: Direction
+      url: Tuinet.Direction.html
+  - type:
+      text: EventKind
+      url: Tuinet.EventKind.html
+  - type:
+      text: KeyCode
+      url: Tuinet.KeyCode.html
+  - type:
+      text: KeyKind
+      url: Tuinet.KeyKind.html
+    description: Whether a key went down, auto-repeated or came up.
+  - type:
+      text: Modifiers
+      url: Tuinet.Modifiers.html
+  - type:
+      text: MouseButton
+      url: Tuinet.MouseButton.html
+  - type:
+      text: MouseKind
+      url: Tuinet.MouseKind.html
+  - type:
+      text: Overflow
+      url: Tuinet.Overflow.html
+  - type:
+      text: TtySignals
+      url: Tuinet.TtySignals.html
+    description: Job-control signals an <xref href="Tuinet.ITty" data-throw-if-not-resolved="false"></xref> reports to <xref href="Tuinet.Terminal" data-throw-if-not-resolved="false"></xref>.
+languageId: csharp

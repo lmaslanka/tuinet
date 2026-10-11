@@ -1,0 +1,31 @@
+### YamlMime:ApiPage
+title: Enum Modifiers
+body:
+- api1: Enum Modifiers
+  id: Tuinet_Modifiers
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Input.cs#L36
+  metadata:
+    uid: Tuinet.Modifiers
+    commentId: T:Tuinet.Modifiers
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: >-
+    [Flags]
+
+    public enum Modifiers : byte
+- h2: Fields
+- parameters:
+  - name: Alt
+    default: "2"
+  - name: Ctrl
+    default: "1"
+  - name: None
+    default: "0"
+  - name: Shift
+    default: "4"
+languageId: csharp

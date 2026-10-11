@@ -1,0 +1,186 @@
+### YamlMime:ApiPage
+title: Struct TextArea
+body:
+- api1: Struct TextArea
+  id: Tuinet_Widgets_TextArea
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L536
+  metadata:
+    uid: Tuinet.Widgets.TextArea
+    commentId: T:Tuinet.Widgets.TextArea
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Draws a <xref href="Tuinet.Widgets.TextAreaState" data-throw-if-not-resolved="false"></xref>: the lines in view, soft-wrapped or scrolled sideways, with optional line
+
+    numbers, a placeholder, and when <xref href="Tuinet.Widgets.TextArea.Focused" data-throw-if-not-resolved="false"></xref> the selection and the real terminal cursor at the caret.
+
+    Only visible lines are measured.
+- code: 'public readonly ref struct TextArea : IStatefulWidget<TextAreaState>'
+- h4: Implements
+- list:
+  - text: IStatefulWidget<TextAreaState>
+    url: Tuinet.IStatefulWidget-1.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: TextArea()
+  id: Tuinet_Widgets_TextArea__ctor
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L538
+  metadata:
+    uid: Tuinet.Widgets.TextArea.#ctor
+    commentId: M:Tuinet.Widgets.TextArea.#ctor
+- code: public TextArea()
+- h2: Properties
+- api3: CursorShape
+  id: Tuinet_Widgets_TextArea_CursorShape
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L562
+  metadata:
+    uid: Tuinet.Widgets.TextArea.CursorShape
+    commentId: P:Tuinet.Widgets.TextArea.CursorShape
+- markdown: 'Shape of the caret while <xref href="Tuinet.Widgets.TextArea.Focused" data-throw-if-not-resolved="false"></xref>: a blinking bar, as in GUI text fields.'
+- code: public CursorShape CursorShape { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: CursorShape
+      url: Tuinet.CursorShape.html
+- api3: Focused
+  id: Tuinet_Widgets_TextArea_Focused
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L559
+  metadata:
+    uid: Tuinet.Widgets.TextArea.Focused
+    commentId: P:Tuinet.Widgets.TextArea.Focused
+- markdown: Shows the terminal cursor at the caret, and the selection; scrolls to keep the caret in view.
+- code: public bool Focused { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: LineNumberStyle
+  id: Tuinet_Widgets_TextArea_LineNumberStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L556
+  metadata:
+    uid: Tuinet.Widgets.TextArea.LineNumberStyle
+    commentId: P:Tuinet.Widgets.TextArea.LineNumberStyle
+- code: public Style LineNumberStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: LineNumbers
+  id: Tuinet_Widgets_TextArea_LineNumbers
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L554
+  metadata:
+    uid: Tuinet.Widgets.TextArea.LineNumbers
+    commentId: P:Tuinet.Widgets.TextArea.LineNumbers
+- markdown: Line numbers in a gutter on the left (on a wrapped line's first row only).
+- code: public bool LineNumbers { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Placeholder
+  id: Tuinet_Widgets_TextArea_Placeholder
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L549
+  metadata:
+    uid: Tuinet.Widgets.TextArea.Placeholder
+    commentId: P:Tuinet.Widgets.TextArea.Placeholder
+- markdown: Shown while the text is empty.
+- code: public ReadOnlySpan<char> Placeholder { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: PlaceholderStyle
+  id: Tuinet_Widgets_TextArea_PlaceholderStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L551
+  metadata:
+    uid: Tuinet.Widgets.TextArea.PlaceholderStyle
+    commentId: P:Tuinet.Widgets.TextArea.PlaceholderStyle
+- code: public Style PlaceholderStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: SelectionStyle
+  id: Tuinet_Widgets_TextArea_SelectionStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L546
+  metadata:
+    uid: Tuinet.Widgets.TextArea.SelectionStyle
+    commentId: P:Tuinet.Widgets.TextArea.SelectionStyle
+- markdown: Layered over <xref href="Tuinet.Widgets.TextArea.Style" data-throw-if-not-resolved="false"></xref> for selected text; reverse video by default.
+- code: public Style SelectionStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Style
+  id: Tuinet_Widgets_TextArea_Style
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L543
+  metadata:
+    uid: Tuinet.Widgets.TextArea.Style
+    commentId: P:Tuinet.Widgets.TextArea.Style
+- markdown: Text style; the area is erased with it (default colors keep the background underneath).
+- code: public Style Style { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Render(Rect, CellBuffer, ref TextAreaState)
+  id: Tuinet_Widgets_TextArea_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_TextAreaState__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L564
+  metadata:
+    uid: Tuinet.Widgets.TextArea.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.TextAreaState@)
+    commentId: M:Tuinet.Widgets.TextArea.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.TextAreaState@)
+- code: public void Render(Rect area, CellBuffer buffer, ref TextAreaState state)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: state
+    type:
+    - text: TextAreaState
+      url: Tuinet.Widgets.TextAreaState.html
+languageId: csharp
+metadata:
+  description: >-
+    Draws a : the lines in view, soft-wrapped or scrolled sideways, with optional line
+
+    numbers, a placeholder, and when  the selection and the real terminal cursor at the caret.
+
+    Only visible lines are measured.

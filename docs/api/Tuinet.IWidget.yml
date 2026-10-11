@@ -1,0 +1,49 @@
+### YamlMime:ApiPage
+title: Interface IWidget
+body:
+- api1: Interface IWidget
+  id: Tuinet_IWidget
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/IWidget.cs#L8
+  metadata:
+    uid: Tuinet.IWidget
+    commentId: T:Tuinet.IWidget
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    An immediate-mode widget: a value describing what to draw, rendered into an area of a buffer.
+
+    Widgets hold no state between frames; implement them as <code>readonly ref struct</code>s so they can
+
+    carry spans (e.g. <code>stackalloc</code>-formatted text) at zero allocation cost.
+- code: public interface IWidget
+- h2: Methods
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_IWidget_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/IWidget.cs#L10
+  metadata:
+    uid: Tuinet.IWidget.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.IWidget.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+languageId: csharp
+metadata:
+  description: >-
+    An immediate-mode widget: a value describing what to draw, rendered into an area of a buffer.
+
+    Widgets hold no state between frames; implement them as readonly ref structs so they can
+
+    carry spans (e.g. stackalloc-formatted text) at zero allocation cost.

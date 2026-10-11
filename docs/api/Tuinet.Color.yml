@@ -1,0 +1,503 @@
+### YamlMime:ApiPage
+title: Struct Color
+body:
+- api1: Struct Color
+  id: Tuinet_Color
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L17
+  metadata:
+    uid: Tuinet.Color
+    commentId: T:Tuinet.Color
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A terminal color: the terminal default, a palette index (0-255), or 24-bit RGB.
+
+    Four bytes, compared bitwise. Downsampled at emit time to the terminal's <xref href="Tuinet.ColorMode" data-throw-if-not-resolved="false"></xref>.
+- code: 'public readonly struct Color : IEquatable<Color>'
+- h4: Implements
+- list:
+  - text: IEquatable<Color>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Properties
+- api3: B
+  id: Tuinet_Color_B
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L36
+  metadata:
+    uid: Tuinet.Color.B
+    commentId: P:Tuinet.Color.B
+- code: public byte B { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- api3: Black
+  id: Tuinet_Color_Black
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L52
+  metadata:
+    uid: Tuinet.Color.Black
+    commentId: P:Tuinet.Color.Black
+- code: public static Color Black { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Blue
+  id: Tuinet_Color_Blue
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L56
+  metadata:
+    uid: Tuinet.Color.Blue
+    commentId: P:Tuinet.Color.Blue
+- code: public static Color Blue { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightBlack
+  id: Tuinet_Color_BrightBlack
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L60
+  metadata:
+    uid: Tuinet.Color.BrightBlack
+    commentId: P:Tuinet.Color.BrightBlack
+- code: public static Color BrightBlack { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightBlue
+  id: Tuinet_Color_BrightBlue
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L64
+  metadata:
+    uid: Tuinet.Color.BrightBlue
+    commentId: P:Tuinet.Color.BrightBlue
+- code: public static Color BrightBlue { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightCyan
+  id: Tuinet_Color_BrightCyan
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L66
+  metadata:
+    uid: Tuinet.Color.BrightCyan
+    commentId: P:Tuinet.Color.BrightCyan
+- code: public static Color BrightCyan { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightGreen
+  id: Tuinet_Color_BrightGreen
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L62
+  metadata:
+    uid: Tuinet.Color.BrightGreen
+    commentId: P:Tuinet.Color.BrightGreen
+- code: public static Color BrightGreen { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightMagenta
+  id: Tuinet_Color_BrightMagenta
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L65
+  metadata:
+    uid: Tuinet.Color.BrightMagenta
+    commentId: P:Tuinet.Color.BrightMagenta
+- code: public static Color BrightMagenta { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightRed
+  id: Tuinet_Color_BrightRed
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L61
+  metadata:
+    uid: Tuinet.Color.BrightRed
+    commentId: P:Tuinet.Color.BrightRed
+- code: public static Color BrightRed { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightWhite
+  id: Tuinet_Color_BrightWhite
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L67
+  metadata:
+    uid: Tuinet.Color.BrightWhite
+    commentId: P:Tuinet.Color.BrightWhite
+- code: public static Color BrightWhite { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: BrightYellow
+  id: Tuinet_Color_BrightYellow
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L63
+  metadata:
+    uid: Tuinet.Color.BrightYellow
+    commentId: P:Tuinet.Color.BrightYellow
+- code: public static Color BrightYellow { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Cyan
+  id: Tuinet_Color_Cyan
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L58
+  metadata:
+    uid: Tuinet.Color.Cyan
+    commentId: P:Tuinet.Color.Cyan
+- code: public static Color Cyan { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Default
+  id: Tuinet_Color_Default
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L43
+  metadata:
+    uid: Tuinet.Color.Default
+    commentId: P:Tuinet.Color.Default
+- code: public static Color Default { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: G
+  id: Tuinet_Color_G
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L35
+  metadata:
+    uid: Tuinet.Color.G
+    commentId: P:Tuinet.Color.G
+- code: public byte G { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- api3: Green
+  id: Tuinet_Color_Green
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L54
+  metadata:
+    uid: Tuinet.Color.Green
+    commentId: P:Tuinet.Color.Green
+- code: public static Color Green { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Index
+  id: Tuinet_Color_Index
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L39
+  metadata:
+    uid: Tuinet.Color.Index
+    commentId: P:Tuinet.Color.Index
+- markdown: Palette index for <xref href="Tuinet.ColorKind.Indexed" data-throw-if-not-resolved="false"></xref> colors.
+- code: public byte Index { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- api3: IsDefault
+  id: Tuinet_Color_IsDefault
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L41
+  metadata:
+    uid: Tuinet.Color.IsDefault
+    commentId: P:Tuinet.Color.IsDefault
+- code: public bool IsDefault { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Kind
+  id: Tuinet_Color_Kind
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L33
+  metadata:
+    uid: Tuinet.Color.Kind
+    commentId: P:Tuinet.Color.Kind
+- code: public ColorKind Kind { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ColorKind
+      url: Tuinet.ColorKind.html
+- api3: Magenta
+  id: Tuinet_Color_Magenta
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L57
+  metadata:
+    uid: Tuinet.Color.Magenta
+    commentId: P:Tuinet.Color.Magenta
+- code: public static Color Magenta { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: R
+  id: Tuinet_Color_R
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L34
+  metadata:
+    uid: Tuinet.Color.R
+    commentId: P:Tuinet.Color.R
+- code: public byte R { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- api3: Red
+  id: Tuinet_Color_Red
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L53
+  metadata:
+    uid: Tuinet.Color.Red
+    commentId: P:Tuinet.Color.Red
+- code: public static Color Red { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: White
+  id: Tuinet_Color_White
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L59
+  metadata:
+    uid: Tuinet.Color.White
+    commentId: P:Tuinet.Color.White
+- code: public static Color White { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Yellow
+  id: Tuinet_Color_Yellow
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L55
+  metadata:
+    uid: Tuinet.Color.Yellow
+    commentId: P:Tuinet.Color.Yellow
+- code: public static Color Yellow { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- h2: Methods
+- api3: Equals(Color)
+  id: Tuinet_Color_Equals_Tuinet_Color_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L75
+  metadata:
+    uid: Tuinet.Color.Equals(Tuinet.Color)
+    commentId: M:Tuinet.Color.Equals(Tuinet.Color)
+- markdown: Indicates whether the current object is equal to another object of the same type.
+- code: public bool Equals(Color other)
+- h4: Parameters
+- parameters:
+  - name: other
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+    description: An object to compare with this object.
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.
+- api3: Equals(object?)
+  id: Tuinet_Color_Equals_System_Object_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L76
+  metadata:
+    uid: Tuinet.Color.Equals(System.Object)
+    commentId: M:Tuinet.Color.Equals(System.Object)
+- markdown: Indicates whether this instance and a specified object are equal.
+- code: public override bool Equals(object? obj)
+- h4: Parameters
+- parameters:
+  - name: obj
+    type:
+    - text: object
+      url: https://learn.microsoft.com/dotnet/api/system.object
+    - '?'
+    description: The object to compare with the current instance.
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.
+- api3: GetHashCode()
+  id: Tuinet_Color_GetHashCode
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L77
+  metadata:
+    uid: Tuinet.Color.GetHashCode
+    commentId: M:Tuinet.Color.GetHashCode
+- markdown: Returns the hash code for this instance.
+- code: public override int GetHashCode()
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+    description: A 32-bit signed integer that is the hash code for this instance.
+- api3: Hex(uint)
+  id: Tuinet_Color_Hex_System_UInt32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L48
+  metadata:
+    uid: Tuinet.Color.Hex(System.UInt32)
+    commentId: M:Tuinet.Color.Hex(System.UInt32)
+- markdown: 24-bit color from <code>0xRRGGBB</code>.
+- code: public static Color Hex(uint rgb)
+- h4: Parameters
+- parameters:
+  - name: rgb
+    type:
+    - text: uint
+      url: https://learn.microsoft.com/dotnet/api/system.uint32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Indexed(byte)
+  id: Tuinet_Color_Indexed_System_Byte_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L50
+  metadata:
+    uid: Tuinet.Color.Indexed(System.Byte)
+    commentId: M:Tuinet.Color.Indexed(System.Byte)
+- code: public static Color Indexed(byte index)
+- h4: Parameters
+- parameters:
+  - name: index
+    type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- h4: Returns
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: Rgb(byte, byte, byte)
+  id: Tuinet_Color_Rgb_System_Byte_System_Byte_System_Byte_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L45
+  metadata:
+    uid: Tuinet.Color.Rgb(System.Byte,System.Byte,System.Byte)
+    commentId: M:Tuinet.Color.Rgb(System.Byte,System.Byte,System.Byte)
+- code: public static Color Rgb(byte r, byte g, byte b)
+- h4: Parameters
+- parameters:
+  - name: r
+    type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+  - name: g
+    type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+  - name: b
+    type:
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+- h4: Returns
+- parameters:
+  - type:
+    - text: Color
+      url: Tuinet.Color.html
+- api3: ToString()
+  id: Tuinet_Color_ToString
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L81
+  metadata:
+    uid: Tuinet.Color.ToString
+    commentId: M:Tuinet.Color.ToString
+- markdown: Returns the fully qualified type name of this instance.
+- code: public override string ToString()
+- h4: Returns
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    description: The fully qualified type name.
+- h2: Operators
+- api3: operator ==(Color, Color)
+  id: Tuinet_Color_op_Equality_Tuinet_Color_Tuinet_Color_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L78
+  metadata:
+    uid: Tuinet.Color.op_Equality(Tuinet.Color,Tuinet.Color)
+    commentId: M:Tuinet.Color.op_Equality(Tuinet.Color,Tuinet.Color)
+- code: public static bool operator ==(Color left, Color right)
+- h4: Parameters
+- parameters:
+  - name: left
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+  - name: right
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: operator !=(Color, Color)
+  id: Tuinet_Color_op_Inequality_Tuinet_Color_Tuinet_Color_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Color.cs#L79
+  metadata:
+    uid: Tuinet.Color.op_Inequality(Tuinet.Color,Tuinet.Color)
+    commentId: M:Tuinet.Color.op_Inequality(Tuinet.Color,Tuinet.Color)
+- code: public static bool operator !=(Color left, Color right)
+- h4: Parameters
+- parameters:
+  - name: left
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+  - name: right
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+languageId: csharp
+metadata:
+  description: >-
+    A terminal color: the terminal default, a palette index (0-255), or 24-bit RGB.
+
+    Four bytes, compared bitwise. Downsampled at emit time to the terminal's .

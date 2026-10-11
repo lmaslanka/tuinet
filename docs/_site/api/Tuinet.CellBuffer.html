@@ -1,0 +1,568 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class CellBuffer | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class CellBuffer | TUI.NET ">
+      
+      <meta name="description" content="A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
+consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.
+
+
+Text writes (, ) layer: a default foreground or
+background in the style keeps the color already in the cell, so text drawn on a filled panel
+keeps the panel&#39;s background. Attributes are replaced.  and
+ replace whole cells.
+">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.CellBuffer' data-commentid='T:Tuinet.CellBuffer' id='Tuinet_CellBuffer'>Class CellBuffer    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L40'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.html'>Tuinet</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>A grid of cells plus a cursor position. All writes clip to the buffer and keep wide glyphs
+consistent: a wide glyph always owns a continuation cell, and overwriting either half blanks the other.</p>
+<p>
+Text writes (<span class="xref">Tuinet.CellBuffer.SetString(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)</span>, <span class="xref">Tuinet.CellBuffer.SetRune(System.Int32,System.Int32,System.Text.Rune,Tuinet.Style)</span>) layer: a default foreground or
+background in the style keeps the color already in the cell, so text drawn on a filled panel
+keeps the panel's background. Attributes are replaced. <span class="xref">Tuinet.CellBuffer.Fill(Tuinet.Rect,Tuinet.Style)</span> and
+<span class="xref">Tuinet.CellBuffer.SetCell(System.Int32,System.Int32,Tuinet.Cell)</span> replace whole cells.
+</p>
+<pre><code class='lang-csharp'>public sealed class CellBuffer</code></pre><h4 class='section'>Inheritance</h4><dl class="typelist inheritance"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>
+</div>
+<div>
+<a href='Tuinet.CellBuffer.html'>CellBuffer</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h4 class='section'>Extension Methods</h4><dl class="typelist"><dd>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_FindText_Tuinet_CellBuffer_System_String_'>CellBufferTesting.FindText(CellBuffer, string)</a>
+</div>
+<div>
+<a href='Tuinet.WidgetExtensions.html#Tuinet_WidgetExtensions_Render__1_Tuinet_CellBuffer___0_Tuinet_Rect_'>WidgetExtensions.Render&lt;TWidget&gt;(CellBuffer, TWidget, Rect)</a>
+</div>
+<div>
+<a href='Tuinet.WidgetExtensions.html#Tuinet_WidgetExtensions_Render__2_Tuinet_CellBuffer___0_Tuinet_Rect___1__'>WidgetExtensions.Render&lt;TWidget, TState&gt;(CellBuffer, TWidget, Rect, ref TState)</a>
+</div>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_StyleAt_Tuinet_CellBuffer_System_Int32_System_Int32_'>CellBufferTesting.StyleAt(CellBuffer, int, int)</a>
+</div>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_StyleOf_Tuinet_CellBuffer_System_String_'>CellBufferTesting.StyleOf(CellBuffer, string)</a>
+</div>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_ToAnsi_Tuinet_CellBuffer_'>CellBufferTesting.ToAnsi(CellBuffer)</a>
+</div>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_ToStyledString_Tuinet_CellBuffer_'>CellBufferTesting.ToStyledString(CellBuffer)</a>
+</div>
+<div>
+<a href='Tuinet.Testing.CellBufferTesting.html#Tuinet_Testing_CellBufferTesting_TryFindText_Tuinet_CellBuffer_System_String_Tuinet_Rect__'>CellBufferTesting.TryFindText(CellBuffer, string, out Rect)</a>
+</div>
+
+</dd></dl><h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.CellBuffer.#ctor(System.Int32,System.Int32)' data-commentid='M:Tuinet.CellBuffer.#ctor(System.Int32,System.Int32)' id='Tuinet_CellBuffer__ctor_System_Int32_System_Int32_'>CellBuffer(int, int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L51'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public CellBuffer(int width, int height)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>width</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>height</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.CellBuffer.Area' data-commentid='P:Tuinet.CellBuffer.Area' id='Tuinet_CellBuffer_Area'>Area    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L64'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Rect Area { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.CursorShape' data-commentid='P:Tuinet.CellBuffer.CursorShape' id='Tuinet_CellBuffer_CursorShape'>CursorShape    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L76'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Shape of the terminal cursor after this frame is presented.</p>
+<pre><code class='lang-csharp'>public CursorShape CursorShape { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.CursorShape.html'>CursorShape</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.CursorVisible' data-commentid='P:Tuinet.CellBuffer.CursorVisible' id='Tuinet_CellBuffer_CursorVisible'>CursorVisible    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L73'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool CursorVisible { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.CursorX' data-commentid='P:Tuinet.CellBuffer.CursorX' id='Tuinet_CellBuffer_CursorX'>CursorX    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L68'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Terminal cursor column after this frame is presented, or -1 when hidden.</p>
+<pre><code class='lang-csharp'>public int CursorX { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.CursorY' data-commentid='P:Tuinet.CellBuffer.CursorY' id='Tuinet_CellBuffer_CursorY'>CursorY    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L71'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Terminal cursor row after this frame is presented, or -1 when hidden.</p>
+<pre><code class='lang-csharp'>public int CursorY { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Height' data-commentid='P:Tuinet.CellBuffer.Height' id='Tuinet_CellBuffer_Height'>Height    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L63'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public int Height { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Size' data-commentid='P:Tuinet.CellBuffer.Size' id='Tuinet_CellBuffer_Size'>Size    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L65'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Size Size { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Size.html'>Size</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Width' data-commentid='P:Tuinet.CellBuffer.Width' id='Tuinet_CellBuffer_Width'>Width    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L62'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public int Width { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Item(System.Int32,System.Int32)' data-commentid='P:Tuinet.CellBuffer.Item(System.Int32,System.Int32)' id='Tuinet_CellBuffer_Item_System_Int32_System_Int32_'>this[int, int]    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L78'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Cell this[int x, int y] { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.CellBuffer.Clear' data-commentid='M:Tuinet.CellBuffer.Clear' id='Tuinet_CellBuffer_Clear'>Clear()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L176'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Reset every cell to <span class="xref">Tuinet.Cell.Empty</span> and hide the cursor.</p>
+<pre><code class='lang-csharp'>public void Clear()</code></pre><h3 class='section api' data-uid='Tuinet.CellBuffer.Erase(Tuinet.Rect,Tuinet.Style)' data-commentid='M:Tuinet.CellBuffer.Erase(Tuinet.Rect,Tuinet.Style)' id='Tuinet_CellBuffer_Erase_Tuinet_Rect_Tuinet_Style_'>Erase(Rect, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L214'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Blank the glyphs in <code class="paramref">area</code>, layering <code class="paramref">style</code>: default colors keep
+the colors already there (so erasing an input row on a panel keeps the panel background).</p>
+<pre><code class='lang-csharp'>public void Erase(Rect area, Style style = default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Fill(Tuinet.Rect,Tuinet.Style)' data-commentid='M:Tuinet.CellBuffer.Fill(Tuinet.Rect,Tuinet.Style)' id='Tuinet_CellBuffer_Fill_Tuinet_Rect_Tuinet_Style_'>Fill(Rect, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L183'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void Fill(Rect area, Style style)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Fill(Tuinet.Rect,Tuinet.Cell)' data-commentid='M:Tuinet.CellBuffer.Fill(Tuinet.Rect,Tuinet.Cell)' id='Tuinet_CellBuffer_Fill_Tuinet_Rect_Tuinet_Cell_'>Fill(Rect, Cell)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L186'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Fill <code class="paramref">area</code> with a narrow <code class="paramref">cell</code>.</p>
+<pre><code class='lang-csharp'>public void Fill(Rect area, Cell cell)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>cell</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.HideCursor' data-commentid='M:Tuinet.CellBuffer.HideCursor' id='Tuinet_CellBuffer_HideCursor'>HideCursor()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L136'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void HideCursor()</code></pre><h3 class='section api' data-uid='Tuinet.CellBuffer.Resize(System.Int32,System.Int32)' data-commentid='M:Tuinet.CellBuffer.Resize(System.Int32,System.Int32)' id='Tuinet_CellBuffer_Resize_System_Int32_System_Int32_'>Resize(int, int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L464'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void Resize(int width, int height)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>width</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>height</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.Row(System.Int32)' data-commentid='M:Tuinet.CellBuffer.Row(System.Int32)' id='Tuinet_CellBuffer_Row_System_Int32_'>Row(int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L91'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public ReadOnlySpan&lt;Cell&gt; Row(int y)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='Tuinet.Cell.html'>Cell</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.RowText(System.Int32)' data-commentid='M:Tuinet.CellBuffer.RowText(System.Int32)' id='Tuinet_CellBuffer_RowText_System_Int32_'>RowText(int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L501'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The glyphs of one row as a string (for tests and debugging).</p>
+<pre><code class='lang-csharp'>public string RowText(int y)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetCell(System.Int32,System.Int32,Tuinet.Cell)' data-commentid='M:Tuinet.CellBuffer.SetCell(System.Int32,System.Int32,Tuinet.Cell)' id='Tuinet_CellBuffer_SetCell_System_Int32_System_Int32_Tuinet_Cell_'>SetCell(int, int, Cell)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L334'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Place one glyph cell. Returns the columns written: 0 if it does not fit.</p>
+<pre><code class='lang-csharp'>public int SetCell(int x, int y, Cell cell)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>cell</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetCursor(System.Int32,System.Int32,Tuinet.CursorShape)' data-commentid='M:Tuinet.CellBuffer.SetCursor(System.Int32,System.Int32,Tuinet.CursorShape)' id='Tuinet_CellBuffer_SetCursor_System_Int32_System_Int32_Tuinet_CursorShape_'>SetCursor(int, int, CursorShape)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L123'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Show the terminal cursor at (x, y) after this frame, in <code class="paramref">shape</code> (e.g. a bar for a text
+caret). Out-of-range positions hide it. The renderer sends the shape only when it changes, and the
+terminal's own shape comes back on exit.</p>
+<pre><code class='lang-csharp'>public void SetCursor(int x, int y, CursorShape shape = CursorShape.Default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>shape</code> <a href='Tuinet.CursorShape.html'>CursorShape</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetLink(Tuinet.Rect,System.ReadOnlySpan{System.Char})' data-commentid='M:Tuinet.CellBuffer.SetLink(Tuinet.Rect,System.ReadOnlySpan{System.Char})' id='Tuinet_CellBuffer_SetLink_Tuinet_Rect_System_ReadOnlySpan_System_Char__'>SetLink(Rect, ReadOnlySpan&lt;char&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L155'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Make the cells in <code class="paramref">area</code> a hyperlink to <code class="paramref">url</code> (OSC 8): terminals that
+support it open the URL on click (often Ctrl+click), others show the text as is. Draw the text first: text
+written over a cell later replaces its link, as it does its attributes; <span class="xref">Tuinet.CellBuffer.SetStyle(Tuinet.Rect,Tuinet.Style)</span> keeps it.
+An empty <code class="paramref">url</code> removes links. Returns false, removing links instead, for a URL that can't
+be linked: one with control characters, longer than 2048 chars once encoded, or past the 4095th distinct URL
+of the process. Spaces and non-ASCII characters are percent-encoded.</p>
+<pre><code class="lang-csharp">int end = buffer.SetString(x, y, "docs", linkStyle);
+buffer.SetLink(new Rect(x, y, end - x, 1), "https://example.com/docs");</code></pre>
+<pre><code class='lang-csharp'>public bool SetLink(Rect area, ReadOnlySpan&lt;char&gt; url)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>url</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetMarkup(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)' data-commentid='M:Tuinet.CellBuffer.SetMarkup(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)' id='Tuinet_CellBuffer_SetMarkup_System_Int32_System_Int32_System_ReadOnlySpan_System_Char__Tuinet_Style_System_Int32_Tuinet_Overflow_'>SetMarkup(int, int, ReadOnlySpan&lt;char&gt;, Style, int, Overflow)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L454'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Parse <span class="xref">Tuinet.Markup</span> (e.g. <code>&quot;[b fg=#F5A623]q[/] quit&quot;</code>) and write it with <span class="xref">Tuinet.CellBuffer.SetText(System.Int32,System.Int32,Tuinet.StyledText,System.Int32,Tuinet.Overflow)</span>.
+Parses on every call, without allocating for markup up to 1024 chars.</p>
+<pre><code class='lang-csharp'>public int SetMarkup(int x, int y, ReadOnlySpan&lt;char&gt; markup, Style style = default, int maxWidth = 2147483647, Overflow overflow = Overflow.Clip)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>markup</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>maxWidth</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>overflow</code> <a href='Tuinet.Overflow.html'>Overflow</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetRune(Tuinet.Rect,System.Text.Rune,Tuinet.Style)' data-commentid='M:Tuinet.CellBuffer.SetRune(Tuinet.Rect,System.Text.Rune,Tuinet.Style)' id='Tuinet_CellBuffer_SetRune_Tuinet_Rect_System_Text_Rune_Tuinet_Style_'>SetRune(Rect, Rune, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L259'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Fill <code class="paramref">area</code> with <code class="paramref">rune</code> (borders, rules, separators). Layers like
+<span class="xref">Tuinet.CellBuffer.SetRune(System.Int32,System.Int32,System.Text.Rune,Tuinet.Style)</span>: default colors keep the colors already there,
+attributes are replaced. Zero-width runes draw nothing; wide runes fill pairs of columns.</p>
+<pre><code class='lang-csharp'>public void SetRune(Rect area, Rune rune, Style style = default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>rune</code> <a href='https://learn.microsoft.com/dotnet/api/system.text.rune'>Rune</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetRune(System.Int32,System.Int32,System.Text.Rune,Tuinet.Style)' data-commentid='M:Tuinet.CellBuffer.SetRune(System.Int32,System.Int32,System.Text.Rune,Tuinet.Style)' id='Tuinet_CellBuffer_SetRune_System_Int32_System_Int32_System_Text_Rune_Tuinet_Style_'>SetRune(int, int, Rune, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L321'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Place one glyph. Returns the columns written: 0 if it does not fit or is zero-width.</p>
+<pre><code class='lang-csharp'>public int SetRune(int x, int y, Rune rune, Style style = default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>rune</code> <a href='https://learn.microsoft.com/dotnet/api/system.text.rune'>Rune</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetString(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)' data-commentid='M:Tuinet.CellBuffer.SetString(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)' id='Tuinet_CellBuffer_SetString_System_Int32_System_Int32_System_ReadOnlySpan_System_Char__Tuinet_Style_System_Int32_Tuinet_Overflow_'>SetString(int, int, ReadOnlySpan&lt;char&gt;, Style, int, Overflow)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L349'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Write <code class="paramref">text</code> starting at column <code class="paramref">x</code>, using at most
+<code class="paramref">maxWidth</code> columns. Controls and combining marks are dropped.
+Returns the column after the last glyph written, so styled segments can be chained.</p>
+<pre><code class='lang-csharp'>public int SetString(int x, int y, ReadOnlySpan&lt;char&gt; text, Style style = default, int maxWidth = 2147483647, Overflow overflow = Overflow.Clip)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>maxWidth</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>overflow</code> <a href='Tuinet.Overflow.html'>Overflow</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetStyle(Tuinet.Rect,Tuinet.Style)' data-commentid='M:Tuinet.CellBuffer.SetStyle(Tuinet.Rect,Tuinet.Style)' id='Tuinet_CellBuffer_SetStyle_Tuinet_Rect_Tuinet_Style_'>SetStyle(Rect, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L217'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layer <code class="paramref">style</code> over every cell in <code class="paramref">area</code>, keeping glyphs.</p>
+<pre><code class='lang-csharp'>public void SetStyle(Rect area, Style style)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.SetText(System.Int32,System.Int32,Tuinet.StyledText,System.Int32,Tuinet.Overflow)' data-commentid='M:Tuinet.CellBuffer.SetText(System.Int32,System.Int32,Tuinet.StyledText,System.Int32,Tuinet.Overflow)' id='Tuinet_CellBuffer_SetText_System_Int32_System_Int32_Tuinet_StyledText_System_Int32_Tuinet_Overflow_'>SetText(int, int, StyledText, int, Overflow)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L380'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Write styled text, like <span class="xref">Tuinet.CellBuffer.SetString(System.Int32,System.Int32,System.ReadOnlySpan{System.Char},Tuinet.Style,System.Int32,Tuinet.Overflow)</span> but with a style per run (layered over the text's base
+style, and over the cells underneath like any text write). Stops at the first glyph that doesn't fit.
+A run boundary inside a grapheme cluster moves to the cluster's end. With
+<span class="xref">Tuinet.Overflow.Ellipsis</span>, the '…' takes the style of the text it replaces.</p>
+<pre><code class='lang-csharp'>public int SetText(int x, int y, StyledText text, int maxWidth = 2147483647, Overflow overflow = Overflow.Clip)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>text</code> <a href='Tuinet.StyledText.html'>StyledText</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>maxWidth</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>overflow</code> <a href='Tuinet.Overflow.html'>Overflow</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.CellBuffer.ToString' data-commentid='M:Tuinet.CellBuffer.ToString' id='Tuinet_CellBuffer_ToString'>ToString()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L520'><i class='bi bi-code-slash'></i></a></h3>
+ <p>All rows joined with '\n' (for snapshot tests).</p>
+<pre><code class='lang-csharp'>public override string ToString()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

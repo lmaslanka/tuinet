@@ -1,0 +1,474 @@
+### YamlMime:ApiPage
+title: Struct Rect
+body:
+- api1: Struct Rect
+  id: Tuinet_Rect
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L6
+  metadata:
+    uid: Tuinet.Rect
+    commentId: T:Tuinet.Rect
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: A screen rectangle. Width and height are never negative.
+- code: 'public readonly struct Rect : IEquatable<Rect>'
+- h4: Implements
+- list:
+  - text: IEquatable<Rect>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: Rect(int, int, int, int)
+  id: Tuinet_Rect__ctor_System_Int32_System_Int32_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L8
+  metadata:
+    uid: Tuinet.Rect.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)
+    commentId: M:Tuinet.Rect.#ctor(System.Int32,System.Int32,System.Int32,System.Int32)
+- code: public Rect(int x, int y, int width, int height)
+- h4: Parameters
+- parameters:
+  - name: x
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: y
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: width
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: height
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Properties
+- api3: Bottom
+  id: Tuinet_Rect_Bottom
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L25
+  metadata:
+    uid: Tuinet.Rect.Bottom
+    commentId: P:Tuinet.Rect.Bottom
+- markdown: Exclusive bottom edge.
+- code: public int Bottom { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Height
+  id: Tuinet_Rect_Height
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L19
+  metadata:
+    uid: Tuinet.Rect.Height
+    commentId: P:Tuinet.Rect.Height
+- code: public int Height { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: IsEmpty
+  id: Tuinet_Rect_IsEmpty
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L27
+  metadata:
+    uid: Tuinet.Rect.IsEmpty
+    commentId: P:Tuinet.Rect.IsEmpty
+- code: public bool IsEmpty { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Right
+  id: Tuinet_Rect_Right
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L22
+  metadata:
+    uid: Tuinet.Rect.Right
+    commentId: P:Tuinet.Rect.Right
+- markdown: Exclusive right edge.
+- code: public int Right { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Size
+  id: Tuinet_Rect_Size
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L29
+  metadata:
+    uid: Tuinet.Rect.Size
+    commentId: P:Tuinet.Rect.Size
+- code: public Size Size { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Size
+      url: Tuinet.Size.html
+- api3: Width
+  id: Tuinet_Rect_Width
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L18
+  metadata:
+    uid: Tuinet.Rect.Width
+    commentId: P:Tuinet.Rect.Width
+- code: public int Width { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: X
+  id: Tuinet_Rect_X
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L16
+  metadata:
+    uid: Tuinet.Rect.X
+    commentId: P:Tuinet.Rect.X
+- code: public int X { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Y
+  id: Tuinet_Rect_Y
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L17
+  metadata:
+    uid: Tuinet.Rect.Y
+    commentId: P:Tuinet.Rect.Y
+- code: public int Y { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: Centered(int, int)
+  id: Tuinet_Rect_Centered_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L51
+  metadata:
+    uid: Tuinet.Rect.Centered(System.Int32,System.Int32)
+    commentId: M:Tuinet.Rect.Centered(System.Int32,System.Int32)
+- markdown: A <code class="paramref">width</code> × <code class="paramref">height</code> rect centered in this one, clamped to fit.
+- code: public Rect Centered(int width, int height)
+- h4: Parameters
+- parameters:
+  - name: width
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: height
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Centered(Size)
+  id: Tuinet_Rect_Centered_Tuinet_Size_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L59
+  metadata:
+    uid: Tuinet.Rect.Centered(Tuinet.Size)
+    commentId: M:Tuinet.Rect.Centered(Tuinet.Size)
+- markdown: A rect of <code class="paramref">size</code> centered in this one, clamped to fit.
+- code: public Rect Centered(Size size)
+- h4: Parameters
+- parameters:
+  - name: size
+    type:
+    - text: Size
+      url: Tuinet.Size.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Contains(int, int)
+  id: Tuinet_Rect_Contains_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L31
+  metadata:
+    uid: Tuinet.Rect.Contains(System.Int32,System.Int32)
+    commentId: M:Tuinet.Rect.Contains(System.Int32,System.Int32)
+- code: public bool Contains(int x, int y)
+- h4: Parameters
+- parameters:
+  - name: x
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: y
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Equals(Rect)
+  id: Tuinet_Rect_Equals_Tuinet_Rect_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L87
+  metadata:
+    uid: Tuinet.Rect.Equals(Tuinet.Rect)
+    commentId: M:Tuinet.Rect.Equals(Tuinet.Rect)
+- markdown: Indicates whether the current object is equal to another object of the same type.
+- code: public bool Equals(Rect other)
+- h4: Parameters
+- parameters:
+  - name: other
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+    description: An object to compare with this object.
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.
+- api3: Equals(object?)
+  id: Tuinet_Rect_Equals_System_Object_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L90
+  metadata:
+    uid: Tuinet.Rect.Equals(System.Object)
+    commentId: M:Tuinet.Rect.Equals(System.Object)
+- markdown: Indicates whether this instance and a specified object are equal.
+- code: public override bool Equals(object? obj)
+- h4: Parameters
+- parameters:
+  - name: obj
+    type:
+    - text: object
+      url: https://learn.microsoft.com/dotnet/api/system.object
+    - '?'
+    description: The object to compare with the current instance.
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+    description: <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.
+- api3: GetHashCode()
+  id: Tuinet_Rect_GetHashCode
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L91
+  metadata:
+    uid: Tuinet.Rect.GetHashCode
+    commentId: M:Tuinet.Rect.GetHashCode
+- markdown: Returns the hash code for this instance.
+- code: public override int GetHashCode()
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+    description: A 32-bit signed integer that is the hash code for this instance.
+- api3: Inset(int)
+  id: Tuinet_Rect_Inset_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L43
+  metadata:
+    uid: Tuinet.Rect.Inset(System.Int32)
+    commentId: M:Tuinet.Rect.Inset(System.Int32)
+- code: public Rect Inset(int all)
+- h4: Parameters
+- parameters:
+  - name: all
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Inset(int, int)
+  id: Tuinet_Rect_Inset_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L45
+  metadata:
+    uid: Tuinet.Rect.Inset(System.Int32,System.Int32)
+    commentId: M:Tuinet.Rect.Inset(System.Int32,System.Int32)
+- code: public Rect Inset(int horizontal, int vertical)
+- h4: Parameters
+- parameters:
+  - name: horizontal
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: vertical
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Intersect(Rect)
+  id: Tuinet_Rect_Intersect_Tuinet_Rect_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L34
+  metadata:
+    uid: Tuinet.Rect.Intersect(Tuinet.Rect)
+    commentId: M:Tuinet.Rect.Intersect(Tuinet.Rect)
+- code: public Rect Intersect(Rect other)
+- h4: Parameters
+- parameters:
+  - name: other
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Offset(int, int)
+  id: Tuinet_Rect_Offset_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L48
+  metadata:
+    uid: Tuinet.Rect.Offset(System.Int32,System.Int32)
+    commentId: M:Tuinet.Rect.Offset(System.Int32,System.Int32)
+- code: public Rect Offset(int dx, int dy)
+- h4: Parameters
+- parameters:
+  - name: dx
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: dy
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: PlaceNear(Rect, Size)
+  id: Tuinet_Rect_PlaceNear_Tuinet_Rect_Tuinet_Size_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L67
+  metadata:
+    uid: Tuinet.Rect.PlaceNear(Tuinet.Rect,Tuinet.Size)
+    commentId: M:Tuinet.Rect.PlaceNear(Tuinet.Rect,Tuinet.Size)
+- markdown: >-
+    Where to open a popup of <code class="paramref">size</code> next to <code class="paramref">anchor</code> inside these bounds
+
+    (usually the screen): below it if it fits, else above if it fits there, else on the side with more room,
+
+    cut to fit. It starts at the anchor's left edge, moved left to stay inside. A 0×0 anchor is a point,
+
+    e.g. the mouse pointer for a context menu.
+- code: public Rect PlaceNear(Rect anchor, Size size)
+- h4: Parameters
+- parameters:
+  - name: anchor
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: size
+    type:
+    - text: Size
+      url: Tuinet.Size.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Row(int)
+  id: Tuinet_Rect_Row_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L84
+  metadata:
+    uid: Tuinet.Rect.Row(System.Int32)
+    commentId: M:Tuinet.Rect.Row(System.Int32)
+- markdown: The <code class="paramref">index</code>-th one-row slice, or empty if out of range.
+- code: public Rect Row(int index)
+- h4: Parameters
+- parameters:
+  - name: index
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: ToString()
+  id: Tuinet_Rect_ToString
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L95
+  metadata:
+    uid: Tuinet.Rect.ToString
+    commentId: M:Tuinet.Rect.ToString
+- markdown: Returns the fully qualified type name of this instance.
+- code: public override string ToString()
+- h4: Returns
+- parameters:
+  - type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    description: The fully qualified type name.
+- h2: Operators
+- api3: operator ==(Rect, Rect)
+  id: Tuinet_Rect_op_Equality_Tuinet_Rect_Tuinet_Rect_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L92
+  metadata:
+    uid: Tuinet.Rect.op_Equality(Tuinet.Rect,Tuinet.Rect)
+    commentId: M:Tuinet.Rect.op_Equality(Tuinet.Rect,Tuinet.Rect)
+- code: public static bool operator ==(Rect left, Rect right)
+- h4: Parameters
+- parameters:
+  - name: left
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: right
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: operator !=(Rect, Rect)
+  id: Tuinet_Rect_op_Inequality_Tuinet_Rect_Tuinet_Rect_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Rect.cs#L93
+  metadata:
+    uid: Tuinet.Rect.op_Inequality(Tuinet.Rect,Tuinet.Rect)
+    commentId: M:Tuinet.Rect.op_Inequality(Tuinet.Rect,Tuinet.Rect)
+- code: public static bool operator !=(Rect left, Rect right)
+- h4: Parameters
+- parameters:
+  - name: left
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: right
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+languageId: csharp
+metadata:
+  description: A screen rectangle. Width and height are never negative.

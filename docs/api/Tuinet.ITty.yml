@@ -1,0 +1,152 @@
+### YamlMime:ApiPage
+title: Interface ITty
+body:
+- api1: Interface ITty
+  id: Tuinet_ITty
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L7
+  metadata:
+    uid: Tuinet.ITty
+    commentId: T:Tuinet.ITty
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    The platform seam: raw byte I/O with a terminal. Implement it to run a <xref href="Tuinet.Terminal" data-throw-if-not-resolved="false"></xref>
+
+    over anything (a pty, a socket, a test double).
+- code: 'public interface ITty : IDisposable'
+- h4: Implements
+- list:
+  - text: IDisposable
+    url: https://learn.microsoft.com/dotnet/api/system.idisposable
+- h2: Properties
+- api3: CanSuspend
+  id: Tuinet_ITty_CanSuspend
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L28
+  metadata:
+    uid: Tuinet.ITty.CanSuspend
+    commentId: P:Tuinet.ITty.CanSuspend
+- markdown: Whether <xref href="Tuinet.ITty.Suspend" data-throw-if-not-resolved="false"></xref> can stop the process (Unix job control). False by default.
+- code: bool CanSuspend { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Size
+  id: Tuinet_ITty_Size
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L10
+  metadata:
+    uid: Tuinet.ITty.Size
+    commentId: P:Tuinet.ITty.Size
+- markdown: 'Current size. Must be cheap: called on every poll. Backends refresh it on resize notification.'
+- code: Size Size { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Size
+      url: Tuinet.Size.html
+- h2: Methods
+- api3: Read(Span<byte>, int)
+  id: Tuinet_ITty_Read_System_Span_System_Byte__System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L19
+  metadata:
+    uid: Tuinet.ITty.Read(System.Span{System.Byte},System.Int32)
+    commentId: M:Tuinet.ITty.Read(System.Span{System.Byte},System.Int32)
+- markdown: >-
+    Wait up to <code class="paramref">timeoutMs</code> (-1 = forever, 0 = don't wait) for input and read it.
+
+    Returns 0 on timeout, on <xref href="Tuinet.ITty.Wake" data-throw-if-not-resolved="false"></xref>, or when the size may have changed.
+- code: int Read(Span<byte> buffer, int timeoutMs)
+- h4: Parameters
+- parameters:
+  - name: buffer
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+    - '>'
+  - name: timeoutMs
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Restore()
+  id: Tuinet_ITty_Restore
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L25
+  metadata:
+    uid: Tuinet.ITty.Restore
+    commentId: M:Tuinet.ITty.Restore
+- markdown: Restore the terminal's original modes (termios / console modes). Idempotent; must not throw.
+- code: void Restore()
+- api3: Suspend()
+  id: Tuinet_ITty_Suspend
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L35
+  metadata:
+    uid: Tuinet.ITty.Suspend
+    commentId: M:Tuinet.ITty.Suspend
+- markdown: >-
+    Restore the original modes, stop the process until it is continued (e.g. the shell's <code>fg</code>), then
+
+    re-enter raw mode. Called only when <xref href="Tuinet.ITty.CanSuspend" data-throw-if-not-resolved="false"></xref>; <xref href="Tuinet.Terminal" data-throw-if-not-resolved="false"></xref> writes the
+
+    leave and enter sequences around it.
+- code: void Suspend()
+- api3: TakeSignals()
+  id: Tuinet_ITty_TakeSignals
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L43
+  metadata:
+    uid: Tuinet.ITty.TakeSignals
+    commentId: M:Tuinet.ITty.TakeSignals
+- markdown: >-
+    Job-control signals from outside the app since the last call; called on every poll, so it must be
+
+    cheap. Before reporting <xref href="Tuinet.TtySignals.Continued" data-throw-if-not-resolved="false"></xref>, re-apply raw mode.
+- code: TtySignals TakeSignals()
+- h4: Returns
+- parameters:
+  - type:
+    - text: TtySignals
+      url: Tuinet.TtySignals.html
+- api3: Wake()
+  id: Tuinet_ITty_Wake
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L22
+  metadata:
+    uid: Tuinet.ITty.Wake
+    commentId: M:Tuinet.ITty.Wake
+- markdown: Make a blocked <xref href="Tuinet.ITty.Read(System.Span%7bSystem.Byte%7d%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> return now. Callable from any thread.
+- code: void Wake()
+- api3: Write(ReadOnlySpan<byte>)
+  id: Tuinet_ITty_Write_System_ReadOnlySpan_System_Byte__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/ITty.cs#L13
+  metadata:
+    uid: Tuinet.ITty.Write(System.ReadOnlySpan{System.Byte})
+    commentId: M:Tuinet.ITty.Write(System.ReadOnlySpan{System.Byte})
+- markdown: Write all bytes.
+- code: void Write(ReadOnlySpan<byte> bytes)
+- h4: Parameters
+- parameters:
+  - name: bytes
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: byte
+      url: https://learn.microsoft.com/dotnet/api/system.byte
+    - '>'
+languageId: csharp
+metadata:
+  description: >-
+    The platform seam: raw byte I/O with a terminal. Implement it to run a 
+
+    over anything (a pty, a socket, a test double).

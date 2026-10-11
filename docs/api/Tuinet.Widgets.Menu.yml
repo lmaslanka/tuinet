@@ -1,0 +1,184 @@
+### YamlMime:ApiPage
+title: Struct Menu
+body:
+- api1: Struct Menu
+  id: Tuinet_Widgets_Menu
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L239
+  metadata:
+    uid: Tuinet.Widgets.Menu
+    commentId: T:Tuinet.Widgets.Menu
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A popup list of actions: labels with mnemonics, right-aligned shortcuts, separators joined to the border and
+
+    disabled items. Size it with <xref href="Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan%7bTuinet.Widgets.MenuItem%7d)" data-throw-if-not-resolved="false"></xref> and place it with <xref href="Tuinet.Rect.PlaceNear(Tuinet.Rect%2cTuinet.Size)" data-throw-if-not-resolved="false"></xref>, by the row it
+
+    belongs to or at a 0×0 point at the pointer; render it last so it sits on top. The area is the box: a
+
+    <xref href="Tuinet.Widgets.Popup.Shadow" data-throw-if-not-resolved="false"></xref> hangs off it. A menu taller than its area scrolls to keep the highlight in view.
+- code: 'public readonly ref struct Menu : IStatefulWidget<MenuState>'
+- h4: Implements
+- list:
+  - text: IStatefulWidget<MenuState>
+    url: Tuinet.IStatefulWidget-1.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Examples
+- markdown: >-
+    <pre><code class="lang-csharp">Rect box = frame.Area.PlaceNear(new Rect(mouse.X, mouse.Y, 0, 0), Menu.Measure(items));
+
+    frame.Render(new Menu(items) { Popup = popup, SelectedStyle = highlight }, box, ref menu);</code></pre>
+- h2: Constructors
+- api3: Menu(ReadOnlySpan<MenuItem>)
+  id: Tuinet_Widgets_Menu__ctor_System_ReadOnlySpan_Tuinet_Widgets_MenuItem__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L244
+  metadata:
+    uid: Tuinet.Widgets.Menu.#ctor(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})
+    commentId: M:Tuinet.Widgets.Menu.#ctor(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})
+- code: public Menu(ReadOnlySpan<MenuItem> items)
+- h4: Parameters
+- parameters:
+  - name: items
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: MenuItem
+      url: Tuinet.Widgets.MenuItem.html
+    - '>'
+- h2: Properties
+- api3: DisabledStyle
+  id: Tuinet_Widgets_Menu_DisabledStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L253
+  metadata:
+    uid: Tuinet.Widgets.Menu.DisabledStyle
+    commentId: P:Tuinet.Widgets.Menu.DisabledStyle
+- code: public Style DisabledStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: MnemonicStyle
+  id: Tuinet_Widgets_Menu_MnemonicStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L256
+  metadata:
+    uid: Tuinet.Widgets.Menu.MnemonicStyle
+    commentId: P:Tuinet.Widgets.Menu.MnemonicStyle
+- markdown: Layered over each item's mnemonic letter.
+- code: public Style MnemonicStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Popup
+  id: Tuinet_Widgets_Menu_Popup
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L247
+  metadata:
+    uid: Tuinet.Widgets.Menu.Popup
+    commentId: P:Tuinet.Widgets.Menu.Popup
+- markdown: 'The border, fill and shadow. Its <xref href="Tuinet.Widgets.Popup.Padding" data-throw-if-not-resolved="false"></xref> is ignored: rows have one blank column on each side.'
+- code: public Popup Popup { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Popup
+      url: Tuinet.Widgets.Popup.html
+- api3: SelectedStyle
+  id: Tuinet_Widgets_Menu_SelectedStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L250
+  metadata:
+    uid: Tuinet.Widgets.Menu.SelectedStyle
+    commentId: P:Tuinet.Widgets.Menu.SelectedStyle
+- markdown: Layered over the highlighted row.
+- code: public Style SelectedStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: ShortcutStyle
+  id: Tuinet_Widgets_Menu_ShortcutStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L252
+  metadata:
+    uid: Tuinet.Widgets.Menu.ShortcutStyle
+    commentId: P:Tuinet.Widgets.Menu.ShortcutStyle
+- code: public Style ShortcutStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- h2: Methods
+- api3: Measure(ReadOnlySpan<MenuItem>)
+  id: Tuinet_Widgets_Menu_Measure_System_ReadOnlySpan_Tuinet_Widgets_MenuItem__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L259
+  metadata:
+    uid: Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})
+    commentId: M:Tuinet.Widgets.Menu.Measure(System.ReadOnlySpan{Tuinet.Widgets.MenuItem})
+- markdown: 'The box for <code class="paramref">items</code>: a border, a blank column each side, the widest label, a gap and the widest shortcut.'
+- code: public static Size Measure(ReadOnlySpan<MenuItem> items)
+- h4: Parameters
+- parameters:
+  - name: items
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: MenuItem
+      url: Tuinet.Widgets.MenuItem.html
+    - '>'
+- h4: Returns
+- parameters:
+  - type:
+    - text: Size
+      url: Tuinet.Size.html
+- api3: Render(Rect, CellBuffer, ref MenuState)
+  id: Tuinet_Widgets_Menu_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_MenuState__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Menu.cs#L272
+  metadata:
+    uid: Tuinet.Widgets.Menu.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.MenuState@)
+    commentId: M:Tuinet.Widgets.Menu.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.MenuState@)
+- code: public void Render(Rect area, CellBuffer buffer, ref MenuState state)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+  - name: state
+    type:
+    - text: MenuState
+      url: Tuinet.Widgets.MenuState.html
+languageId: csharp
+metadata:
+  description: >-
+    A popup list of actions: labels with mnemonics, right-aligned shortcuts, separators joined to the border and
+
+    disabled items. Size it with  and place it with , by the row it
+
+    belongs to or at a 0×0 point at the pointer; render it last so it sits on top. The area is the box: a
+     hangs off it. A menu taller than its area scrolls to keep the highlight in view.

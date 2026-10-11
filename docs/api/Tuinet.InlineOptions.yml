@@ -1,0 +1,95 @@
+### YamlMime:ApiPage
+title: Class InlineOptions
+body:
+- api1: Class InlineOptions
+  id: Tuinet_InlineOptions
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L22
+  metadata:
+    uid: Tuinet.InlineOptions
+    commentId: T:Tuinet.InlineOptions
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Inline mode: instead of the alternate screen, draw a live band of <xref href="Tuinet.InlineOptions.Height" data-throw-if-not-resolved="false"></xref> rows under the
+
+    shell prompt. The band stays in the terminal (and its scrollback) after exit.
+- code: 'public sealed record InlineOptions : IEquatable<InlineOptions>'
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: InlineOptions
+    url: Tuinet.InlineOptions.html
+- h4: Implements
+- list:
+  - text: IEquatable<InlineOptions>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: InlineOptions(int)
+  id: Tuinet_InlineOptions__ctor_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L24
+  metadata:
+    uid: Tuinet.InlineOptions.#ctor(System.Int32)
+    commentId: M:Tuinet.InlineOptions.#ctor(System.Int32)
+- code: public InlineOptions(int height)
+- h4: Parameters
+- parameters:
+  - name: height
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Properties
+- api3: CursorReportTimeoutMs
+  id: Tuinet_InlineOptions_CursorReportTimeoutMs
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L37
+  metadata:
+    uid: Tuinet.InlineOptions.CursorReportTimeoutMs
+    commentId: P:Tuinet.InlineOptions.CursorReportTimeoutMs
+- markdown: >-
+    How long to wait for the terminal to report the cursor position, which says where the band starts.
+
+    Without a reply the band goes at the bottom of the screen.
+- code: public int CursorReportTimeoutMs { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Height
+  id: Tuinet_InlineOptions_Height
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L31
+  metadata:
+    uid: Tuinet.InlineOptions.Height
+    commentId: P:Tuinet.InlineOptions.Height
+- markdown: Rows of the band (fewer if the terminal is shorter).
+- code: public int Height { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+languageId: csharp
+metadata:
+  description: >-
+    Inline mode: instead of the alternate screen, draw a live band of  rows under the
+
+    shell prompt. The band stays in the terminal (and its scrollback) after exit.

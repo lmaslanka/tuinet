@@ -1,0 +1,244 @@
+### YamlMime:ApiPage
+title: Class TerminalOptions
+body:
+- api1: Class TerminalOptions
+  id: Tuinet_TerminalOptions
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L40
+  metadata:
+    uid: Tuinet.TerminalOptions
+    commentId: T:Tuinet.TerminalOptions
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public sealed record TerminalOptions : IEquatable<TerminalOptions>'
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: TerminalOptions
+    url: Tuinet.TerminalOptions.html
+- h4: Implements
+- list:
+  - text: IEquatable<TerminalOptions>
+    url: https://learn.microsoft.com/dotnet/api/system.iequatable-1
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Properties
+- api3: BracketedPaste
+  id: Tuinet_TerminalOptions_BracketedPaste
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L52
+  metadata:
+    uid: Tuinet.TerminalOptions.BracketedPaste
+    commentId: P:Tuinet.TerminalOptions.BracketedPaste
+- markdown: Deliver pastes as one <xref href="Tuinet.EventKind.Paste" data-throw-if-not-resolved="false"></xref> event instead of a key per character.
+- code: public bool BracketedPaste { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: ColorMode
+  id: Tuinet_TerminalOptions_ColorMode
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L73
+  metadata:
+    uid: Tuinet.TerminalOptions.ColorMode
+    commentId: P:Tuinet.TerminalOptions.ColorMode
+- markdown: 'Color depth to emit. <code>null</code>: detect from the environment in <xref href="Tuinet.Terminal.Open(Tuinet.TerminalOptions)" data-throw-if-not-resolved="false"></xref>, TrueColor otherwise.'
+- code: public ColorMode? ColorMode { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: ColorMode
+      url: Tuinet.ColorMode.html
+    - '?'
+- api3: EraseSequences
+  id: Tuinet_TerminalOptions_EraseSequences
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L91
+  metadata:
+    uid: Tuinet.TerminalOptions.EraseSequences
+    commentId: P:Tuinet.TerminalOptions.EraseSequences
+- markdown: >-
+    Clear runs of blank cells with erase sequences (EL to the end of a row, ECH inside it) instead of writing
+
+    spaces, when that is fewer bytes. Erased cells take the current background color (BCE), which modern
+
+    terminals support; turn off for one that doesn't.
+- code: public bool EraseSequences { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: EscapeTimeoutMs
+  id: Tuinet_TerminalOptions_EscapeTimeoutMs
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L76
+  metadata:
+    uid: Tuinet.TerminalOptions.EscapeTimeoutMs
+    commentId: P:Tuinet.TerminalOptions.EscapeTimeoutMs
+- markdown: How long a lone ESC waits for the rest of an escape sequence before it is the Escape key.
+- code: public int EscapeTimeoutMs { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: FocusEvents
+  id: Tuinet_TerminalOptions_FocusEvents
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L55
+  metadata:
+    uid: Tuinet.TerminalOptions.FocusEvents
+    commentId: P:Tuinet.TerminalOptions.FocusEvents
+- markdown: Report <xref href="Tuinet.EventKind.FocusGained" data-throw-if-not-resolved="false"></xref> / <xref href="Tuinet.EventKind.FocusLost" data-throw-if-not-resolved="false"></xref>.
+- code: public bool FocusEvents { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Inline
+  id: Tuinet_TerminalOptions_Inline
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L43
+  metadata:
+    uid: Tuinet.TerminalOptions.Inline
+    commentId: P:Tuinet.TerminalOptions.Inline
+- markdown: 'Draw in a band under the prompt instead of on the alternate screen (null: full screen).'
+- code: public InlineOptions? Inline { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: InlineOptions
+      url: Tuinet.InlineOptions.html
+    - '?'
+- api3: KeyReleaseEvents
+  id: Tuinet_TerminalOptions_KeyReleaseEvents
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L70
+  metadata:
+    uid: Tuinet.TerminalOptions.KeyReleaseEvents
+    commentId: P:Tuinet.TerminalOptions.KeyReleaseEvents
+- markdown: >-
+    With <xref href="Tuinet.TerminalOptions.KittyKeyboard" data-throw-if-not-resolved="false"></xref>: also report key repeats and releases (<xref href="Tuinet.KeyEvent.Kind" data-throw-if-not-resolved="false"></xref>), e.g. for
+
+    hold-to-move. Releases never match <xref href="Tuinet.KeyEvent.Is(Tuinet.KeyCode%2cTuinet.Modifiers)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.KeyEvent.IsChar(System.Char)" data-throw-if-not-resolved="false"></xref> or
+
+    <xref href="Tuinet.KeyEvent.IsCtrl(System.Char)" data-throw-if-not-resolved="false"></xref>, but code reading <xref href="Tuinet.KeyEvent.Code" data-throw-if-not-resolved="false"></xref> directly must check the kind.
+- code: public bool KeyReleaseEvents { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: KittyKeyboard
+  id: Tuinet_TerminalOptions_KittyKeyboard
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L63
+  metadata:
+    uid: Tuinet.TerminalOptions.KittyKeyboard
+    commentId: P:Tuinet.TerminalOptions.KittyKeyboard
+- markdown: >-
+    Ask the terminal for the kitty keyboard protocol (kitty, Ghostty, foot, WezTerm, recent Alacritty and iTerm2):
+
+    keys that legacy encoding can't tell apart arrive distinct (Ctrl+I vs Tab, Ctrl+M vs Enter, Ctrl+[ vs Esc,
+
+    Ctrl+Shift+letter), and Esc arrives at once instead of after <xref href="Tuinet.TerminalOptions.EscapeTimeoutMs" data-throw-if-not-resolved="false"></xref>. Terminals without
+
+    it ignore the request; <xref href="Tuinet.Terminal.KittyKeyboardActive" data-throw-if-not-resolved="false"></xref> says whether it took effect.
+- code: public bool KittyKeyboard { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Mouse
+  id: Tuinet_TerminalOptions_Mouse
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L46
+  metadata:
+    uid: Tuinet.TerminalOptions.Mouse
+    commentId: P:Tuinet.TerminalOptions.Mouse
+- markdown: Report mouse clicks, drags and wheel as <xref href="Tuinet.EventKind.Mouse" data-throw-if-not-resolved="false"></xref> (SGR 1006).
+- code: public bool Mouse { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: MouseMotion
+  id: Tuinet_TerminalOptions_MouseMotion
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L49
+  metadata:
+    uid: Tuinet.TerminalOptions.MouseMotion
+    commentId: P:Tuinet.TerminalOptions.MouseMotion
+- markdown: 'With <xref href="Tuinet.TerminalOptions.Mouse" data-throw-if-not-resolved="false"></xref>: also report motion with no button held.'
+- code: public bool MouseMotion { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: ScrollRegions
+  id: Tuinet_TerminalOptions_ScrollRegions
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L84
+  metadata:
+    uid: Tuinet.TerminalOptions.ScrollRegions
+    commentId: P:Tuinet.TerminalOptions.ScrollRegions
+- markdown: >-
+    When a band of full-width rows scrolls, let the terminal move them (scroll margins plus
+
+    insert/delete line) instead of repainting every row. On terminals that report left/right margins (DECLRMM,
+
+    asked at startup; see <xref href="Tuinet.Terminal.LeftRightMarginsActive" data-throw-if-not-resolved="false"></xref>) bands narrower than the screen move too,
+
+    such as a list beside a panel. Turn off for a terminal that mishandles them.
+- code: public bool ScrollRegions { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: SuspendOnCtrlZ
+  id: Tuinet_TerminalOptions_SuspendOnCtrlZ
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L98
+  metadata:
+    uid: Tuinet.TerminalOptions.SuspendOnCtrlZ
+    commentId: P:Tuinet.TerminalOptions.SuspendOnCtrlZ
+- markdown: >-
+    Handle Ctrl+Z inside <xref href="Tuinet.Terminal.Poll(Tuinet.Event%40%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> by calling <xref href="Tuinet.Terminal.Suspend" data-throw-if-not-resolved="false"></xref>, so the app can
+
+    be backgrounded like a shell command. Off by default: Ctrl+Z is a normal key. Where suspending isn't
+
+    supported (Windows) the key is delivered as usual.
+- code: public bool SuspendOnCtrlZ { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- h2: Methods
+- api3: DetectColorMode()
+  id: Tuinet_TerminalOptions_DetectColorMode
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L101
+  metadata:
+    uid: Tuinet.TerminalOptions.DetectColorMode
+    commentId: M:Tuinet.TerminalOptions.DetectColorMode
+- markdown: Best guess at the terminal's color depth from NO_COLOR, COLORTERM, TERM_PROGRAM, WT_SESSION and TERM.
+- code: public static ColorMode DetectColorMode()
+- h4: Returns
+- parameters:
+  - type:
+    - text: ColorMode
+      url: Tuinet.ColorMode.html
+languageId: csharp

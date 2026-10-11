@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Class TestTerminal | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Class TestTerminal | TUI.NET ">
+      
+      <meta name="description" content="Drives an  the way  does, over a real  on a
+, with a clock the test controls. It draws the first frame when created; after that each input
+call is one burst of events followed by one frame, as when a user acts and the loop catches up. Calls chain:
+
+using var term = new TestTerminal(new MyApp(), 80, 24);
+term.Press(&quot;jj&quot;).Key(KeyCode.Enter);
+Assert.Contains(&quot;EDIT&quot;, term.Text);
+term.Click(&quot;Save&quot;);
+
+Typed calls (, , …) hand
+events straight to the app;  sends raw bytes through the terminal&#39;s input parser.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Testing.TestTerminal' data-commentid='T:Tuinet.Testing.TestTerminal' id='Tuinet_Testing_TestTerminal'>Class TestTerminal    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L18'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.Testing.html'>Tuinet.Testing</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>Drives an <span class="xref">Tuinet.IApp</span> the way <span class="xref">Tuinet.Terminal.Run(Tuinet.IApp,System.Int32)</span> does, over a real <span class="xref">Tuinet.Terminal</span> on a
+<span class="xref">Tuinet.Testing.TestTty</span>, with a clock the test controls. It draws the first frame when created; after that each input
+call is one burst of events followed by one frame, as when a user acts and the loop catches up. Calls chain:</p>
+<pre><code class="lang-csharp">using var term = new TestTerminal(new MyApp(), 80, 24);
+term.Press("jj").Key(KeyCode.Enter);
+Assert.Contains("EDIT", term.Text);
+term.Click("Save");</code></pre>
+<p>Typed calls (<span class="xref">Tuinet.Testing.TestTerminal.Press(System.String)</span>, <span class="xref">Tuinet.Testing.TestTerminal.Key(Tuinet.KeyCode,Tuinet.Modifiers)</span>, <span class="xref">Tuinet.Testing.TestTerminal.Click(System.Int32,System.Int32,Tuinet.MouseButton)</span>…) hand
+events straight to the app; <span class="xref">Tuinet.Testing.TestTerminal.Input(System.String)</span> sends raw bytes through the terminal's input parser.</p>
+<pre><code class='lang-csharp'>public sealed class TestTerminal : IDisposable</code></pre><h4 class='section'>Inheritance</h4><dl class="typelist inheritance"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>
+</div>
+<div>
+<a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>
+</div>
+
+</dd></dl><h4 class='section'>Implements</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.idisposable'>IDisposable</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.#ctor(Tuinet.IApp,System.Int32,System.Int32,Tuinet.TerminalOptions)' data-commentid='M:Tuinet.Testing.TestTerminal.#ctor(Tuinet.IApp,System.Int32,System.Int32,Tuinet.TerminalOptions)' id='Tuinet_Testing_TestTerminal__ctor_Tuinet_IApp_System_Int32_System_Int32_Tuinet_TerminalOptions_'>TestTerminal(IApp, int, int, TerminalOptions?)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L20'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public TestTerminal(IApp app, int width = 80, int height = 24, TerminalOptions? options = null)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>app</code> <a href='Tuinet.IApp.html'>IApp</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>width</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>height</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>options</code> <a href='Tuinet.TerminalOptions.html'>TerminalOptions</a>?  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.App' data-commentid='P:Tuinet.Testing.TestTerminal.App' id='Tuinet_Testing_TestTerminal_App'>App    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L29'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public IApp App { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.IApp.html'>IApp</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.IsRunning' data-commentid='P:Tuinet.Testing.TestTerminal.IsRunning' id='Tuinet_Testing_TestTerminal_IsRunning'>IsRunning    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L41'><i class='bi bi-code-slash'></i></a></h3>
+ <p>False once <span class="xref">Tuinet.IApp.Handle(Tuinet.Event,System.Int64)</span> returned false; input calls then throw.</p>
+<pre><code class='lang-csharp'>public bool IsRunning { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.NowMs' data-commentid='P:Tuinet.Testing.TestTerminal.NowMs' id='Tuinet_Testing_TestTerminal_NowMs'>NowMs    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L38'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The time passed to <span class="xref">Tuinet.IApp.Handle(Tuinet.Event,System.Int64)</span> and <span class="xref">Tuinet.IApp.Render(Tuinet.CellBuffer,System.Int64)</span>, in ms. Setting it doesn't draw; see <span class="xref">Tuinet.Testing.TestTerminal.Advance(System.Int64)</span>.</p>
+<pre><code class='lang-csharp'>public long NowMs { get; set; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int64'>long</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Screen' data-commentid='P:Tuinet.Testing.TestTerminal.Screen' id='Tuinet_Testing_TestTerminal_Screen'>Screen    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L44'><i class='bi bi-code-slash'></i></a></h3>
+ <p>A copy of the last frame drawn (it doesn't change under later frames).</p>
+<pre><code class='lang-csharp'>public CellBuffer Screen { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.CellBuffer.html'>CellBuffer</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Terminal' data-commentid='P:Tuinet.Testing.TestTerminal.Terminal' id='Tuinet_Testing_TestTerminal_Terminal'>Terminal    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L35'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The terminal the app draws through (frame and byte counters: <span class="xref">Tuinet.Terminal.LastFrameBytes</span>…).</p>
+<pre><code class='lang-csharp'>public Terminal Terminal { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Terminal.html'>Terminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Text' data-commentid='P:Tuinet.Testing.TestTerminal.Text' id='Tuinet_Testing_TestTerminal_Text'>Text    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L47'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The last frame as plain text, rows joined with '\n'.</p>
+<pre><code class='lang-csharp'>public string Text { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Tty' data-commentid='P:Tuinet.Testing.TestTerminal.Tty' id='Tuinet_Testing_TestTerminal_Tty'>Tty    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L32'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The fake tty: what was written, how many writes, scripted raw input.</p>
+<pre><code class='lang-csharp'>public TestTty Tty { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTty.html'>TestTty</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Advance(System.Int64)' data-commentid='M:Tuinet.Testing.TestTerminal.Advance(System.Int64)' id='Tuinet_Testing_TestTerminal_Advance_System_Int64_'>Advance(long)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L163'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Move the clock <code class="paramref">ms</code> forward. If the app was animating, or has something due by then
+(<span class="xref">Tuinet.IApp.NextDueMs(System.Int64)</span>), it gets one <span class="xref">Tuinet.EventKind.Tick</span> and a frame, as when
+<span class="xref">Tuinet.Terminal.Run(Tuinet.IApp,System.Int32)</span> wakes; the animation frames in between are skipped.</p>
+<pre><code class='lang-csharp'>public TestTerminal Advance(long ms)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>ms</code> <a href='https://learn.microsoft.com/dotnet/api/system.int64'>long</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Click(System.Int32,System.Int32,Tuinet.MouseButton)' data-commentid='M:Tuinet.Testing.TestTerminal.Click(System.Int32,System.Int32,Tuinet.MouseButton)' id='Tuinet_Testing_TestTerminal_Click_System_Int32_System_Int32_Tuinet_MouseButton_'>Click(int, int, MouseButton)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L94'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Press and release <code class="paramref">button</code> at (<code class="paramref">x</code>, <code class="paramref">y</code>): two reports, a frame after each.</p>
+<pre><code class='lang-csharp'>public TestTerminal Click(int x, int y, MouseButton button = MouseButton.Left)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>button</code> <a href='Tuinet.MouseButton.html'>MouseButton</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Click(System.String,Tuinet.MouseButton)' data-commentid='M:Tuinet.Testing.TestTerminal.Click(System.String,Tuinet.MouseButton)' id='Tuinet_Testing_TestTerminal_Click_System_String_Tuinet_MouseButton_'>Click(string, MouseButton)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L98'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Click the first cell of <code class="paramref">text</code> on screen (see <span class="xref">Tuinet.Testing.CellBufferTesting.FindText(Tuinet.CellBuffer,System.String)</span>).</p>
+<pre><code class='lang-csharp'>public TestTerminal Click(string text, MouseButton button = MouseButton.Left)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>button</code> <a href='Tuinet.MouseButton.html'>MouseButton</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Dispose' data-commentid='M:Tuinet.Testing.TestTerminal.Dispose' id='Tuinet_Testing_TestTerminal_Dispose'>Dispose()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L185'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.</p>
+<pre><code class='lang-csharp'>public void Dispose()</code></pre><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.FindText(System.String)' data-commentid='M:Tuinet.Testing.TestTerminal.FindText(System.String)' id='Tuinet_Testing_TestTerminal_FindText_System_String_'>FindText(string)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L183'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Where <code class="paramref">text</code> first appears, reading rows top to bottom: the cells it covers (one row; wide
+glyphs count two columns). Throws <span class="xref">Tuinet.Testing.ScreenAssertionException</span>, showing the screen, when it isn't there.</p>
+<pre><code class='lang-csharp'>public Rect FindText(string text)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Input(System.ReadOnlySpan{System.Byte})' data-commentid='M:Tuinet.Testing.TestTerminal.Input(System.ReadOnlySpan{System.Byte})' id='Tuinet_Testing_TestTerminal_Input_System_ReadOnlySpan_System_Byte__'>Input(ReadOnlySpan&lt;byte&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L132'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Feed raw terminal input (escape sequences, UTF-8) through the terminal's parser, hand every event it yields to
+the app, then draw a frame. A sequence cut off at the end resolves at once (a lone ESC is the Escape key).</p>
+<pre><code class='lang-csharp'>public TestTerminal Input(ReadOnlySpan&lt;byte&gt; bytes)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>bytes</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.byte'>byte</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Input(System.String)' data-commentid='M:Tuinet.Testing.TestTerminal.Input(System.String)' id='Tuinet_Testing_TestTerminal_Input_System_String_'>Input(string)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L140'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Feed raw terminal input (escape sequences, UTF-8) through the terminal's parser, hand every event it yields to
+the app, then draw a frame. A sequence cut off at the end resolves at once (a lone ESC is the Escape key).</p>
+<pre><code class='lang-csharp'>public TestTerminal Input(string text)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Key(Tuinet.KeyCode,Tuinet.Modifiers)' data-commentid='M:Tuinet.Testing.TestTerminal.Key(Tuinet.KeyCode,Tuinet.Modifiers)' id='Tuinet_Testing_TestTerminal_Key_Tuinet_KeyCode_Tuinet_Modifiers_'>Key(KeyCode, Modifiers)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L81'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Press a non-character key, e.g. <code>Key(KeyCode.Tab, Modifiers.Shift)</code>.</p>
+<pre><code class='lang-csharp'>public TestTerminal Key(KeyCode code, Modifiers modifiers = Modifiers.None)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>code</code> <a href='Tuinet.KeyCode.html'>KeyCode</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>modifiers</code> <a href='Tuinet.Modifiers.html'>Modifiers</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Mouse(Tuinet.MouseEvent)' data-commentid='M:Tuinet.Testing.TestTerminal.Mouse(Tuinet.MouseEvent)' id='Tuinet_Testing_TestTerminal_Mouse_Tuinet_MouseEvent_'>Mouse(MouseEvent)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L87'><i class='bi bi-code-slash'></i></a></h3>
+ <p>One mouse report.</p>
+<pre><code class='lang-csharp'>public TestTerminal Mouse(MouseEvent mouse)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>mouse</code> <a href='Tuinet.MouseEvent.html'>MouseEvent</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Mouse(Tuinet.MouseKind,System.Int32,System.Int32,Tuinet.MouseButton,Tuinet.Modifiers)' data-commentid='M:Tuinet.Testing.TestTerminal.Mouse(Tuinet.MouseKind,System.Int32,System.Int32,Tuinet.MouseButton,Tuinet.Modifiers)' id='Tuinet_Testing_TestTerminal_Mouse_Tuinet_MouseKind_System_Int32_System_Int32_Tuinet_MouseButton_Tuinet_Modifiers_'>Mouse(MouseKind, int, int, MouseButton, Modifiers)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L90'><i class='bi bi-code-slash'></i></a></h3>
+ <p>One mouse report of <code class="paramref">kind</code> at (<code class="paramref">x</code>, <code class="paramref">y</code>).</p>
+<pre><code class='lang-csharp'>public TestTerminal Mouse(MouseKind kind, int x, int y, MouseButton button = MouseButton.None, Modifiers modifiers = Modifiers.None)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>kind</code> <a href='Tuinet.MouseKind.html'>MouseKind</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>button</code> <a href='Tuinet.MouseButton.html'>MouseButton</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>modifiers</code> <a href='Tuinet.Modifiers.html'>Modifiers</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Paste(System.String)' data-commentid='M:Tuinet.Testing.TestTerminal.Paste(System.String)' id='Tuinet_Testing_TestTerminal_Paste_System_String_'>Paste(string)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L84'><i class='bi bi-code-slash'></i></a></h3>
+ <p>A bracketed paste of <code class="paramref">text</code>.</p>
+<pre><code class='lang-csharp'>public TestTerminal Paste(string text)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>text</code> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Post(System.Object)' data-commentid='M:Tuinet.Testing.TestTerminal.Post(System.Object)' id='Tuinet_Testing_TestTerminal_Post_System_Object_'>Post(object)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L151'><i class='bi bi-code-slash'></i></a></h3>
+ <p><span class="xref">Tuinet.Terminal.Post(System.Object)</span> a message: the app gets it as <span class="xref">Tuinet.EventKind.Message</span>, then a frame.</p>
+<pre><code class='lang-csharp'>public TestTerminal Post(object message)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>message</code> <a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Press(System.String)' data-commentid='M:Tuinet.Testing.TestTerminal.Press(System.String)' id='Tuinet_Testing_TestTerminal_Press_System_String_'>Press(string)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L53'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Type <code class="paramref">keys</code>, one key press and frame per character. <code>\n</code> or <code>\r</code> is Enter,
+<code>\t</code> Tab, <code>\u001b</code> Escape and <code>\b</code> Backspace. Keys after one that stops the app are dropped.</p>
+<pre><code class='lang-csharp'>public TestTerminal Press(string keys)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>keys</code> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Press(System.Char,Tuinet.Modifiers)' data-commentid='M:Tuinet.Testing.TestTerminal.Press(System.Char,Tuinet.Modifiers)' id='Tuinet_Testing_TestTerminal_Press_System_Char_Tuinet_Modifiers_'>Press(char, Modifiers)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L78'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Press <code class="paramref">c</code> with <code class="paramref">modifiers</code>, e.g. <code>Press('s', Modifiers.Ctrl)</code>.</p>
+<pre><code class='lang-csharp'>public TestTerminal Press(char c, Modifiers modifiers)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>c</code> <a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>modifiers</code> <a href='Tuinet.Modifiers.html'>Modifiers</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Render' data-commentid='M:Tuinet.Testing.TestTerminal.Render' id='Tuinet_Testing_TestTerminal_Render'>Render()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L173'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Draw a frame now through <span class="xref">Tuinet.Terminal.BeginFrame</span> and <span class="xref">Tuinet.Terminal.Present</span>; returns <span class="xref">Tuinet.Testing.TestTerminal.Screen</span>.</p>
+<pre><code class='lang-csharp'>public CellBuffer Render()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.CellBuffer.html'>CellBuffer</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Resize(System.Int32,System.Int32)' data-commentid='M:Tuinet.Testing.TestTerminal.Resize(System.Int32,System.Int32)' id='Tuinet_Testing_TestTerminal_Resize_System_Int32_System_Int32_'>Resize(int, int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L143'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Resize the tty: the app gets the <span class="xref">Tuinet.EventKind.Resize</span>, then a frame at the new size.</p>
+<pre><code class='lang-csharp'>public TestTerminal Resize(int width, int height)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>width</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>height</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Send(Tuinet.Event)' data-commentid='M:Tuinet.Testing.TestTerminal.Send(Tuinet.Event)' id='Tuinet_Testing_TestTerminal_Send_Tuinet_Event_'>Send(Event)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L117'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Hand <code class="paramref">ev</code> to the app, then draw a frame (unless the app stopped).</p>
+<pre><code class='lang-csharp'>public TestTerminal Send(Event ev)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>ev</code> <a href='Tuinet.Event.html'>Event</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Testing.TestTerminal.Wheel(System.Int32,System.Int32,System.Int32)' data-commentid='M:Tuinet.Testing.TestTerminal.Wheel(System.Int32,System.Int32,System.Int32)' id='Tuinet_Testing_TestTerminal_Wheel_System_Int32_System_Int32_System_Int32_'>Wheel(int, int, int)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Testing/TestTerminal.cs#L105'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Turn the wheel <code class="paramref">notches</code> at (<code class="paramref">x</code>, <code class="paramref">y</code>): negative up, positive down.</p>
+<pre><code class='lang-csharp'>public TestTerminal Wheel(int x, int y, int notches)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>notches</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Testing.TestTerminal.html'>TestTerminal</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

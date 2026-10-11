@@ -1,0 +1,74 @@
+### YamlMime:ApiPage
+title: Namespace Tuinet.Testing
+body:
+- api1: Namespace Tuinet.Testing
+  id: Tuinet_Testing
+  metadata:
+    uid: Tuinet.Testing
+    commentId: N:Tuinet.Testing
+- h3: Classes
+- parameters:
+  - type:
+      text: CellBufferTesting
+      url: Tuinet.Testing.CellBufferTesting.html
+    description: >-
+      Test assertions and dumps for a <xref href="Tuinet.CellBuffer" data-throw-if-not-resolved="false"></xref>: a styled text format for snapshot files, ANSI for
+
+      eyeballing in a terminal, and finding text on screen. Allocates freely: these are for tests, not frames.
+  - type:
+      text: ScreenAssertionException
+      url: Tuinet.Testing.ScreenAssertionException.html
+    description: "A screen assertion failed: text missing from a buffer, or a buffer that doesn't match its snapshot."
+  - type:
+      text: Snapshot
+      url: Tuinet.Testing.Snapshot.html
+    description: >-
+      Snapshot tests for frames: <xref href="Tuinet.Testing.Snapshot.Verify(Tuinet.CellBuffer%2cSystem.String%2cSystem.Boolean%2cSystem.String%2cSystem.String)" data-throw-if-not-resolved="false"></xref> compares a buffer with
+
+      <code>__snapshots__/&lt;name&gt;.txt</code> next to the test's source file. On a mismatch (or a missing snapshot) it writes
+
+      <code>&lt;name&gt;.received.txt</code> beside it and throws; set <code>TUINET_ACCEPT_SNAPSHOTS=1</code> to write the snapshots
+
+      instead, then review them in the diff.
+
+
+      <pre><code class="lang-csharp">var buffer = new CellBuffer(40, 10);
+
+      app.Render(buffer, nowMs: 0);
+
+      Snapshot.Verify(buffer, "main-screen");</code></pre>
+  - type:
+      text: TestTerminal
+      url: Tuinet.Testing.TestTerminal.html
+    description: >-
+      Drives an <xref href="Tuinet.IApp" data-throw-if-not-resolved="false"></xref> the way <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> does, over a real <xref href="Tuinet.Terminal" data-throw-if-not-resolved="false"></xref> on a
+
+      <xref href="Tuinet.Testing.TestTty" data-throw-if-not-resolved="false"></xref>, with a clock the test controls. It draws the first frame when created; after that each input
+
+      call is one burst of events followed by one frame, as when a user acts and the loop catches up. Calls chain:
+
+
+      <pre><code class="lang-csharp">using var term = new TestTerminal(new MyApp(), 80, 24);
+
+      term.Press("jj").Key(KeyCode.Enter);
+
+      Assert.Contains("EDIT", term.Text);
+
+      term.Click("Save");</code></pre>
+
+
+      Typed calls (<xref href="Tuinet.Testing.TestTerminal.Press(System.String)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Testing.TestTerminal.Key(Tuinet.KeyCode%2cTuinet.Modifiers)" data-throw-if-not-resolved="false"></xref>, <xref href="Tuinet.Testing.TestTerminal.Click(System.Int32%2cSystem.Int32%2cTuinet.MouseButton)" data-throw-if-not-resolved="false"></xref>…) hand
+
+      events straight to the app; <xref href="Tuinet.Testing.TestTerminal.Input(System.String)" data-throw-if-not-resolved="false"></xref> sends raw bytes through the terminal's input parser.
+  - type:
+      text: TestTty
+      url: Tuinet.Testing.TestTty.html
+    description: >-
+      An in-memory <xref href="Tuinet.ITty" data-throw-if-not-resolved="false"></xref> for tests: script input with <xref href="Tuinet.Testing.TestTty.Enqueue(System.ReadOnlySpan%7bSystem.Byte%7d)" data-throw-if-not-resolved="false"></xref>,
+
+      resize with <xref href="Tuinet.Testing.TestTty.Resize(System.Int32%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref>, and inspect what the terminal wrote. Counts writes and bytes so
+
+      tests can pin the output cost of a frame. Suspends are recorded instead of stopping the process, and
+
+      <xref href="Tuinet.Testing.TestTty.Signal(Tuinet.TtySignals)" data-throw-if-not-resolved="false"></xref> simulates job-control signals from outside.
+languageId: csharp

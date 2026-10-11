@@ -1,0 +1,312 @@
+### YamlMime:ApiPage
+title: Class TextAreaState
+body:
+- api1: Class TextAreaState
+  id: Tuinet_Widgets_TextAreaState
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L9
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState
+    commentId: T:Tuinet.Widgets.TextAreaState
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Editable multi-line text for <xref href="Tuinet.Widgets.TextArea" data-throw-if-not-resolved="false"></xref>: a gap buffer with a line index, caret and selection,
+
+    undo/redo, soft wrap, and the viewport the last render showed (for keys and the mouse). Owned by the app. Lines
+
+    end with '\n'; pasted CR LF and CR become '\n' and tabs four spaces. Rendering only measures the lines on screen,
+
+    so a frame costs the same for 10 lines or 100,000.
+- code: 'public sealed class TextAreaState : EditableText'
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: EditableText
+    url: Tuinet.Widgets.EditableText.html
+  - text: TextAreaState
+    url: Tuinet.Widgets.TextAreaState.html
+- h4: Inherited Members
+- list:
+  - text: EditableText.Length
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Length
+  - text: EditableText.IsEmpty
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_IsEmpty
+  - text: EditableText.Caret
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Caret
+  - text: EditableText.Anchor
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Anchor
+  - text: EditableText.HasSelection
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_HasSelection
+  - text: EditableText.SelectionStart
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_SelectionStart
+  - text: EditableText.SelectionEnd
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_SelectionEnd
+  - text: EditableText.Selection
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Selection
+  - text: EditableText.Text
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Text
+  - text: EditableText.CanUndo
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_CanUndo
+  - text: EditableText.CanRedo
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_CanRedo
+  - text: EditableText.Set(ReadOnlySpan<char>)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Set_System_ReadOnlySpan_System_Char__
+  - text: EditableText.Clear()
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Clear
+  - text: EditableText.Insert(ReadOnlySpan<char>)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Insert_System_ReadOnlySpan_System_Char__
+  - text: EditableText.Insert(Rune)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Insert_System_Text_Rune_
+  - text: EditableText.MoveCaret(int, bool)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_MoveCaret_System_Int32_System_Boolean_
+  - text: EditableText.Select(int, int)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Select_System_Int32_System_Int32_
+  - text: EditableText.SelectAll()
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_SelectAll
+  - text: EditableText.DeleteSelection()
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_DeleteSelection
+  - text: EditableText.Undo()
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Undo
+  - text: EditableText.Redo()
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_Redo
+  - text: EditableText.CopyTo(int, Span<char>)
+    url: Tuinet.Widgets.EditableText.html#Tuinet_Widgets_EditableText_CopyTo_System_Int32_System_Span_System_Char__
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: TextAreaState(string?)
+  id: Tuinet_Widgets_TextAreaState__ctor_System_String_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L26
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.#ctor(System.String)
+    commentId: M:Tuinet.Widgets.TextAreaState.#ctor(System.String)
+- markdown: Text with the caret at its start.
+- code: public TextAreaState(string? text = null)
+- h4: Parameters
+- parameters:
+  - name: text
+    type:
+    - text: string
+      url: https://learn.microsoft.com/dotnet/api/system.string
+    - '?'
+    optional: true
+- h2: Properties
+- api3: Area
+  id: Tuinet_Widgets_TextAreaState_Area
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L62
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.Area
+    commentId: P:Tuinet.Widgets.TextAreaState.Area
+- markdown: Where the text (not the line numbers) was last rendered, for mouse hit-testing.
+- code: public Rect Area { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: CaretColumn
+  id: Tuinet_Widgets_TextAreaState_CaretColumn
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L56
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.CaretColumn
+    commentId: P:Tuinet.Widgets.TextAreaState.CaretColumn
+- markdown: The caret's offset into its line, in chars.
+- code: public int CaretColumn { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: CaretLine
+  id: Tuinet_Widgets_TextAreaState_CaretLine
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L53
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.CaretLine
+    commentId: P:Tuinet.Widgets.TextAreaState.CaretLine
+- code: public int CaretLine { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: LineCount
+  id: Tuinet_Widgets_TextAreaState_LineCount
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L34
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.LineCount
+    commentId: P:Tuinet.Widgets.TextAreaState.LineCount
+- code: public int LineCount { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: SoftWrap
+  id: Tuinet_Widgets_TextAreaState_SoftWrap
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L32
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.SoftWrap
+    commentId: P:Tuinet.Widgets.TextAreaState.SoftWrap
+- markdown: Wrap long lines at word boundaries to the width (the default), or scroll sideways.
+- code: public bool SoftWrap { get; set; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: TopLine
+  id: Tuinet_Widgets_TextAreaState_TopLine
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L59
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.TopLine
+    commentId: P:Tuinet.Widgets.TextAreaState.TopLine
+- markdown: First line in view at the last render (possibly partly scrolled off, when wrapped).
+- code: public int TopLine { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: Handle(KeyEvent)
+  id: Tuinet_Widgets_TextAreaState_Handle_Tuinet_KeyEvent_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L84
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.Handle(Tuinet.KeyEvent)
+    commentId: M:Tuinet.Widgets.TextAreaState.Handle(Tuinet.KeyEvent)
+- markdown: >-
+    Apply an editing key. Returns false for keys left to the app (Tab, Esc, Ctrl+Enter, Ctrl+↑…). On top of the
+
+    shared keys (see <xref href="Tuinet.Widgets.EditableText" data-throw-if-not-resolved="false"></xref>): Enter inserts a line break, ↑/↓ and PageUp/PageDown move by
+
+    screen rows keeping the column, Home/End go to the line's start/end (with Ctrl, the text's), Shift selects,
+
+    and Ctrl+A selects all.
+- code: public bool Handle(KeyEvent key)
+- h4: Parameters
+- parameters:
+  - name: key
+    type:
+    - text: KeyEvent
+      url: Tuinet.KeyEvent.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: HandleMouse(MouseEvent, int)
+  id: Tuinet_Widgets_TextAreaState_HandleMouse_Tuinet_MouseEvent_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L131
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.HandleMouse(Tuinet.MouseEvent,System.Int32)
+    commentId: M:Tuinet.Widgets.TextAreaState.HandleMouse(Tuinet.MouseEvent,System.Int32)
+- markdown: >-
+    Click places the caret (Shift+click selects to there), dragging selects (scrolling when the pointer leaves
+
+    the top or bottom), and the wheel scrolls by <code class="paramref">wheelRows</code> rows per notch (sideways when not
+
+    wrapping). Uses the layout of the last render. Returns whether the event was used.
+- code: public bool HandleMouse(MouseEvent ev, int wheelRows = 3)
+- h4: Parameters
+- parameters:
+  - name: ev
+    type:
+    - text: MouseEvent
+      url: Tuinet.MouseEvent.html
+  - name: wheelRows
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+    optional: true
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Line(int)
+  id: Tuinet_Widgets_TextAreaState_Line_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L37
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.Line(System.Int32)
+    commentId: M:Tuinet.Widgets.TextAreaState.Line(System.Int32)
+- markdown: The text of a line, without its '\n'. Valid until the next edit or line read.
+- code: public ReadOnlySpan<char> Line(int index)
+- h4: Parameters
+- parameters:
+  - name: index
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+- api3: LineOf(int)
+  id: Tuinet_Widgets_TextAreaState_LineOf_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L51
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.LineOf(System.Int32)
+    commentId: M:Tuinet.Widgets.TextAreaState.LineOf(System.Int32)
+- markdown: The line holding <code class="paramref">offset</code>.
+- code: public int LineOf(int offset)
+- h4: Parameters
+- parameters:
+  - name: offset
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: LineStart(int)
+  id: Tuinet_Widgets_TextAreaState_LineStart_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/TextArea.cs#L44
+  metadata:
+    uid: Tuinet.Widgets.TextAreaState.LineStart(System.Int32)
+    commentId: M:Tuinet.Widgets.TextAreaState.LineStart(System.Int32)
+- markdown: Offset where <code class="paramref">line</code> starts.
+- code: public int LineStart(int line)
+- h4: Parameters
+- parameters:
+  - name: line
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+languageId: csharp
+metadata:
+  description: >-
+    Editable multi-line text for : a gap buffer with a line index, caret and selection,
+
+    undo/redo, soft wrap, and the viewport the last render showed (for keys and the mouse). Owned by the app. Lines
+
+    end with '\n'; pasted CR LF and CR become '\n' and tabs four spaces. Rendering only measures the lines on screen,
+
+    so a frame costs the same for 10 lines or 100,000.

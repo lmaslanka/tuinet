@@ -1,0 +1,35 @@
+### YamlMime:ApiPage
+title: Enum Borders
+body:
+- api1: Enum Borders
+  id: Tuinet_Widgets_Borders
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Block.cs#L12
+  metadata:
+    uid: Tuinet.Widgets.Borders
+    commentId: T:Tuinet.Widgets.Borders
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: >-
+    [Flags]
+
+    public enum Borders : byte
+- h2: Fields
+- parameters:
+  - name: All
+    default: "15"
+  - name: Bottom
+    default: "4"
+  - name: Left
+    default: "8"
+  - name: None
+    default: "0"
+  - name: Right
+    default: "2"
+  - name: Top
+    default: "1"
+languageId: csharp

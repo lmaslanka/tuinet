@@ -1,0 +1,171 @@
+### YamlMime:ApiPage
+title: Struct TabsState
+body:
+- api1: Struct TabsState
+  id: Tuinet_Widgets_TabsState
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L8
+  metadata:
+    uid: Tuinet.Widgets.TabsState
+    commentId: T:Tuinet.Widgets.TabsState
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    Selected tab and scroll position of a <xref href="Tuinet.Widgets.Tabs" data-throw-if-not-resolved="false"></xref> bar. Owned by the app. Render scrolls to keep
+
+    <xref href="Tuinet.Widgets.TabsState.Selected" data-throw-if-not-resolved="false"></xref> visible whenever it changes (or the bar is resized); in between, <xref href="Tuinet.Widgets.TabsState.Offset" data-throw-if-not-resolved="false"></xref>
+
+    can scroll on its own, e.g. with the overflow arrows or the wheel.
+- code: public struct TabsState
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: TabsState(int)
+  id: Tuinet_Widgets_TabsState__ctor_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L13
+  metadata:
+    uid: Tuinet.Widgets.TabsState.#ctor(System.Int32)
+    commentId: M:Tuinet.Widgets.TabsState.#ctor(System.Int32)
+- code: public TabsState(int selected = 0)
+- h4: Parameters
+- parameters:
+  - name: selected
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+    optional: true
+- h2: Properties
+- api3: Area
+  id: Tuinet_Widgets_TabsState_Area
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L22
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Area
+    commentId: P:Tuinet.Widgets.TabsState.Area
+- markdown: The row the bar was last rendered into, for mouse hit-testing.
+- code: public readonly Rect Area { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Offset
+  id: Tuinet_Widgets_TabsState_Offset
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L19
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Offset
+    commentId: P:Tuinet.Widgets.TabsState.Offset
+- markdown: First visible tab when the titles don't fit. Render adjusts it to keep <xref href="Tuinet.Widgets.TabsState.Selected" data-throw-if-not-resolved="false"></xref> visible when that changes.
+- code: public int Offset { readonly get; set; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Selected
+  id: Tuinet_Widgets_TabsState_Selected
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L16
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Selected
+    commentId: P:Tuinet.Widgets.TabsState.Selected
+- markdown: Selected tab, or -1 for none.
+- code: public int Selected { readonly get; set; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: Handle(KeyEvent, int)
+  id: Tuinet_Widgets_TabsState_Handle_Tuinet_KeyEvent_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L37
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Handle(Tuinet.KeyEvent,System.Int32)
+    commentId: M:Tuinet.Widgets.TabsState.Handle(Tuinet.KeyEvent,System.Int32)
+- markdown: >-
+    ←/→ (or h/l) move with wrap-around, Home/End jump to the ends. For when the bar itself has focus;
+
+    shortcuts that switch tabs from anywhere (e.g. Alt+1…9) are the app's. Returns whether the key was used.
+- code: public bool Handle(KeyEvent key, int count)
+- h4: Parameters
+- parameters:
+  - name: key
+    type:
+    - text: KeyEvent
+      url: Tuinet.KeyEvent.html
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Next(int)
+  id: Tuinet_Widgets_TabsState_Next_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L25
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Next(System.Int32)
+    commentId: M:Tuinet.Widgets.TabsState.Next(System.Int32)
+- markdown: The next tab, wrapping to the first.
+- code: public void Next(int count)
+- h4: Parameters
+- parameters:
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Previous(int)
+  id: Tuinet_Widgets_TabsState_Previous_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L28
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Previous(System.Int32)
+    commentId: M:Tuinet.Widgets.TabsState.Previous(System.Int32)
+- markdown: The previous tab, wrapping to the last.
+- code: public void Previous(int count)
+- h4: Parameters
+- parameters:
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- api3: Select(int, int)
+  id: Tuinet_Widgets_TabsState_Select_System_Int32_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Tabs.cs#L31
+  metadata:
+    uid: Tuinet.Widgets.TabsState.Select(System.Int32,System.Int32)
+    commentId: M:Tuinet.Widgets.TabsState.Select(System.Int32,System.Int32)
+- markdown: Select tab <code class="paramref">index</code>, clamped to the tabs there are.
+- code: public void Select(int index, int count)
+- h4: Parameters
+- parameters:
+  - name: index
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+languageId: csharp
+metadata:
+  description: >-
+    Selected tab and scroll position of a  bar. Owned by the app. Render scrolls to keep
+     visible whenever it changes (or the bar is resized); in between, 
+    can scroll on its own, e.g. with the overflow arrows or the wheel.

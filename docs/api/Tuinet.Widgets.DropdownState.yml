@@ -1,0 +1,184 @@
+### YamlMime:ApiPage
+title: Struct DropdownState
+body:
+- api1: Struct DropdownState
+  id: Tuinet_Widgets_DropdownState
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L6
+  metadata:
+    uid: Tuinet.Widgets.DropdownState
+    commentId: T:Tuinet.Widgets.DropdownState
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: Committed choice, open flag and highlighted row of a <xref href="Tuinet.Widgets.Dropdown%601" data-throw-if-not-resolved="false"></xref>.
+- code: public struct DropdownState
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: DropdownState(int)
+  id: Tuinet_Widgets_DropdownState__ctor_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L8
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.#ctor(System.Int32)
+    commentId: M:Tuinet.Widgets.DropdownState.#ctor(System.Int32)
+- code: public DropdownState(int selected)
+- h4: Parameters
+- parameters:
+  - name: selected
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Fields
+- api3: List
+  id: Tuinet_Widgets_DropdownState_List
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L16
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.List
+    commentId: F:Tuinet.Widgets.DropdownState.List
+- markdown: Highlight inside the open list.
+- code: public ListState List
+- h4: Field Value
+- parameters:
+  - type:
+    - text: ListState
+      url: Tuinet.Widgets.ListState.html
+- h2: Properties
+- api3: Field
+  id: Tuinet_Widgets_DropdownState_Field
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L19
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Field
+    commentId: P:Tuinet.Widgets.DropdownState.Field
+- markdown: Where the closed field was last rendered, for mouse hit-testing.
+- code: public readonly Rect Field { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: IsOpen
+  id: Tuinet_Widgets_DropdownState_IsOpen
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L13
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.IsOpen
+    commentId: P:Tuinet.Widgets.DropdownState.IsOpen
+- code: public readonly bool IsOpen { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Popup
+  id: Tuinet_Widgets_DropdownState_Popup
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L22
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Popup
+    commentId: P:Tuinet.Widgets.DropdownState.Popup
+- markdown: Where the open list was last rendered (border included), or empty while closed.
+- code: public readonly Rect Popup { get; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Rect
+      url: Tuinet.Rect.html
+- api3: Selected
+  id: Tuinet_Widgets_DropdownState_Selected
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L11
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Selected
+    commentId: P:Tuinet.Widgets.DropdownState.Selected
+- markdown: The chosen item, or -1 for none.
+- code: public int Selected { readonly get; set; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h2: Methods
+- api3: Close()
+  id: Tuinet_Widgets_DropdownState_Close
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L31
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Close
+    commentId: M:Tuinet.Widgets.DropdownState.Close
+- code: public void Close()
+- api3: Handle(KeyEvent, int)
+  id: Tuinet_Widgets_DropdownState_Handle_Tuinet_KeyEvent_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L37
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Handle(Tuinet.KeyEvent,System.Int32)
+    commentId: M:Tuinet.Widgets.DropdownState.Handle(Tuinet.KeyEvent,System.Int32)
+- markdown: >-
+    Closed: Enter, Space or Down opens. Open: Up/Down (or k/j) move, Enter commits, Esc cancels.
+
+    Returns false for keys it does not use (e.g. Tab while closed), so the caller can handle them.
+- code: public bool Handle(KeyEvent key, int count)
+- h4: Parameters
+- parameters:
+  - name: key
+    type:
+    - text: KeyEvent
+      url: Tuinet.KeyEvent.html
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: HandleMouse(MouseEvent, int)
+  id: Tuinet_Widgets_DropdownState_HandleMouse_Tuinet_MouseEvent_System_Int32_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L89
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.HandleMouse(Tuinet.MouseEvent,System.Int32)
+    commentId: M:Tuinet.Widgets.DropdownState.HandleMouse(Tuinet.MouseEvent,System.Int32)
+- markdown: >-
+    Closed: a click on the field opens. Open: a click on an item commits it, the wheel scrolls the list, a
+
+    click on the field or anywhere else cancels. Returns whether the event was used; a click elsewhere closes
+
+    the list but returns false, so the caller can still act on it (e.g. focus what was clicked).
+- code: public bool HandleMouse(MouseEvent ev, int count)
+- h4: Parameters
+- parameters:
+  - name: ev
+    type:
+    - text: MouseEvent
+      url: Tuinet.MouseEvent.html
+  - name: count
+    type:
+    - text: int
+      url: https://learn.microsoft.com/dotnet/api/system.int32
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: Open()
+  id: Tuinet_Widgets_DropdownState_Open
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Dropdown.cs#L24
+  metadata:
+    uid: Tuinet.Widgets.DropdownState.Open
+    commentId: M:Tuinet.Widgets.DropdownState.Open
+- code: public void Open()
+languageId: csharp
+metadata:
+  description: Committed choice, open flag and highlighted row of a .

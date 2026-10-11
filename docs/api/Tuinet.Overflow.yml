@@ -1,0 +1,30 @@
+### YamlMime:ApiPage
+title: Enum Overflow
+body:
+- api1: Enum Overflow
+  id: Tuinet_Overflow
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/CellBuffer.cs#L9
+  metadata:
+    uid: Tuinet.Overflow
+    commentId: T:Tuinet.Overflow
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: public enum Overflow
+- h2: Fields
+- parameters:
+  - name: Clip
+    default: "0"
+    description: >+
+      Stop at the last glyph that fits.
+
+  - name: Ellipsis
+    default: "1"
+    description: >+
+      Replace the tail with '…' when the text does not fit.
+
+languageId: csharp

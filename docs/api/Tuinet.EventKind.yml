@@ -1,0 +1,43 @@
+### YamlMime:ApiPage
+title: Enum EventKind
+body:
+- api1: Enum EventKind
+  id: Tuinet_EventKind
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Input.cs#L143
+  metadata:
+    uid: Tuinet.EventKind
+    commentId: T:Tuinet.EventKind
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public enum EventKind : byte'
+- h2: Fields
+- parameters:
+  - name: FocusGained
+    default: "6"
+  - name: FocusLost
+    default: "7"
+  - name: Key
+    default: "1"
+  - name: Message
+    default: "3"
+  - name: Mouse
+    default: "4"
+  - name: None
+    default: "0"
+  - name: Paste
+    default: "5"
+  - name: Resize
+    default: "2"
+  - name: Tick
+    default: "8"
+    description: >+
+      Time passed with no input: <xref href="Tuinet.Terminal.Run(Tuinet.IApp%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> sends it when an animation frame or
+
+      <xref href="Tuinet.IApp.NextDueMs(System.Int64)" data-throw-if-not-resolved="false"></xref> comes due. <xref href="Tuinet.Terminal.Poll(Tuinet.Event%40%2cSystem.Int32)" data-throw-if-not-resolved="false"></xref> never returns it.
+
+languageId: csharp

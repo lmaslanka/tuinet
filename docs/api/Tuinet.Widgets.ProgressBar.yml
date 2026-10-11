@@ -1,0 +1,152 @@
+### YamlMime:ApiPage
+title: Struct ProgressBar
+body:
+- api1: Struct ProgressBar
+  id: Tuinet_Widgets_ProgressBar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L9
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar
+    commentId: T:Tuinet.Widgets.ProgressBar
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet.Widgets
+      url: Tuinet.Widgets.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A horizontal bar filled to <xref href="Tuinet.Widgets.ProgressBar.Ratio" data-throw-if-not-resolved="false"></xref> on the first row of its area. With the default
+
+    '█' fill, the boundary cell uses eighth-blocks (▏▎▍▌▋▊▉) for sub-cell precision.
+- code: 'public readonly ref struct ProgressBar : IWidget'
+- h4: Implements
+- list:
+  - text: IWidget
+    url: Tuinet.IWidget.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Constructors
+- api3: ProgressBar(double)
+  id: Tuinet_Widgets_ProgressBar__ctor_System_Double_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L11
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.#ctor(System.Double)
+    commentId: M:Tuinet.Widgets.ProgressBar.#ctor(System.Double)
+- code: public ProgressBar(double ratio)
+- h4: Parameters
+- parameters:
+  - name: ratio
+    type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+- h2: Properties
+- api3: EmptyChar
+  id: Tuinet_Widgets_ProgressBar_EmptyChar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L19
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.EmptyChar
+    commentId: P:Tuinet.Widgets.ProgressBar.EmptyChar
+- code: public char EmptyChar { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+- api3: EmptyStyle
+  id: Tuinet_Widgets_ProgressBar_EmptyStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L17
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.EmptyStyle
+    commentId: P:Tuinet.Widgets.ProgressBar.EmptyStyle
+- code: public Style EmptyStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: FilledChar
+  id: Tuinet_Widgets_ProgressBar_FilledChar
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L18
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.FilledChar
+    commentId: P:Tuinet.Widgets.ProgressBar.FilledChar
+- code: public char FilledChar { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+- api3: FilledStyle
+  id: Tuinet_Widgets_ProgressBar_FilledStyle
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L16
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.FilledStyle
+    commentId: P:Tuinet.Widgets.ProgressBar.FilledStyle
+- code: public Style FilledStyle { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: Style
+      url: Tuinet.Style.html
+- api3: Ratio
+  id: Tuinet_Widgets_ProgressBar_Ratio
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L14
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.Ratio
+    commentId: P:Tuinet.Widgets.ProgressBar.Ratio
+- markdown: Fill fraction, clamped to 0..1.
+- code: public double Ratio { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: double
+      url: https://learn.microsoft.com/dotnet/api/system.double
+- api3: Smooth
+  id: Tuinet_Widgets_ProgressBar_Smooth
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L22
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.Smooth
+    commentId: P:Tuinet.Widgets.ProgressBar.Smooth
+- markdown: Use eighth-blocks at the boundary (only applies when <xref href="Tuinet.Widgets.ProgressBar.FilledChar" data-throw-if-not-resolved="false"></xref> is '█').
+- code: public bool Smooth { get; init; }
+- h4: Property Value
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- h2: Methods
+- api3: Render(Rect, CellBuffer)
+  id: Tuinet_Widgets_ProgressBar_Render_Tuinet_Rect_Tuinet_CellBuffer_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/ProgressBar.cs#L24
+  metadata:
+    uid: Tuinet.Widgets.ProgressBar.Render(Tuinet.Rect,Tuinet.CellBuffer)
+    commentId: M:Tuinet.Widgets.ProgressBar.Render(Tuinet.Rect,Tuinet.CellBuffer)
+- code: public void Render(Rect area, CellBuffer buffer)
+- h4: Parameters
+- parameters:
+  - name: area
+    type:
+    - text: Rect
+      url: Tuinet.Rect.html
+  - name: buffer
+    type:
+    - text: CellBuffer
+      url: Tuinet.CellBuffer.html
+languageId: csharp
+metadata:
+  description: >-
+    A horizontal bar filled to  on the first row of its area. With the default
+
+    '█' fill, the boundary cell uses eighth-blocks (▏▎▍▌▋▊▉) for sub-cell precision.

@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct Cell | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct Cell | TUI.NET ">
+      
+      <meta name="description" content="One terminal cell: glyph, style, display width, hyperlink. Exactly 16 bytes, blittable and canonical,
+so the renderer compares whole rows with a vectorized memcmp.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Cell' data-commentid='T:Tuinet.Cell' id='Tuinet_Cell'>Struct Cell    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L23'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.html'>Tuinet</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>One terminal cell: glyph, style, display width, hyperlink. Exactly 16 bytes, blittable and canonical,
+so the renderer compares whole rows with a vectorized memcmp.</p>
+<pre><code class='lang-csharp'>public readonly struct Cell : IEquatable&lt;Cell&gt;</code></pre><h4 class='section'>Implements</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.iequatable-1'>IEquatable&lt;Cell&gt;</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.Cell.#ctor(System.Text.Rune,Tuinet.Style)' data-commentid='M:Tuinet.Cell.#ctor(System.Text.Rune,Tuinet.Style)' id='Tuinet_Cell__ctor_System_Text_Rune_Tuinet_Style_'>Cell(Rune, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L33'><i class='bi bi-code-slash'></i></a></h3>
+ <p>A cell holding <code class="paramref">rune</code>. Zero-width runes (controls, combining marks) become a space.</p>
+<pre><code class='lang-csharp'>public Cell(Rune rune, Style style = default)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>rune</code> <a href='https://learn.microsoft.com/dotnet/api/system.text.rune'>Rune</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Cell.Empty' data-commentid='P:Tuinet.Cell.Empty' id='Tuinet_Cell_Empty'>Empty    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L58'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static Cell Empty { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.IsContinuation' data-commentid='P:Tuinet.Cell.IsContinuation' id='Tuinet_Cell_IsContinuation'>IsContinuation    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L119'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public bool IsContinuation { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.IsGrapheme' data-commentid='P:Tuinet.Cell.IsGrapheme' id='Tuinet_Cell_IsGrapheme'>IsGrapheme    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L108'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Holds a cluster of several code points (combining marks, emoji sequences, flags).</p>
+<pre><code class='lang-csharp'>public bool IsGrapheme { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Link' data-commentid='P:Tuinet.Cell.Link' id='Tuinet_Cell_Link'>Link    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L124'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The hyperlink this cell belongs to (OSC 8), or null. See <span class="xref">Tuinet.CellBuffer.SetLink(Tuinet.Rect,System.ReadOnlySpan{System.Char})</span>.</p>
+<pre><code class='lang-csharp'>public string? Link { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>?  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Rune' data-commentid='P:Tuinet.Cell.Rune' id='Tuinet_Cell_Rune'>Rune    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L102'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The glyph; for a multi-code-point cluster, its first code point (see <span class="xref">Tuinet.Cell.Text</span>).</p>
+<pre><code class='lang-csharp'>public Rune Rune { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.text.rune'>Rune</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Style' data-commentid='P:Tuinet.Cell.Style' id='Tuinet_Cell_Style'>Style    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L114'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style Style { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Text' data-commentid='P:Tuinet.Cell.Text' id='Tuinet_Cell_Text'>Text    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L105'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The cell's text: a whole grapheme cluster (e.g. &quot;👨‍👩‍👧&quot;), or its single rune.</p>
+<pre><code class='lang-csharp'>public string Text { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Width' data-commentid='P:Tuinet.Cell.Width' id='Tuinet_Cell_Width'>Width    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L117'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Columns this cell's glyph occupies: 1 or 2, or 0 for the right half of a wide glyph.</p>
+<pre><code class='lang-csharp'>public int Width { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Cell.Blank(Tuinet.Style)' data-commentid='M:Tuinet.Cell.Blank(Tuinet.Style)' id='Tuinet_Cell_Blank_Tuinet_Style_'>Blank(Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L60'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static Cell Blank(Style style)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Equals(Tuinet.Cell)' data-commentid='M:Tuinet.Cell.Equals(Tuinet.Cell)' id='Tuinet_Cell_Equals_Tuinet_Cell_'>Equals(Cell)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L143'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Indicates whether the current object is equal to another object of the same type.</p>
+<pre><code class='lang-csharp'>public bool Equals(Cell other)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>other</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+<p>An object to compare with this object.</p>
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+<p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.Equals(System.Object)' data-commentid='M:Tuinet.Cell.Equals(System.Object)' id='Tuinet_Cell_Equals_System_Object_'>Equals(object?)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L150'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Indicates whether this instance and a specified object are equal.</p>
+<pre><code class='lang-csharp'>public override bool Equals(object? obj)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>obj</code> <a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>?  </dt>
+<dd>
+
+
+<p>The object to compare with the current instance.</p>
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+<p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.GetHashCode' data-commentid='M:Tuinet.Cell.GetHashCode' id='Tuinet_Cell_GetHashCode'>GetHashCode()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L151'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Returns the hash code for this instance.</p>
+<pre><code class='lang-csharp'>public override int GetHashCode()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+<p>A 32-bit signed integer that is the hash code for this instance.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.ToString' data-commentid='M:Tuinet.Cell.ToString' id='Tuinet_Cell_ToString'>ToString()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L155'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Returns the fully qualified type name of this instance.</p>
+<pre><code class='lang-csharp'>public override string ToString()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+<p>The fully qualified type name.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.WithStyle(Tuinet.Style)' data-commentid='M:Tuinet.Cell.WithStyle(Tuinet.Style)' id='Tuinet_Cell_WithStyle_Tuinet_Style_'>WithStyle(Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L141'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Cell WithStyle(Style style)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>style</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Operators</h2><h3 class='section api' data-uid='Tuinet.Cell.op_Equality(Tuinet.Cell,Tuinet.Cell)' data-commentid='M:Tuinet.Cell.op_Equality(Tuinet.Cell,Tuinet.Cell)' id='Tuinet_Cell_op_Equality_Tuinet_Cell_Tuinet_Cell_'>operator ==(Cell, Cell)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L152'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static bool operator ==(Cell left, Cell right)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>left</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>right</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Cell.op_Inequality(Tuinet.Cell,Tuinet.Cell)' data-commentid='M:Tuinet.Cell.op_Inequality(Tuinet.Cell,Tuinet.Cell)' id='Tuinet_Cell_op_Inequality_Tuinet_Cell_Tuinet_Cell_'>operator !=(Cell, Cell)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Cell.cs#L153'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static bool operator !=(Cell left, Cell right)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>left</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>right</code> <a href='Tuinet.Cell.html'>Cell</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

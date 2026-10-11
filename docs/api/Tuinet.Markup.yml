@@ -1,0 +1,171 @@
+### YamlMime:ApiPage
+title: Class Markup
+body:
+- api1: Class Markup
+  id: Tuinet_Markup
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L175
+  metadata:
+    uid: Tuinet.Markup
+    commentId: T:Tuinet.Markup
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- markdown: >-
+    A small markup for styled text, parsed into caller memory without allocating.
+
+
+    <ul><li><code>[b]</code> bold, <code>[dim]</code>, <code>[i]</code> italic, <code>[u]</code> underline, <code>[blink]</code>, <code>[reverse]</code>,
+
+    <code>[hidden]</code>, <code>[s]</code> strike (long names work too: <code>[bold]</code>, <code>[italic]</code>, …).</li><li><code>[fg=red]</code>, <code>[bg=#1C2433]</code>: a name (<code>black</code> … <code>white</code>, <code>bright-red</code> …,
+
+    <code>default</code>), <code>#RRGGBB</code>, or a palette index 0–255. A bare color name or <code>#RRGGBB</code> sets the
+
+    foreground; a bare number is just text.</li><li>Several in one tag: <code>[b fg=#F5A623]</code>. <code>[/]</code> closes the latest tag.</li><li><code>[[</code> is a literal <code>[</code>. A tag that doesn't parse is kept as text, so <code>[1/3]</code> needs no escaping.</li></ul>
+- code: public static class Markup
+- h4: Inheritance
+- inheritance:
+  - text: object
+    url: https://learn.microsoft.com/dotnet/api/system.object
+  - text: Markup
+    url: Tuinet.Markup.html
+- h4: Inherited Members
+- list:
+  - text: object.Equals(object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)
+  - text: object.Equals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)
+  - text: object.GetHashCode()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gethashcode
+  - text: object.GetType()
+    url: https://learn.microsoft.com/dotnet/api/system.object.gettype
+  - text: object.MemberwiseClone()
+    url: https://learn.microsoft.com/dotnet/api/system.object.memberwiseclone
+  - text: object.ReferenceEquals(object?, object?)
+    url: https://learn.microsoft.com/dotnet/api/system.object.referenceequals
+  - text: object.ToString()
+    url: https://learn.microsoft.com/dotnet/api/system.object.tostring
+- h2: Methods
+- api3: Parse(ReadOnlySpan<char>, Span<char>, Span<StyledRun>, Style)
+  id: Tuinet_Markup_Parse_System_ReadOnlySpan_System_Char__System_Span_System_Char__System_Span_Tuinet_StyledRun__Tuinet_Style_
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L184
+  metadata:
+    uid: Tuinet.Markup.Parse(System.ReadOnlySpan{System.Char},System.Span{System.Char},System.Span{Tuinet.StyledRun},Tuinet.Style)
+    commentId: M:Tuinet.Markup.Parse(System.ReadOnlySpan{System.Char},System.Span{System.Char},System.Span{Tuinet.StyledRun},Tuinet.Style)
+- markdown: >-
+    Parse <code class="paramref">markup</code>. The visible text goes into <code class="paramref">chars</code> (at most
+
+    <code>markup.Length</code> are needed) and runs into <code class="paramref">runs</code> (at most one per tag and text
+
+    piece); what doesn't fit is cut. Styles are layered over <code class="paramref">style</code>.
+- code: public static StyledText Parse(ReadOnlySpan<char> markup, Span<char> chars, Span<StyledRun> runs, Style style = default)
+- h4: Parameters
+- parameters:
+  - name: markup
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: chars
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: runs
+    type:
+    - text: Span
+      url: https://learn.microsoft.com/dotnet/api/system.span-1
+    - <
+    - text: StyledRun
+      url: Tuinet.StyledRun.html
+    - '>'
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+    optional: true
+- h4: Returns
+- parameters:
+  - type:
+    - text: StyledText
+      url: Tuinet.StyledText.html
+- api3: TryParseColor(ReadOnlySpan<char>, out Color)
+  id: Tuinet_Markup_TryParseColor_System_ReadOnlySpan_System_Char__Tuinet_Color__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L284
+  metadata:
+    uid: Tuinet.Markup.TryParseColor(System.ReadOnlySpan{System.Char},Tuinet.Color@)
+    commentId: M:Tuinet.Markup.TryParseColor(System.ReadOnlySpan{System.Char},Tuinet.Color@)
+- markdown: A color name (<code>red</code>, <code>bright-blue</code>, <code>default</code>), <code>#RRGGBB</code>, or a palette index 0–255.
+- code: public static bool TryParseColor(ReadOnlySpan<char> text, out Color color)
+- h4: Parameters
+- parameters:
+  - name: text
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: color
+    type:
+    - text: Color
+      url: Tuinet.Color.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+- api3: TryParseTag(ReadOnlySpan<char>, Style, out Style)
+  id: Tuinet_Markup_TryParseTag_System_ReadOnlySpan_System_Char__Tuinet_Style_Tuinet_Style__
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/StyledText.cs#L238
+  metadata:
+    uid: Tuinet.Markup.TryParseTag(System.ReadOnlySpan{System.Char},Tuinet.Style,Tuinet.Style@)
+    commentId: M:Tuinet.Markup.TryParseTag(System.ReadOnlySpan{System.Char},Tuinet.Style,Tuinet.Style@)
+- markdown: Layer the attributes and colors in <code class="paramref">tag</code> (e.g. "b fg=red") over <code class="paramref">style</code>.
+- code: public static bool TryParseTag(ReadOnlySpan<char> tag, Style style, out Style result)
+- h4: Parameters
+- parameters:
+  - name: tag
+    type:
+    - text: ReadOnlySpan
+      url: https://learn.microsoft.com/dotnet/api/system.readonlyspan-1
+    - <
+    - text: char
+      url: https://learn.microsoft.com/dotnet/api/system.char
+    - '>'
+  - name: style
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+  - name: result
+    type:
+    - text: Style
+      url: Tuinet.Style.html
+- h4: Returns
+- parameters:
+  - type:
+    - text: bool
+      url: https://learn.microsoft.com/dotnet/api/system.boolean
+languageId: csharp
+metadata:
+  description: >-
+    A small markup for styled text, parsed into caller memory without allocating.
+
+
+    [b] bold, [dim], [i] italic, [u] underline, [blink], [reverse],
+
+    [hidden], [s] strike (long names work too: [bold], [italic], …).[fg=red], [bg=#1C2433]: a name (black … white, bright-red …,
+
+    default), #RRGGBB, or a palette index 0–255. A bare color name or #RRGGBB sets the
+
+    foreground; a bare number is just text.Several in one tag: [b fg=#F5A623]. [/] closes the latest tag.[[ is a literal [. A tag that doesn't parse is kept as text, so [1/3] needs no escaping.

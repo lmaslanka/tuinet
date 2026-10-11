@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct Table&lt;TSource&gt; | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct Table&lt;TSource&gt; | TUI.NET ">
+      
+      <meta name="description" content="A scrolling, selectable table: a header row over virtualized rows, laid out in columns with
+per-column alignment. Selection and scroll live in a , as for .">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Widgets.Table`1' data-commentid='T:Tuinet.Widgets.Table`1' id='Tuinet_Widgets_Table_1'>Struct Table&lt;TSource&gt;    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L61'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.Widgets.html'>Tuinet.Widgets</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>A scrolling, selectable table: a header row over virtualized rows, laid out in columns with
+per-column alignment. Selection and scroll live in a <span class="xref">Tuinet.Widgets.ListState</span>, as for <span class="xref">Tuinet.Widgets.ListView`1</span>.</p>
+<pre><code class='lang-csharp'>public readonly ref struct Table&lt;TSource&gt; : IStatefulWidget&lt;ListState&gt; where TSource : ITableSource, allows ref struct</code></pre><h4 class='section'>Type Parameters</h4><dl class='parameters'><dt><code>TSource</code>   </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Implements</h4><dl class="typelist"><dd>
+<div>
+<a href='Tuinet.IStatefulWidget-1.html'>IStatefulWidget&lt;ListState&gt;</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.#ctor(`0,System.ReadOnlySpan{Tuinet.Widgets.TableColumn})' data-commentid='M:Tuinet.Widgets.Table`1.#ctor(`0,System.ReadOnlySpan{Tuinet.Widgets.TableColumn})' id='Tuinet_Widgets_Table_1__ctor__0_System_ReadOnlySpan_Tuinet_Widgets_TableColumn__'>Table(TSource, ReadOnlySpan&lt;TableColumn&gt;)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L69'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Table(TSource source, ReadOnlySpan&lt;TableColumn&gt; columns)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>source</code> TSource  </dt>
+<dd>
+
+
+
+</dd><dt><code>columns</code> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='Tuinet.Widgets.TableColumn.html'>TableColumn</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.AlternateRowStyle' data-commentid='P:Tuinet.Widgets.Table`1.AlternateRowStyle' id='Tuinet_Widgets_Table_1_AlternateRowStyle'>AlternateRowStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L94'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over odd rows (zebra striping). Stripes follow the row index, so they don't shift on scroll.</p>
+<pre><code class='lang-csharp'>public Style AlternateRowStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.ColumnSeparator' data-commentid='P:Tuinet.Widgets.Table`1.ColumnSeparator' id='Tuinet_Widgets_Table_1_ColumnSeparator'>ColumnSeparator    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L88'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Drawn in the gap between columns (e.g. '│'); '\0' for none. Needs <span class="xref">Tuinet.Widgets.Table`1.ColumnSpacing</span> ≥ 1.</p>
+<pre><code class='lang-csharp'>public char ColumnSeparator { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.ColumnSpacing' data-commentid='P:Tuinet.Widgets.Table`1.ColumnSpacing' id='Tuinet_Widgets_Table_1_ColumnSpacing'>ColumnSpacing    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L85'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Empty columns between adjacent columns.</p>
+<pre><code class='lang-csharp'>public int ColumnSpacing { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.HeaderSeparator' data-commentid='P:Tuinet.Widgets.Table`1.HeaderSeparator' id='Tuinet_Widgets_Table_1_HeaderSeparator'>HeaderSeparator    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L82'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Draw a '─' rule under the header (with '┼' where it crosses <span class="xref">Tuinet.Widgets.Table`1.ColumnSeparator</span>).</p>
+<pre><code class='lang-csharp'>public bool HeaderSeparator { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.HeaderStyle' data-commentid='P:Tuinet.Widgets.Table`1.HeaderStyle' id='Tuinet_Widgets_Table_1_HeaderStyle'>HeaderStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L79'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over the header row.</p>
+<pre><code class='lang-csharp'>public Style HeaderStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.HighlightSymbol' data-commentid='P:Tuinet.Widgets.Table`1.HighlightSymbol' id='Tuinet_Widgets_Table_1_HighlightSymbol'>HighlightSymbol    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L100'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Drawn before the selected row (e.g. &quot;&gt; &quot;); other rows and the header are indented by its width.</p>
+<pre><code class='lang-csharp'>public ReadOnlySpan&lt;char&gt; HighlightSymbol { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.readonlyspan-1'>ReadOnlySpan</a>&lt;<a href='https://learn.microsoft.com/dotnet/api/system.char'>char</a>&gt;  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.HighlightSymbolStyle' data-commentid='P:Tuinet.Widgets.Table`1.HighlightSymbolStyle' id='Tuinet_Widgets_Table_1_HighlightSymbolStyle'>HighlightSymbolStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L103'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over <span class="xref">Tuinet.Widgets.Table`1.SelectedStyle</span> for the highlight symbol.</p>
+<pre><code class='lang-csharp'>public Style HighlightSymbolStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.Scrollbar' data-commentid='P:Tuinet.Widgets.Table`1.Scrollbar' id='Tuinet_Widgets_Table_1_Scrollbar'>Scrollbar    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L112'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Draw a scrollbar beside the body rows; columns are laid out one column narrower while it shows.</p>
+<pre><code class='lang-csharp'>public ScrollbarMode Scrollbar { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Widgets.ScrollbarMode.html'>ScrollbarMode</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.ScrollbarThumbStyle' data-commentid='P:Tuinet.Widgets.Table`1.ScrollbarThumbStyle' id='Tuinet_Widgets_Table_1_ScrollbarThumbStyle'>ScrollbarThumbStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L114'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style ScrollbarThumbStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.ScrollbarTrackStyle' data-commentid='P:Tuinet.Widgets.Table`1.ScrollbarTrackStyle' id='Tuinet_Widgets_Table_1_ScrollbarTrackStyle'>ScrollbarTrackStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L115'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style ScrollbarTrackStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.SelectedStyle' data-commentid='P:Tuinet.Widgets.Table`1.SelectedStyle' id='Tuinet_Widgets_Table_1_SelectedStyle'>SelectedStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L97'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over the selected row after its cells render.</p>
+<pre><code class='lang-csharp'>public Style SelectedStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.SeparatorStyle' data-commentid='P:Tuinet.Widgets.Table`1.SeparatorStyle' id='Tuinet_Widgets_Table_1_SeparatorStyle'>SeparatorStyle    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L91'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Style of the column separators and the header rule.</p>
+<pre><code class='lang-csharp'>public Style SeparatorStyle { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.SortColumn' data-commentid='P:Tuinet.Widgets.Table`1.SortColumn' id='Tuinet_Widgets_Table_1_SortColumn'>SortColumn    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L106'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Column whose header shows a sort arrow, or -1. Sorting itself is up to the source.</p>
+<pre><code class='lang-csharp'>public int SortColumn { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.SortDescending' data-commentid='P:Tuinet.Widgets.Table`1.SortDescending' id='Tuinet_Widgets_Table_1_SortDescending'>SortDescending    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L109'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Show '▼' instead of '▲' on <span class="xref">Tuinet.Widgets.Table`1.SortColumn</span>.</p>
+<pre><code class='lang-csharp'>public bool SortDescending { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.Style' data-commentid='P:Tuinet.Widgets.Table`1.Style' id='Tuinet_Widgets_Table_1_Style'>Style    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L76'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layered over every body row.</p>
+<pre><code class='lang-csharp'>public Style Style { get; init; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.HeaderColumnAt(System.Int32,System.Int32,Tuinet.Widgets.ListState@)' data-commentid='M:Tuinet.Widgets.Table`1.HeaderColumnAt(System.Int32,System.Int32,Tuinet.Widgets.ListState@)' id='Tuinet_Widgets_Table_1_HeaderColumnAt_System_Int32_System_Int32_Tuinet_Widgets_ListState__'>HeaderColumnAt(int, int, in ListState)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L191'><i class='bi bi-code-slash'></i></a></h3>
+ <p>The column whose header is at cell (<code class="paramref">x</code>, <code class="paramref">y</code>) at the last render, or -1:
+e.g. to sort on a header click. Build the table with the same columns and settings as for render.</p>
+<pre><code class='lang-csharp'>public int HeaderColumnAt(int x, int y, in ListState state)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>x</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>y</code> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>state</code> <a href='Tuinet.Widgets.ListState.html'>ListState</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Widgets.Table`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.ListState@)' data-commentid='M:Tuinet.Widgets.Table`1.Render(Tuinet.Rect,Tuinet.CellBuffer,Tuinet.Widgets.ListState@)' id='Tuinet_Widgets_Table_1_Render_Tuinet_Rect_Tuinet_CellBuffer_Tuinet_Widgets_ListState__'>Render(Rect, CellBuffer, ref ListState)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Widgets/Table.cs#L117'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public void Render(Rect area, CellBuffer buffer, ref ListState state)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>area</code> <a href='Tuinet.Rect.html'>Rect</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>buffer</code> <a href='Tuinet.CellBuffer.html'>CellBuffer</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>state</code> <a href='Tuinet.Widgets.ListState.html'>ListState</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

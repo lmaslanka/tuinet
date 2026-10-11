@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+      <title>Struct Style | TUI.NET </title>
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <meta name="title" content="Struct Style | TUI.NET ">
+      
+      <meta name="description" content="Foreground, background and text attributes. Ten bytes, no padding.">
+      <link rel="icon" href="../favicon.ico">
+      <link rel="stylesheet" href="../public/docfx.min.css">
+      <link rel="stylesheet" href="../public/main.css">
+      <meta name="docfx:navrel" content="../toc.html">
+      <meta name="docfx:tocrel" content="toc.html">
+      
+      <meta name="docfx:rel" content="../">
+      
+      
+      
+      <meta name="loc:inThisArticle" content="In this article">
+      <meta name="loc:searchResultsCount" content="{count} results for &quot;{query}&quot;">
+      <meta name="loc:searchNoResults" content="No results for &quot;{query}&quot;">
+      <meta name="loc:tocFilter" content="Filter by title">
+      <meta name="loc:nextArticle" content="Next">
+      <meta name="loc:prevArticle" content="Previous">
+      <meta name="loc:themeLight" content="Light">
+      <meta name="loc:themeDark" content="Dark">
+      <meta name="loc:themeAuto" content="Auto">
+      <meta name="loc:changeTheme" content="Change theme">
+      <meta name="loc:copy" content="Copy">
+      <meta name="loc:downloadPdf" content="Download PDF">
+
+      <script type="module" src="./../public/docfx.min.js"></script>
+
+      <script>
+        const theme = localStorage.getItem('theme') || 'auto'
+        document.documentElement.setAttribute('data-bs-theme', theme === 'auto' ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light') : theme)
+      </script>
+
+  </head>
+
+  <body class="tex2jax_ignore" data-layout="" data-yaml-mime="ApiPage">
+    <header class="bg-body border-bottom">
+      <nav id="autocollapse" class="navbar navbar-expand-md" role="navigation">
+        <div class="container-xxl flex-nowrap">
+          <a class="navbar-brand" href="../index.html">
+            <img id="logo" class="svg" src="../logo.svg" alt="TUI.NET">
+            TUI.NET
+          </a>
+          <button class="btn btn-lg d-md-none border-0" type="button" data-bs-toggle="collapse" data-bs-target="#navpanel" aria-controls="navpanel" aria-expanded="false" aria-label="Toggle navigation">
+            <i class="bi bi-three-dots"></i>
+          </button>
+          <div class="collapse navbar-collapse" id="navpanel">
+            <div id="navbar">
+              <form class="search" role="search" id="search">
+                <i class="bi bi-search"></i>
+                <input class="form-control" id="search-query" type="search" disabled placeholder="Search" autocomplete="off" aria-label="Search">
+              </form>
+            </div>
+          </div>
+        </div>
+      </nav>
+    </header>
+
+    <main class="container-xxl">
+      <div class="toc-offcanvas">
+        <div class="offcanvas-md offcanvas-start" tabindex="-1" id="tocOffcanvas" aria-labelledby="tocOffcanvasLabel">
+          <div class="offcanvas-header">
+            <h5 class="offcanvas-title" id="tocOffcanvasLabel">Table of Contents</h5>
+            <button type="button" class="btn-close" data-bs-dismiss="offcanvas" data-bs-target="#tocOffcanvas" aria-label="Close"></button>
+          </div>
+          <div class="offcanvas-body">
+            <nav class="toc" id="toc"></nav>
+          </div>
+        </div>
+      </div>
+
+      <div class="content">
+        <div class="actionbar">
+          <button class="btn btn-lg border-0 d-md-none" type="button" data-bs-toggle="offcanvas" data-bs-target="#tocOffcanvas" aria-controls="tocOffcanvas" aria-expanded="false" aria-label="Show table of contents">
+            <i class="bi bi-list"></i>
+          </button>
+
+          <nav id="breadcrumb"></nav>
+        </div>
+
+        <article data-uid="">
+<h1 class='section api' data-uid='Tuinet.Style' data-commentid='T:Tuinet.Style' id='Tuinet_Style'>Struct Style    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L20'><i class='bi bi-code-slash'></i></a></h1>
+ <div class="facts text-secondary">
+<dl><dt>Namespace</dt><dd><a href='Tuinet.html'>Tuinet</a></dd></dl><dl><dt>Assembly</dt><dd>Tuinet.dll</dd></dl>
+</div><p>Foreground, background and text attributes. Ten bytes, no padding.</p>
+<pre><code class='lang-csharp'>public readonly struct Style : IEquatable&lt;Style&gt;</code></pre><h4 class='section'>Implements</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.iequatable-1'>IEquatable&lt;Style&gt;</a>
+</div>
+
+</dd></dl><h4 class='section'>Inherited Members</h4><dl class="typelist"><dd>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object)'>object.Equals(object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.equals#system-object-equals(system-object-system-object)'>object.Equals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gethashcode'>object.GetHashCode()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.gettype'>object.GetType()</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.referenceequals'>object.ReferenceEquals(object?, object?)</a>
+</div>
+<div>
+<a href='https://learn.microsoft.com/dotnet/api/system.object.tostring'>object.ToString()</a>
+</div>
+
+</dd></dl><h2 class='section'>Constructors</h2><h3 class='section api' data-uid='Tuinet.Style.#ctor(Tuinet.Color,Tuinet.Color,Tuinet.Attr)' data-commentid='M:Tuinet.Style.#ctor(Tuinet.Color,Tuinet.Color,Tuinet.Attr)' id='Tuinet_Style__ctor_Tuinet_Color_Tuinet_Color_Tuinet_Attr_'>Style(Color, Color, Attr)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L23'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style(Color fg, Color bg, Attr attrs = Attr.None)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>fg</code> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>bg</code> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>attrs</code> <a href='Tuinet.Attr.html'>Attr</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Properties</h2><h3 class='section api' data-uid='Tuinet.Style.Attrs' data-commentid='P:Tuinet.Style.Attrs' id='Tuinet_Style_Attrs'>Attrs    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L32'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Attr Attrs { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Attr.html'>Attr</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Bg' data-commentid='P:Tuinet.Style.Bg' id='Tuinet_Style_Bg'>Bg    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L31'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Color Bg { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Default' data-commentid='P:Tuinet.Style.Default' id='Tuinet_Style_Default'>Default    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L34'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static Style Default { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Fg' data-commentid='P:Tuinet.Style.Fg' id='Tuinet_Style_Fg'>Fg    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L30'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Color Fg { get; }</code></pre><h4 class='section'>Property Value</h4><dl class='parameters'><dt> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Methods</h2><h3 class='section api' data-uid='Tuinet.Style.Equals(Tuinet.Style)' data-commentid='M:Tuinet.Style.Equals(Tuinet.Style)' id='Tuinet_Style_Equals_Tuinet_Style_'>Equals(Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L49'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Indicates whether the current object is equal to another object of the same type.</p>
+<pre><code class='lang-csharp'>public bool Equals(Style other)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>other</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+<p>An object to compare with this object.</p>
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+<p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if the current object is equal to the <code class="paramref">other</code> parameter; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Equals(System.Object)' data-commentid='M:Tuinet.Style.Equals(System.Object)' id='Tuinet_Style_Equals_System_Object_'>Equals(object?)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L52'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Indicates whether this instance and a specified object are equal.</p>
+<pre><code class='lang-csharp'>public override bool Equals(object? obj)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>obj</code> <a href='https://learn.microsoft.com/dotnet/api/system.object'>object</a>?  </dt>
+<dd>
+
+
+<p>The object to compare with the current instance.</p>
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+<p><a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">true</a> if <code class="paramref">obj</code> and this instance are the same type and represent the same value; otherwise, <a href="https://learn.microsoft.com/dotnet/csharp/language-reference/builtin-types/bool">false</a>.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.GetHashCode' data-commentid='M:Tuinet.Style.GetHashCode' id='Tuinet_Style_GetHashCode'>GetHashCode()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L53'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Returns the hash code for this instance.</p>
+<pre><code class='lang-csharp'>public override int GetHashCode()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.int32'>int</a>  </dt>
+<dd>
+
+
+<p>A 32-bit signed integer that is the hash code for this instance.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Patch(Tuinet.Style)' data-commentid='M:Tuinet.Style.Patch(Tuinet.Style)' id='Tuinet_Style_Patch_Tuinet_Style_'>Patch(Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L44'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Layers <code class="paramref">top</code> over this style: its non-default colors win, attributes are combined.</p>
+<pre><code class='lang-csharp'>public Style Patch(Style top)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>top</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.ToString' data-commentid='M:Tuinet.Style.ToString' id='Tuinet_Style_ToString'>ToString()    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L57'><i class='bi bi-code-slash'></i></a></h3>
+ <p>Returns the fully qualified type name of this instance.</p>
+<pre><code class='lang-csharp'>public override string ToString()</code></pre><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.string'>string</a>  </dt>
+<dd>
+
+
+<p>The fully qualified type name.</p>
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.With(Tuinet.Attr)' data-commentid='M:Tuinet.Style.With(Tuinet.Attr)' id='Tuinet_Style_With_Tuinet_Attr_'>With(Attr)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L38'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style With(Attr attrs)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>attrs</code> <a href='Tuinet.Attr.html'>Attr</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.WithBg(Tuinet.Color)' data-commentid='M:Tuinet.Style.WithBg(Tuinet.Color)' id='Tuinet_Style_WithBg_Tuinet_Color_'>WithBg(Color)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L37'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style WithBg(Color bg)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>bg</code> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.WithFg(Tuinet.Color)' data-commentid='M:Tuinet.Style.WithFg(Tuinet.Color)' id='Tuinet_Style_WithFg_Tuinet_Color_'>WithFg(Color)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L36'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style WithFg(Color fg)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>fg</code> <a href='Tuinet.Color.html'>Color</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.Without(Tuinet.Attr)' data-commentid='M:Tuinet.Style.Without(Tuinet.Attr)' id='Tuinet_Style_Without_Tuinet_Attr_'>Without(Attr)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L39'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public Style Without(Attr attrs)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>attrs</code> <a href='Tuinet.Attr.html'>Attr</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h2 class='section'>Operators</h2><h3 class='section api' data-uid='Tuinet.Style.op_Equality(Tuinet.Style,Tuinet.Style)' data-commentid='M:Tuinet.Style.op_Equality(Tuinet.Style,Tuinet.Style)' id='Tuinet_Style_op_Equality_Tuinet_Style_Tuinet_Style_'>operator ==(Style, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L54'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static bool operator ==(Style left, Style right)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>left</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>right</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h3 class='section api' data-uid='Tuinet.Style.op_Inequality(Tuinet.Style,Tuinet.Style)' data-commentid='M:Tuinet.Style.op_Inequality(Tuinet.Style,Tuinet.Style)' id='Tuinet_Style_op_Inequality_Tuinet_Style_Tuinet_Style_'>operator !=(Style, Style)    <a class='header-action link-secondary' title='View source' href='https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/Style.cs#L55'><i class='bi bi-code-slash'></i></a></h3>
+ <pre><code class='lang-csharp'>public static bool operator !=(Style left, Style right)</code></pre><h4 class='section'>Parameters</h4><dl class='parameters'><dt><code>left</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd><dt><code>right</code> <a href='Tuinet.Style.html'>Style</a>  </dt>
+<dd>
+
+
+
+</dd></dl><h4 class='section'>Returns</h4><dl class='parameters'><dt> <a href='https://learn.microsoft.com/dotnet/api/system.boolean'>bool</a>  </dt>
+<dd>
+
+
+
+</dd></dl>
+</article>
+
+        <div class="contribution d-print-none">
+        </div>
+
+
+      </div>
+
+      <div class="affix">
+        <nav id="affix"></nav>
+      </div>
+    </main>
+
+    <div class="container-xxl search-results" id="search-results"></div>
+
+    <footer class="border-top text-secondary">
+      <div class="container-xxl">
+        <div class="flex-fill">
+          TUI.NET · Apache-2.0
+        </div>
+      </div>
+    </footer>
+  </body>
+</html>

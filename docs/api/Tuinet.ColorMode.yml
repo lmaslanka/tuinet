@@ -1,0 +1,40 @@
+### YamlMime:ApiPage
+title: Enum ColorMode
+body:
+- api1: Enum ColorMode
+  id: Tuinet_ColorMode
+  src: https://github.com/lmaslanka/tuinet/blob/main/src/Tuinet/TerminalOptions.cs#L3
+  metadata:
+    uid: Tuinet.ColorMode
+    commentId: T:Tuinet.ColorMode
+- facts:
+  - name: Namespace
+    value:
+      text: Tuinet
+      url: Tuinet.html
+  - name: Assembly
+    value: Tuinet.dll
+- code: 'public enum ColorMode : byte'
+- h2: Fields
+- parameters:
+  - name: Basic16
+    default: "2"
+    description: >+
+      The 16 ANSI colors only.
+
+  - name: Indexed256
+    default: "1"
+    description: >+
+      xterm 256-color palette; RGB is mapped to the nearest cube or gray entry.
+
+  - name: None
+    default: "3"
+    description: >+
+      No colors (attributes such as bold and reverse still apply).
+
+  - name: TrueColor
+    default: "0"
+    description: >+
+      24-bit RGB (<code>38;2;r;g;b</code>).
+
+languageId: csharp
