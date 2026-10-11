@@ -50,6 +50,14 @@ The first release.
   narrower than the screen that scrolls, such as a list beside a panel, is moved by the terminal too. A 150-column
   list scrolling beside a 50-column panel goes from 10.3 KB to 459 bytes per frame. `Terminal.LeftRightMarginsActive`
   reports whether the terminal has them; elsewhere nothing changes. `TerminalOptions.ScrollRegions` gates it.
+- Repeated glyphs: on terminals that name themselves in reply to XTVERSION (asked at startup) as xterm, kitty, foot,
+  WezTerm or Ghostty, a glyph followed by more of the same cell (a border, a rule, a bar, a highlighted blank row) is
+  drawn once and repeated with REP (`CSI n b`) when that is shorter: from 5 more ASCII cells, 3 more 2-byte or 2 more
+  box-drawing ones. At 200×60 a screen with a rule every third row goes from 14.9 KB to 3.1 KB, a bar chart from
+  19.8 KB to 3.1 KB, a dialog opening from 2.0 KB to 1.5 KB and a list's first frame from 3.7 KB to 2.6 KB; in the
+  Showcase the edit dialog opens in 4.1 KB instead of 5.5 KB. Clusters, wide glyphs and links are never repeated.
+  `Terminal.RepeatSequencesActive` reports it; elsewhere the output is unchanged. `TerminalOptions.RepeatSequences`
+  turns it off.
 - Inline mode: `TerminalOptions.Inline = new InlineOptions(height)` draws in a band under the shell prompt
   instead of on the alternate screen; the band stays in the scrollback after exit. `Terminal.PrintAbove`
   prints log lines above the band. The band is placed with a cursor position query and follows resizes.

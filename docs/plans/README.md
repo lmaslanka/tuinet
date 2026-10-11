@@ -22,7 +22,7 @@ One plan per gap found in the 2026-10-03 review. Priority 1 is next.
 | 11 | [Title, clipboard, cursor shape, hyperlinks, kitty keyboard](11-terminal-extras.md) ✅ done | missing | S–M each | 5 |
 | 12 | [Erase with escape codes](12-erase-sequences.md) ✅ done | performance | S | 4 |
 | 13 | [Left/right scroll margins](13-left-right-margins.md) ✅ done | performance | M | 6 |
-| 14 | [Repeat-character sequence](14-repeat-glyph.md) | performance | S | 7 |
+| 14 | [Repeat-character sequence](14-repeat-glyph.md) ✅ done | performance | S | 7 |
 | 15 | [Main-loop and focus helpers](15-loop-and-focus-helpers.md) ✅ done | nice to have | S | 6 |
 | 16 | [Test helpers for library users](16-test-helpers.md) ✅ done | nice to have | S | 6 |
 | 17 | [Docs, gallery, comparison benchmarks](17-docs-and-comparisons.md) | nice to have | M | 6 |

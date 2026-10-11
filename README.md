@@ -26,6 +26,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Unchanged rows are skipped with a vectorized memcmp.
   - Gaps inside a row are jumped with relative cursor moves.
   - Runs of blanks are erased (to the end of the row, or n cells) instead of written as spaces.
+  - On terminals with REP (xterm, kitty, foot, WezTerm, Ghostty), borders, rules and bars are drawn as one glyph and a repeat count.
   - When a band of rows scrolls, the terminal moves it (scroll margins + insert/delete line) and only the new rows are painted.
     On terminals with left/right margins (DECLRMM) this works for a band narrower than the screen too, such as a list beside a panel.
   - Style changes are sent as minimal deltas.
@@ -733,6 +734,7 @@ click every control in the edit dialog, and click outside the progress dialog to
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
 | `ScrollRegions` | on | Let the terminal move rows that scrolled, instead of repainting them: full-width bands, and narrower ones where the terminal reports left/right margins (`term.LeftRightMarginsActive`) |
 | `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
+| `RepeatSequences` | on | Draw a run of one glyph as the glyph and REP (`CSI n b`) on terminals that name themselves (XTVERSION) as having it (`term.RepeatSequencesActive`) |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
 | `KittyKeyboard` | off | Kitty keyboard protocol where the terminal has it (see below) |
 | `KeyReleaseEvents` | off | With `KittyKeyboard`: also key repeats and releases (`KeyEvent.Kind`) |
@@ -973,6 +975,8 @@ public void Key_in_frame_out()
 | The same, terminal with left/right margins (DECLRMM) | 13 µs | 459 |
 | An 80×24 dialog closes over a themed background | 8.6 µs | 313 |
 | Every row gets shorter (text, then blanks to the right edge) | 12 µs | 698 |
+| First paint of a screen with a rule every third row, terminal without REP | 33 µs | 14.9 KB |
+| The same, terminal with REP | 17 µs | 3.1 KB |
 | App frame, scrolling: layout + block + 5,000-item list + diff + write | 14 µs | 165 |
 | App frame, scrolling: layout + block + 5,000-row, 4-column table + diff + write | 21 µs | 233 |
 | `SetString`, 60 rows: ASCII / ASCII with explicit colors / CJK | 6.4 / 4.1 / 9.5 µs | |
