@@ -472,9 +472,24 @@ public class TerminalTests
     [InlineData(100, 65535)]
     public void Hostile_terminal_size_at_startup_is_clamped(int width, int height)
     {
+        // Inline mode: the same clamp, but a two-row frame, so the cases don't each allocate 160 MB of buffers
+        // (which perturbs the allocation tests running in parallel). The full-screen buffers are covered below.
         var tty = new TestTty(width, height);
+        tty.Enqueue("\u001b[1;1R");
+        using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(2) });
+        Assert.Equal(new Size(Math.Min(width, Terminal.MaxWidth), 2), terminal.Size);
+        terminal.BeginFrame().SetString(0, 0, "ok");
+        terminal.Present();
+        Assert.Contains("ok", tty.WrittenText);
+    }
+
+    [Fact]
+    public void Largest_winsize_at_startup_fits_the_frame_buffers()
+    {
+        // 65535 x 65535 wrapped int in new Cell[width * height] and threw out of the constructor.
+        var tty = new TestTty(65535, 65535);
         using var terminal = new Terminal(tty);
-        Assert.Equal(new Size(Math.Min(width, Terminal.MaxWidth), Math.Min(height, Terminal.MaxHeight)), terminal.Size);
+        Assert.Equal(new Size(Terminal.MaxWidth, Terminal.MaxHeight), terminal.Size);
         terminal.BeginFrame().SetString(0, 0, "ok");
         terminal.Present();
         Assert.Contains("ok", tty.WrittenText);
