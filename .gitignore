@@ -7,3 +7,6 @@ BenchmarkDotNet.Artifacts/
 TestResults/
 publish/
 artifacts/
+
+# Snapshot test output (Tuinet.Testing.Snapshot)
+*.received.txt

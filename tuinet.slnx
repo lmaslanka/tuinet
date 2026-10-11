@@ -1,6 +1,7 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Tuinet/Tuinet.csproj" />
+    <Project Path="src/Tuinet.Testing/Tuinet.Testing.csproj" />
   </Folder>
   <Folder Name="/samples/">
     <Project Path="samples/Tuinet.Samples.Gallery/Tuinet.Samples.Gallery.csproj" />
@@ -17,6 +18,7 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tuinet.Tests/Tuinet.Tests.csproj" />
+    <Project Path="tests/Tuinet.Testing.Tests/Tuinet.Testing.Tests.csproj" />
     <Project Path="tests/Tuinet.Samples.Gallery.Tests/Tuinet.Samples.Gallery.Tests.csproj" />
     <Project Path="tests/Tuinet.Samples.Showcase.Tests/Tuinet.Samples.Showcase.Tests.csproj" />
   </Folder>

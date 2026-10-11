@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Tuinet.Testing</RootNamespace>
+    <IsAotCompatible>true</IsAotCompatible>
+    <IsTrimmable>true</IsTrimmable>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <!-- RS0026/RS0027 (optional-parameter overload rules) are API-design opinions, not baseline tracking. -->
+    <NoWarn>$(NoWarn);CS1591;RS0026;RS0027</NoWarn>
+
+    <PackageId>Tuinet.Testing</PackageId>
+    <Description>Test helpers for Tuinet apps: styled screen snapshots, a terminal that takes scripted keys and mouse input, text search and an allocation check. Test-framework agnostic.</Description>
+    <Authors>Lukasz Maslanka</Authors>
+    <PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageTags>tui;terminal;console;testing;snapshot</PackageTags>
+    <PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/lmaslanka/tuinet</PackageProjectUrl>
+    <PackageReleaseNotes>https://github.com/lmaslanka/tuinet/blob/main/CHANGELOG.md</PackageReleaseNotes>
+    <RepositoryUrl>https://github.com/lmaslanka/tuinet</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\..\docs\images\icon.png" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <!-- Public API baseline, as in Tuinet.csproj: public changes must be recorded in PublicAPI.Unshipped.txt. -->
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
+    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
+    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tuinet\Tuinet.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Tuinet.Testing.Tests" />
+  </ItemGroup>
+
+</Project>
