@@ -18,6 +18,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tuinet\Tuinet.csproj" />
     <ProjectReference Include="..\..\samples\Tuinet.Samples.Showcase\Tuinet.Samples.Showcase.csproj" />
+    <ProjectReference Include="..\..\samples\Tuinet.Samples.Gallery\Tuinet.Samples.Gallery.csproj" />
   </ItemGroup>
 
   <ItemGroup>

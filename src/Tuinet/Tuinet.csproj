@@ -32,11 +32,10 @@
   </ItemGroup>
 
   <!-- Public API baseline: any public change must be recorded in PublicAPI.Unshipped.txt (RS0016/RS0017
-       are errors via TreatWarningsAsErrors), so API changes show up in review. -->
+       are errors via TreatWarningsAsErrors), so API changes show up in review. The analyzer package adds
+       PublicAPI.*.txt to AdditionalFiles itself. -->
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.PublicApiAnalyzers" Version="5.6.0" PrivateAssets="all" />
-    <AdditionalFiles Include="PublicAPI.Shipped.txt" />
-    <AdditionalFiles Include="PublicAPI.Unshipped.txt" />
   </ItemGroup>
 
   <ItemGroup>

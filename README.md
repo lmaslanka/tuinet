@@ -989,6 +989,30 @@ public void Key_in_frame_out()
 
 Compared with the original kernel this library grew out of, unchanged and sparse frames are about **9× faster**, and full repaints are **3.3× faster**.
 
+### Compared with other .NET TUI libraries
+
+One scenario in three libraries: a 200×60 truecolor screen, a bordered 5,000-row list with a status line, and
+the selection moving down one row per frame, so every frame also scrolls the list. All three draw the same
+screen (checked by replaying their output through a VT emulator).
+
+| Library | Time / frame | Allocated / frame | Bytes / frame | Writes / frame |
+|---|---:|---:|---:|---:|
+| Tuinet | 14.1 µs | 0 B | 254 | 1 |
+| Tuinet, scroll regions off | 24.8 µs | 0 B | 2,548 | 1 |
+| Spectre.Console 0.57.2, live display | 5,194 µs | 3.1 MB | 17,098 | 639 |
+| Terminal.Gui 2.5.0 | 9,707 µs | 25.7 MB | 15,992 | 118 |
+
+Most of Tuinet's lead in bytes comes from moving the scrolled rows with a scroll region; with that off it is a
+plain cell diff. Spectre.Console's live display has no diffing and rewrites the whole region on every refresh,
+and Terminal.Gui marks every list row dirty, so both send the whole list every frame. Measured on one machine
+(Ryzen 9 7950X, .NET 10, BenchmarkDotNet `ShortRun`); the methodology, how each library's output is captured,
+and the caveats are in [bench/Tuinet.Comparisons](bench/Tuinet.Comparisons/README.md). To reproduce:
+
+```sh
+dotnet run -c Release --project bench/Tuinet.Comparisons -- --filter '*' --job short   # time, allocations
+dotnet run -c Release --project bench/Tuinet.Comparisons -- bytes                      # bytes, writes
+```
+
 ```sh
 dotnet run -c Release --project bench/Tuinet.Benchmarks -- --filter '*'   # BenchmarkDotNet suite
 dotnet run -c Release --project bench/Tuinet.Benchmarks -- bytes          # bytes on the wire per scenario

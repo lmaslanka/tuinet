@@ -4,8 +4,8 @@
     {
       "src": [
         {
-          "src": "../src/Tuinet",
-          "files": ["Tuinet.csproj"]
+          "src": "../src",
+          "files": ["Tuinet/Tuinet.csproj", "Tuinet.Testing/Tuinet.Testing.csproj"]
         }
       ],
       "dest": "api",

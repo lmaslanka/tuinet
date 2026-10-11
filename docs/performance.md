@@ -65,7 +65,7 @@ Drawing everything every frame is cheap because the renderer sends only the diff
 - Text is written from spans: format into `stackalloc` buffers with `TryWrite` instead of building strings.
 - `Markup.Parse` and `StyledTextBuilder` write into memory you pass in; `SetMarkup` parses on the stack.
 - `Terminal.Poll` and `Terminal.Run` allocate nothing per event or per frame.
-- Test it in your own app: see the end of [Testing](testing.md#assertions-and-snapshots).
+- Test it in your own app: see [Testing](testing.md#no-allocations-per-frame).
 
 ## Compared with other .NET libraries
 

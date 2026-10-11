@@ -125,6 +125,12 @@ The first release.
   `Allocations.AssertNone` (the steady-state zero-allocation check). The sample tests use it, with styled snapshots
   of the Showcase screens and every Gallery page.
 - `CellBuffer.CopyTo`: an exact copy of the cells, links and cursor, allocating only when the destination grows.
+- Docs site: topic pages and the API reference for `Tuinet` and `Tuinet.Testing`, built with docfx (pinned as a local
+  dotnet tool), checked in CI with warnings as errors and published to GitHub Pages.
+- Gallery sample: every widget live beside the code that draws it. `tools/screenshots` regenerates the README and docs
+  images from the Showcase and Gallery, and CI checks they are deterministic and up to date.
+- Comparison benchmarks against Spectre.Console and Terminal.Gui (`bench/Tuinet.Comparisons`), with the
+  methodology and results in the README.
 - Native AOT and trimming compatible.
 
 [Unreleased]: https://github.com/lmaslanka/tuinet/commits/main

@@ -4,7 +4,7 @@ Regenerates the README images in `docs/images/`: each *shot* runs an app with so
 `CellBuffer`, and renders that buffer as a PNG of a terminal window (rounded frame, traffic-light dots, title).
 
 ```sh
-dotnet run --project tools/screenshots                  # writes docs/images/showcase-*.png
+dotnet run --project tools/screenshots                  # writes docs/images/showcase-*.png and gallery-*.png
 dotnet run --project tools/screenshots -- out/          # somewhere else
 dotnet run --project tools/screenshots -- --only showcase-edit
 dotnet run --project tools/screenshots -- --scale 2     # high-density images, named name@2x.png
@@ -25,7 +25,7 @@ new("showcase-edit", ShowcaseTitle, 110, 34, Showcase, Input(Char('j'), Key(KeyC
 ```
 
 - **app**: a `Func<IApp>` that makes a fresh app. Apps that don't implement `IApp` wrap their two methods in a
-  `DelegateApp`, as `Showcase()` does.
+  `DelegateApp`, as `TestSheet` does.
 - **setup**: an `Action<IApp>` run before the frame. `Keys("jjp")` types characters, `Input(...)` sends any events
   (`Key(KeyCode.Tab)`, `Char('s', Modifiers.Ctrl)`, `Event.FromPaste(...)`, mouse events) at time 0; or write a lambda.
 - **NowMs**: the time the frame is drawn at, for animations (the progress dialog is shown 4.65 s in).
