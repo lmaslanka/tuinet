@@ -43,6 +43,7 @@ public class TextBenchmarks
     private const string Ascii = "the quick brown fox jumps over the lazy dog, again and again and again and again and again and again and again!";
     private const string Cjk = "你好世界こんにちは안녕하세요你好世界こんにちは안녕하세요你好世界こんにちは안녕하세요";
     private const string Clusters = "status 👍🏽 done ❤️ café 🇵🇱 team 👨‍👩‍👧 ok 1️⃣ नमस्ते ok status 👍🏽 done ❤️ café 🇵🇱 team 👨‍👩‍👧";
+    private const string Cyrillic = "съешь же ещё этих мягких французских булок да выпей чаю, съешь же ещё этих мягких французских булок да выпей чаю!";
 
     [Benchmark(Description = "SetString ascii 60 rows")]
     public int SetStringAscii()
@@ -76,6 +77,43 @@ public class TextBenchmarks
         for (int y = 0; y < 60; y++)
         {
             x += _buffer.SetString(0, y, Cjk);
+        }
+
+        return x;
+    }
+
+    /// <summary>A non-Latin alphabet without marks: letters that never join, like Latin, but outside ASCII.</summary>
+    [Benchmark(Description = "SetString cyrillic 60 rows")]
+    public int SetStringCyrillic()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x += _buffer.SetString(0, y, Cyrillic);
+        }
+
+        return x;
+    }
+
+    [Benchmark(Description = "TextWidth.Of ascii 60 rows")]
+    public int TextWidthAscii()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x += TextWidth.Of(Ascii);
+        }
+
+        return x;
+    }
+
+    [Benchmark(Description = "TextWidth.Of cyrillic 60 rows")]
+    public int TextWidthCyrillic()
+    {
+        int x = 0;
+        for (int y = 0; y < 60; y++)
+        {
+            x += TextWidth.Of(Cyrillic);
         }
 
         return x;

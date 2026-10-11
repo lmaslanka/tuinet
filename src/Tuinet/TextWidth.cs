@@ -14,6 +14,8 @@ public static class TextWidth
     /// <summary>
     /// Columns <paramref name="text"/> takes when written with <see cref="CellBuffer.SetString"/>: grapheme
     /// clusters count once (e + combining accent is 1, 👨‍👩‍👧 is 2), controls and stray marks count 0.
+    /// Runs of printable ASCII are counted with one scan, and letters of any script without marks (Cyrillic,
+    /// Greek, CJK…) with a table lookup each; only clusters are segmented.
     /// </summary>
     public static int Of(ReadOnlySpan<char> text)
     {
@@ -21,11 +23,20 @@ public static class TextWidth
         int i = 0;
         while (i < text.Length)
         {
-            char c = text[i];
-            if (c < 0x80 && (i + 1 == text.Length || text[i + 1] < 0x300))
+            int run = Graphemes.AsciiRun(text[i..], text.Length - i);
+            if (run == 0)
             {
-                width += (uint)(c - 0x20) < 0x5F ? 1 : 0;
-                i++;
+                run = Graphemes.SimpleRun(text[i..], int.MaxValue, out int columns);
+                width += columns;
+            }
+            else
+            {
+                width += run;
+            }
+
+            if (run > 0)
+            {
+                i += run;
                 continue;
             }
 

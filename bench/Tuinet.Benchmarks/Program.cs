@@ -14,6 +14,7 @@ if (args is ["bytes"])
     Row("no change", plain.NoChange(), repeat.NoChange());
     Row("one cell", plain.OneCell(), repeat.OneCell());
     Row("full repaint, styled", plain.FullRepaint(), repeat.FullRepaint());
+    Row("full repaint, cyrillic", plain.FullRepaintCyrillic(), repeat.FullRepaintCyrillic());
     Row("scroll by one row", plain.ScrollOne(), repeat.ScrollOne());
     Row("split scroll", plain.SplitScroll(), repeat.SplitScroll());
     Row("split scroll, DECLRMM", plain.SplitScrollMargins(), repeat.SplitScrollMargins());
