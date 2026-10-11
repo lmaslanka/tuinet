@@ -9,8 +9,8 @@ public class RenderBenchmarks
 {
     private const int W = 200;
     private const int H = 60;
-    private readonly Renderer _renderer = new(ColorMode.TrueColor);
-    private readonly Renderer _margins = new(ColorMode.TrueColor) { LeftRightMargins = true };
+    private Renderer _renderer = null!;
+    private Renderer _margins = null!;
     private readonly VtBuffer _out = new(1 << 20);
     private CellBuffer _a = null!;
     private CellBuffer _b = null!;
@@ -22,10 +22,19 @@ public class RenderBenchmarks
     private CellBuffer _short = null!;
     private CellBuffer _split = null!;
     private CellBuffer _splitScrolled = null!;
+    private CellBuffer _blank = null!;
+    private CellBuffer _rules = null!;
+    private CellBuffer _bars = null!;
+
+    /// <summary>The terminal has REP (repeat the last glyph): runs of one glyph are drawn once and repeated.</summary>
+    [Params(false, true)]
+    public bool Repeat { get; set; }
 
     [GlobalSetup]
     public void Setup()
     {
+        _renderer = new Renderer(ColorMode.TrueColor) { Repeat = Repeat };
+        _margins = new Renderer(ColorMode.TrueColor) { LeftRightMargins = true, Repeat = Repeat };
         _a = Screen(0);
         _b = Screen(1);
         _same = Screen(0);
@@ -50,7 +59,43 @@ public class RenderBenchmarks
         {
             _short.Fill(new Rect(30, y, W - 30, 1), _short[0, y].Style);   // every row keeps 30 columns of text
         }
+
+        _blank = new CellBuffer(W, H);
+        _rules = new CellBuffer(W, H);
+        var muted = new Style(Color.Rgb(90, 90, 110), default);
+        for (int y = 0; y < H; y++)
+        {
+            if (y % 3 == 0)
+            {
+                _rules.SetString(0, y, new string('─', W), muted);   // a log or table with a rule every third row
+            }
+            else
+            {
+                _rules.SetString(2, y, $"entry {y}: the quick brown fox jumps over the lazy dog");
+            }
+        }
+
+        _bars = new CellBuffer(W, H);
+        for (int y = 0; y < H; y++)
+        {
+            int length = 20 + y * 37 % 160;   // a horizontal bar chart: label, bar, value
+            _bars.SetString(0, y, $"series {y,2}");
+            _bars.SetString(12, y, new string('█', length), new Style(Color.Rgb(80, (byte)(100 + y), 200), default));
+            _bars.SetString(13 + length, y, $"{length}");
+        }
     }
+
+    /// <summary>The same centered 80×24 dialog opens: its border and fill over the themed background.</summary>
+    [Benchmark(Description = "dialog opened")]
+    public int DialogOpened() => Render(_dialog, _plain);
+
+    /// <summary>First paint of a screen with a full-width rule every third row.</summary>
+    [Benchmark(Description = "rules")]
+    public int Rules() => Render(_rules, _blank);
+
+    /// <summary>First paint of a 60-row horizontal bar chart (runs of █).</summary>
+    [Benchmark(Description = "bars")]
+    public int Bars() => Render(_bars, _blank);
 
     /// <summary>A centered 80×24 dialog closes over a themed (non-default) background.</summary>
     [Benchmark(Description = "dialog closed")]
