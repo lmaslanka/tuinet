@@ -598,7 +598,7 @@ public sealed class ShowcaseApp
     private void RenderPanel(CellBuffer buffer, Rect box)
     {
         Span<char> title = stackalloc char[24];
-        title.TryWrite($" ITEMS · {_items.Length} ", out int length);
+        int length = new SpanText(title).Append(" ITEMS · ").Append(_items.Length).Append(' ').Text.Length;
         var block = new Block
         {
             BorderType = BorderType.Rounded,
@@ -687,9 +687,9 @@ public sealed class ShowcaseApp
 
         Span<char> value = stackalloc char[48];
         int y = Heading(buffer, top[1], top[1].Y, "FLAGS", Theme.Coral);
-        value.TryWrite($"{enabled,2} of {_items.Length}", out int length);
+        int length = new SpanText(value).Append(enabled, width: 2).Append(" of ").Append(_items.Length).Text.Length;
         y = Flag(buffer, top[1], y, "enabled", value[..length]);
-        value.TryWrite($"{notify,2} of {_items.Length}", out length);
+        length = new SpanText(value).Append(notify, width: 2).Append(" of ").Append(_items.Length).Text.Length;
         y = Flag(buffer, top[1], y, "notify", value[..length]);
         y = Heading(buffer, top[1], y + 1, "TERMINAL", Theme.Blue);
         Flag(buffer, top[1], y, "L/R margins", LeftRightMargins ? "on" : "off");
@@ -708,7 +708,7 @@ public sealed class ShowcaseApp
         // The two sparklines share what's left, each under a heading.
         int rest = Math.Max(2, area.Bottom - y - 3);
         int sparkline = (rest + 1) / 2;
-        value.TryWrite($"last {_frameBytes.Last:F0} B", out length);
+        length = new SpanText(value).Append("last ").Append(_frameBytes.Last, "F0").Append(" B").Text.Length;
         ChartHeading(buffer, Clip(area.X, y, area.Width, 1, area), "BYTES PER FRAME", Theme.Green, _frameBytes.Count > 0 ? value[..length] : "");
         buffer.Render(new Sparkline(_frameBytes.Older, _frameBytes.Newer)
         {
@@ -718,7 +718,7 @@ public sealed class ShowcaseApp
         y += sparkline + 2;
         sparkline = rest / 2;
 
-        value.TryWrite($"last {_frameMicroseconds.Last:F0} µs", out length);
+        length = new SpanText(value).Append("last ").Append(_frameMicroseconds.Last, "F0").Append(" µs").Text.Length;
         ChartHeading(buffer, Clip(area.X, y, area.Width, 1, area), "RENDER + DIFF + WRITE", Theme.Blue, _frameMicroseconds.Count > 0 ? value[..length] : "");
         buffer.Render(new Sparkline(_frameMicroseconds.Older, _frameMicroseconds.Newer)
         {
@@ -792,7 +792,7 @@ public sealed class ShowcaseApp
         int y = area.Y;
 
         Span<char> heading = stackalloc char[24];
-        heading.TryWrite($"SELECTED · {item.Number:D2}", out int length);
+        int length = new SpanText(heading).Append("SELECTED · ").Append(item.Number, "D2").Text.Length;
         buffer.SetString(area.X, y++, heading[..length], Theme.Heading(Theme.Green), area.Width);
         buffer.SetString(area.X, y++, item.Name, Theme.Strong, area.Width, Overflow.Ellipsis);
         int lines = Paragraph.LineCount(item.Description, area.Width, TextWrap.Word);
@@ -892,7 +892,7 @@ public sealed class ShowcaseApp
             {
                 case 0:
                     style = Theme.Faded;
-                    scratch.TryWrite($"{item.Number:D2}", out written);
+                    written = new SpanText(scratch).Append(item.Number, "D2").Text.Length;
                     return scratch[..written];
                 case 1:
                     style = item.Enabled ? Theme.Body : Theme.Faded;
@@ -902,7 +902,7 @@ public sealed class ShowcaseApp
                     return Item.Kinds[item.Kind];
                 case 3:
                     style = Theme.Accent(Theme.PriorityColor(item.Priority));
-                    scratch.TryWrite($"▲ {Item.Priorities[item.Priority]}", out written);
+                    written = new SpanText(scratch).Append("▲ ").Append(Item.Priorities[item.Priority]).Text.Length;
                     return scratch[..written];
                 default:
                     style = Theme.Dim;

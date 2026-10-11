@@ -253,7 +253,7 @@ public sealed class EditDialog
     public void Render(CellBuffer buffer)
     {
         Span<char> title = stackalloc char[24];
-        title.TryWrite($" EDIT ITEM · {_item.Number:D2} ", out int titleLength);
+        int titleLength = new SpanText(title).Append(" EDIT ITEM · ").Append(_item.Number, "D2").Append(' ').Text.Length;
         var popup = new Popup
         {
             Block = new Block

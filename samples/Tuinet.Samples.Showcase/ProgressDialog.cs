@@ -119,7 +119,7 @@ public sealed class ProgressDialog
         buffer.SetString(inner.X, inner.Y, "STAGES", Theme.Heading(Theme.Green), 8);
         buffer.SetString(inner.X + 7, inner.Y, "· fork layer", Theme.Accent(Theme.Green), inner.Width - 7);
         Span<char> count = stackalloc char[24];
-        count.TryWrite($"forks {(int)(Math.Min(t, Longest()) * 126.5):N0}", out int countLength);
+        int countLength = new SpanText(count).Append("forks ").Append((int)(Math.Min(t, Longest()) * 126.5), "N0").Text.Length;
         buffer.SetString(inner.Right - countLength, inner.Y, count[..countLength], Theme.Heading(Theme.Green), countLength);
 
         int labelWidth = 20;
@@ -141,7 +141,7 @@ public sealed class ProgressDialog
                 EmptyStyle = Theme.Faded,
             }, new Rect(inner.X + labelWidth, y, barWidth, 1));
 
-            value.TryWrite($"{ratio:0.00}", out int valueLength);
+            int valueLength = new SpanText(value).Append(ratio, "0.00").Text.Length;
             int x = inner.X + labelWidth + barWidth + 2;
             x = buffer.SetString(x, y, value[..valueLength], Theme.Heading(Theme.Green), inner.Right - x);
             buffer.SetString(x + 1, y, finished ? stage.Verdict : "…", finished ? Theme.Accent(Theme.Green) : Theme.Dim, inner.Right - x - 1);
@@ -193,11 +193,11 @@ public sealed class ProgressDialog
             int length;
             if (done)
             {
-                status.TryWrite($"✓ done", out length);
+                length = new SpanText(status).Append("✓ done").Text.Length;
             }
             else
             {
-                status.TryWrite($"{Spinner.Frame(Spinner.Line, elapsedMs + i * 130, 120)} running", out length);
+                length = new SpanText(status).Append(Spinner.Frame(Spinner.Line, elapsedMs + i * 130, 120)).Append(" running").Text.Length;
             }
 
             Centered(buffer, inner, 5, status[..length], done ? Theme.Heading(Theme.Green) : Theme.Strong);
@@ -226,7 +226,7 @@ public sealed class ProgressDialog
         int y = area.Y + 1;
         int x = buffer.SetString(area.X, y, "overall ", Theme.Heading(Theme.Amber), area.Width);
         Span<char> percent = stackalloc char[8];
-        percent.TryWrite($"{ratio * 100,5:0.0}%", out int length);
+        int length = new SpanText(percent).Append(ratio * 100, "0.0", width: 5).Append('%').Text.Length;
         int barWidth = Math.Max(4, area.Right - x - length - 1);
         buffer.Render(new ProgressBar(ratio)
         {
