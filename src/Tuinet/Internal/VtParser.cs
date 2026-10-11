@@ -155,13 +155,13 @@ internal sealed class VtParser
                 _alt = true;
                 Key(KeyCode.Char, 'O');
                 break;
-            case State.Dcs or State.DcsEsc when _dcsLen == 0:
-                NotDcs();   // ESC P and then nothing: Alt+Shift+P
-                return;
-            case State.Dcs or State.DcsEsc:
-                // A reply (ESC P >) that never reached ST, e.g. an XTVERSION reply split by a slow link: drop it.
+            case State.Dcs or State.DcsEsc when _dcsLen >= 2 && _dcs[1] == '|':
+                // An XTVERSION reply (ESC P > | name…) that never reached ST, e.g. split by a slow link: drop it.
                 // Re-typing its payload as keys would put the terminal's name into whatever has focus.
                 break;
+            case State.Dcs or State.DcsEsc:
+                NotDcs();   // ESC P and then nothing, or ESC P > and a key: Alt+Shift+P and what was typed
+                return;
             case State.Paste:
                 // The end marker never came (a dropped connection, a terminal that lost it): what did arrive is
                 // the paste. Delivered as paste text, never as keys, so it can't type anything.

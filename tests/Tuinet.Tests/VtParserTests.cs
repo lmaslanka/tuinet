@@ -324,7 +324,7 @@ public class VtParserTests
     [Theory]
     [InlineData("\u001bP>|kitty(0.3")]            // reply cut mid-payload
     [InlineData("\u001bP>|kitty(0.36.4)\u001b")]   // reply cut inside ST
-    [InlineData("\u001bP>")]                       // reply cut right after the introducer
+    [InlineData("\u001bP>|")]                      // reply cut right after its signature
     public void Unterminated_terminal_reply_is_dropped_not_typed(string input)
     {
         var parser = new VtParser();
