@@ -177,6 +177,13 @@ public static class Markup
     private const int MaxDepth = 16;
 
     /// <summary>
+    /// Longest text between <c>[</c> and <c>]</c> that is tried as a tag. The longest meaningful tag (every attribute
+    /// plus two colors) is under 70 chars; the bound keeps <see cref="Parse"/> linear, since each <c>[</c> looks at
+    /// most this far ahead for its <c>]</c> instead of scanning the rest of the text.
+    /// </summary>
+    private const int MaxTagLength = 128;
+
+    /// <summary>
     /// Parse <paramref name="markup"/>. The visible text goes into <paramref name="chars"/> (at most
     /// <c>markup.Length</c> are needed) and runs into <paramref name="runs"/> (at most one per tag and text
     /// piece); what doesn't fit is cut. Styles are layered over <paramref name="style"/>.
@@ -206,8 +213,11 @@ public static class Markup
                 continue;
             }
 
-            int close = markup[i..].IndexOf(']');
-            ReadOnlySpan<char> tag = close < 0 ? default : markup.Slice(i + 1, close - 1);
+            // The tag ends at the next ']' within MaxTagLength, unless a '[' comes first (no tag contains one): a
+            // bounded look-ahead, so '['-heavy text ("[a[a[a…") costs O(n) rather than a rescan per bracket.
+            ReadOnlySpan<char> window = markup.Slice(i + 1, Math.Min(MaxTagLength + 1, markup.Length - i - 1));
+            int close = window.IndexOfAny('[', ']');
+            ReadOnlySpan<char> tag = close >= 0 && window[close] == ']' ? window[..close] : default;
             if (tag.SequenceEqual("/"))
             {
                 if (depth > 0)
@@ -215,15 +225,15 @@ public static class Markup
                     current = stack[--depth];
                 }
 
-                i += close + 1;
+                i += close + 2;
                 continue;
             }
 
-            if (close > 1 && depth < MaxDepth && TryParseTag(tag, current, out Style next))
+            if (!tag.IsEmpty && depth < MaxDepth && TryParseTag(tag, current, out Style next))
             {
                 stack[depth++] = current;
                 current = next;
-                i += close + 1;
+                i += close + 2;
                 continue;
             }
 

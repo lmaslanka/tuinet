@@ -177,4 +177,33 @@ public class StyledTextTests
         Assert.Equal(new Style(Color.Blue, Color.Default, Attr.Bold), buffer[3, 0].Style);   // over the border style
         Assert.Equal(Color.Red, buffer[7, 0].Style.Fg);
     }
+
+    [Fact]
+    public void Markup_parse_is_linear_in_unmatched_brackets()
+    {
+        // Each '[' used to scan the rest of the text for a ']': 1.6M chars of "[a" took many seconds. Now each
+        // bracket looks a bounded distance ahead, so this is a few milliseconds even in a Debug build.
+        string markup = string.Concat(Enumerable.Repeat("[a", 800_000));
+        char[] chars = new char[markup.Length];
+        StyledRun[] runs = new StyledRun[4];
+        long start = Environment.TickCount64;
+        StyledText text = Markup.Parse(markup, chars, runs);
+        long elapsed = Environment.TickCount64 - start;
+        Assert.True(elapsed < 3000, $"Markup.Parse took {elapsed} ms");
+        Assert.Equal(markup, text.Text.ToString());
+    }
+
+    [Fact]
+    public void Markup_tag_cannot_contain_a_bracket_or_exceed_the_length_bound()
+    {
+        char[] chars = new char[400];
+        StyledRun[] runs = new StyledRun[8];
+        Assert.Equal("[b [x] y", Markup.Parse("[b [x] y", chars, runs).Text.ToString());   // '[' ends the look-ahead; "[x]" isn't a tag
+        Assert.Equal("ok", Markup.Parse("[b]ok[/]", chars, runs).Text.ToString());
+
+        string longTag = "[" + string.Concat(Enumerable.Repeat("b ", 70)) + "]x";           // 141 chars between the brackets: text
+        Assert.Equal(longTag, Markup.Parse(longTag, chars, runs).Text.ToString());
+        string okTag = "[" + string.Concat(Enumerable.Repeat("b ", 30)) + "]x";             // 60 chars: still a tag
+        Assert.Equal("x", Markup.Parse(okTag, chars, runs).Text.ToString());
+    }
 }
