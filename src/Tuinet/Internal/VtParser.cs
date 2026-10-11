@@ -5,7 +5,8 @@ namespace Tuinet;
 /// <summary>
 /// Incremental VT input decoder: bytes in, <see cref="Event"/>s out. Handles UTF-8, Ctrl/Alt
 /// combinations, CSI/SS3 keys with xterm modifier parameters, kitty <c>CSI u</c> keys (with repeat and
-/// release events), SGR (1006) mouse, focus reports and bracketed paste. Allocation-free except for paste text.
+/// release events), SGR (1006) mouse, focus reports and bracketed paste, plus the terminal's replies to the queries
+/// sent at startup (kitty flags, DECRQM, XTVERSION). Allocation-free except for paste text.
 /// </summary>
 internal sealed class VtParser
 {
@@ -17,14 +18,24 @@ internal sealed class VtParser
         Ss3,
         Utf8,
         Paste,
+        Dcs,
+        DcsEsc,
     }
 
     private const int MaxParams = 4;
     private static ReadOnlySpan<byte> PasteEnd => "\u001b[201~"u8;
 
+    /// <summary>
+    /// Terminals whose name (the XTVERSION reply, up to a space or parenthesis) says they have REP (<c>CSI n b</c>):
+    /// xterm, kitty, foot, WezTerm and Ghostty. tmux answers for the terminal inside it and its REP repeats only ASCII
+    /// (not box drawing), so it isn't here; neither is anything not checked (an unknown name keeps glyphs written out).
+    /// </summary>
+    private static readonly string[] RepeatTerminals = ["xterm", "kitty", "foot", "wezterm", "ghostty"];
+
     private readonly Queue<Event> _events = new(64);
     private readonly byte[] _csi = new byte[32];
     private readonly byte[] _utf8 = new byte[4];
+    private readonly byte[] _dcs = new byte[64];
     private byte[] _paste = [];
     private State _state;
     private int _csiLen;
@@ -32,13 +43,14 @@ internal sealed class VtParser
     private byte _csiIntermediate;
     private int _utf8Len;
     private int _utf8Needed;
+    private int _dcsLen;
     private int _pasteLen;
     private bool _alt;
     private int _reportRow = -1;
     private int _reportColumn;
 
     /// <summary>True while a partial escape or UTF-8 sequence is buffered (a paste in progress is not "incomplete").</summary>
-    public bool IsIncomplete => _state is State.Esc or State.Csi or State.Ss3 or State.Utf8;
+    public bool IsIncomplete => _state is State.Esc or State.Csi or State.Ss3 or State.Utf8 or State.Dcs or State.DcsEsc;
 
     public int Pending => _events.Count;
 
@@ -59,6 +71,13 @@ internal sealed class VtParser
     /// Ps 1-3, the reply to <c>CSI ? 69 $ p</c>. False before any reply, and after a reply of 0 (unknown) or 4.
     /// </summary>
     public bool LeftRightMargins { get; private set; }
+
+    /// <summary>
+    /// The terminal named itself as one known to have REP (repeat the last character, <c>CSI n b</c>): an XTVERSION
+    /// reply <c>DCS &gt; | name(version) ST</c> to <c>CSI &gt; 0 q</c>, with a name on the allow-list. False before
+    /// any reply, for any other name, and on terminals that don't answer.
+    /// </summary>
+    public bool RepeatSequences { get; private set; }
 
     /// <summary>The reply to a cursor position query, 0-based, once it has arrived.</summary>
     public bool TryTakeCursorReport(out int row, out int column)
@@ -94,6 +113,12 @@ internal sealed class VtParser
                 case State.Paste:
                     i += PasteChunk(data[i..]) - 1;
                     break;
+                case State.Dcs:
+                    Dcs(b);
+                    break;
+                case State.DcsEsc:
+                    DcsEsc(b);
+                    break;
             }
         }
     }
@@ -116,6 +141,9 @@ internal sealed class VtParser
                 _alt = true;
                 Key(KeyCode.Char, 'O');
                 break;
+            case State.Dcs or State.DcsEsc:
+                NotDcs();
+                return;
         }
 
         _alt = false;
@@ -189,6 +217,11 @@ internal sealed class VtParser
                 return;
             case (byte)'O':
                 _state = State.Ss3;
+                return;
+            case (byte)'P':
+                // DCS, or Alt+Shift+P: a reply starts "ESC P >" (see Dcs).
+                _dcsLen = 0;
+                _state = State.Dcs;
                 return;
             case 0x1B:
                 Key(KeyCode.Escape);
@@ -423,6 +456,92 @@ internal sealed class VtParser
         }
 
         _events.Enqueue(Event.FromMouse(new MouseEvent(kind, button, Math.Max(0, x), Math.Max(0, y), mods)));
+    }
+
+    /// <summary>
+    /// Inside DCS, up to ST (<c>ESC \</c>). The only DCS expected is the reply to XTVERSION, which starts with '&gt;':
+    /// anything else after <c>ESC P</c> is Alt+Shift+P and the next key.
+    /// </summary>
+    private void Dcs(byte b)
+    {
+        if (_dcsLen == 0 && b != '>')
+        {
+            NotDcs();
+            Ground(b);
+            return;
+        }
+
+        if (b == 0x1B)
+        {
+            _state = State.DcsEsc;
+            return;
+        }
+
+        if (_dcsLen < _dcs.Length)
+        {
+            _dcs[_dcsLen] = b;
+        }
+
+        _dcsLen++;   // past the buffer: kept counting (and ignored) up to ST
+    }
+
+    private void DcsEsc(byte b)
+    {
+        if (b != '\\')
+        {
+            // Not ST: the DCS was cut short, and this ESC starts something new.
+            _state = State.Esc;
+            Esc(b);
+            return;
+        }
+
+        _state = State.Ground;
+        if (_dcsLen <= _dcs.Length)
+        {
+            DispatchDcs(_dcs.AsSpan(0, _dcsLen));
+        }
+    }
+
+    /// <summary>The XTVERSION reply: <c>&gt;|</c> and the terminal's name and version, e.g. <c>&gt;|kitty(0.36.4)</c>.</summary>
+    private void DispatchDcs(ReadOnlySpan<byte> payload)
+    {
+        if (!payload.StartsWith(">|"u8))
+        {
+            return;
+        }
+
+        ReadOnlySpan<byte> name = payload[2..];
+        int end = name.IndexOfAny((byte)'(', (byte)' ');
+        name = end >= 0 ? name[..end] : name;
+        bool repeat = false;
+        foreach (string known in RepeatTerminals)
+        {
+            repeat |= Ascii.EqualsIgnoreCase(name, known);
+        }
+
+        RepeatSequences = repeat;
+    }
+
+    /// <summary>
+    /// <c>ESC P</c> didn't start a reply (or one never ended): it was Alt+Shift+P, and what came after it was typed.
+    /// </summary>
+    private void NotDcs()
+    {
+        int length = Math.Min(_dcsLen, _dcs.Length);
+        bool escape = _state == State.DcsEsc;
+        _state = State.Ground;
+        _alt = true;
+        Key(KeyCode.Char, 'P');
+        _alt = false;
+        if (length > 0)
+        {
+            Feed(_dcs.AsSpan(0, length));
+        }
+
+        if (escape)
+        {
+            Key(KeyCode.Escape);
+        }
     }
 
     private void Ss3(byte b)

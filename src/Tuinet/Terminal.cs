@@ -82,6 +82,9 @@ public sealed partial class Terminal : IDisposable
 
     private static ReadOnlySpan<byte> LeftRightMarginsQuery => "\u001b[?69$p"u8;
 
+    /// <summary>XTVERSION: the terminal's name and version, which says whether it has REP.</summary>
+    private static ReadOnlySpan<byte> VersionQuery => "\u001b[>0q"u8;
+
     /// <summary>Longest text <see cref="CopyToClipboard"/> sends, in UTF-8 bytes (terminals cap OSC 52 around here).</summary>
     public const int MaxClipboardBytes = 74_000;
 
@@ -139,6 +142,13 @@ public sealed partial class Terminal : IDisposable
     /// input, so this turns true during the first polls; it stays false on terminals without them.
     /// </summary>
     public bool LeftRightMarginsActive => _options.ScrollRegions && _parser.LeftRightMargins;
+
+    /// <summary>
+    /// With <see cref="TerminalOptions.RepeatSequences"/>: the terminal named itself (XTVERSION) as one known to have
+    /// REP, so runs of the same glyph are drawn once and repeated. The reply arrives with input, so this turns true
+    /// during the first polls; it stays false on other terminals.
+    /// </summary>
+    public bool RepeatSequencesActive => _options.RepeatSequences && _parser.RepeatSequences;
 
     /// <summary>
     /// Set the window (or tab) title (OSC 2). Control characters are dropped. The terminal's own title comes back on
@@ -251,6 +261,7 @@ public sealed partial class Terminal : IDisposable
         }
 
         _renderer.LeftRightMargins = LeftRightMarginsActive;
+        _renderer.Repeat = RepeatSequencesActive;
         _renderer.Frame(_back, _front);
         LastFrameBytes = _out.Length;
         Flush();
@@ -294,6 +305,7 @@ public sealed partial class Terminal : IDisposable
 
         _out.Clear();
         _renderer.Open(_out);
+        _renderer.Repeat = RepeatSequencesActive;
         _renderer.EraseBelow(0);
 
         // Rows go where the band was, then below; on the last screen row the screen scrolls up first.
@@ -611,18 +623,23 @@ public sealed partial class Terminal : IDisposable
     private void Enter()
     {
         _out.Clear();
-        _out.Reserve(128);
+        _out.Reserve(160);
         // ?2027: grapheme cluster mode, so terminals that know it size clusters the way CellBuffer does.
         _out.Bytes(_inline is null
             ? "\u001b[?1049h\u001b[?25l\u001b[?7l\u001b[?2027h"u8
             : "\u001b[?25l\u001b[?7l\u001b[?2027h"u8);
         if (_inline is null)
         {
+            // Ask whether the terminal has left/right margins (DECRQM 69) and who it is (XTVERSION, for REP), before
+            // the clear: one that can't parse a query may print its last byte.
             if (_options.ScrollRegions)
             {
-                // Ask whether the terminal has left/right margins (DECRQM 69), before the clear: one that can't
-                // parse the query may print its last byte.
                 _out.Bytes(LeftRightMarginsQuery);
+            }
+
+            if (_options.RepeatSequences)
+            {
+                _out.Bytes(VersionQuery);
             }
 
             _out.Bytes("\u001b[0m\u001b[2J"u8);
@@ -672,11 +689,20 @@ public sealed partial class Terminal : IDisposable
         _renderer.Forget();
         _renderer.Top = 0;
         PlaceBand(start);
-        if (_options.ScrollRegions)
+        if (_options.ScrollRegions || _options.RepeatSequences)
         {
-            // In the band, just erased: a terminal that can't parse the query may print its last byte, so erase again.
-            _out.Reserve(16);
-            _out.Bytes(LeftRightMarginsQuery);
+            // In the band, just erased: a terminal that can't parse a query may print its last byte, so erase again.
+            _out.Reserve(32);
+            if (_options.ScrollRegions)
+            {
+                _out.Bytes(LeftRightMarginsQuery);
+            }
+
+            if (_options.RepeatSequences)
+            {
+                _out.Bytes(VersionQuery);
+            }
+
             _out.Bytes("\r\u001b[K"u8);
         }
 

@@ -23,8 +23,12 @@ public class FrameBenchmarks
     private ListState _table;
     private int _tick;
 
+    /// <summary>The terminal has REP (it names itself as kitty): runs of one glyph are drawn once and repeated.</summary>
+    [Params(false, true)]
+    public bool Repeat { get; set; }
+
     [GlobalSetup]
-    public void Setup() => _terminal = new Terminal(new NullTty(200, 60));
+    public void Setup() => _terminal = NullTty.Open(200, 60, Repeat);
 
     [GlobalCleanup]
     public void Cleanup() => _terminal.Dispose();

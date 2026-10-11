@@ -12,8 +12,11 @@ namespace Tuinet.Tests;
 /// into <see cref="Scrollback"/>. Hyperlinks (OSC 8) and the cursor shape (DECSCUSR) are tracked and checked too;
 /// titles (OSC 2) and clipboard writes (OSC 52) are recorded. With leftRightMargins the terminal has DECLRMM and
 /// DECSLRM: IL/DL move only the columns between the margins, which must not split a wide glyph; without it, any use fails.
+/// With repeat the terminal has REP (<c>CSI n b</c>), allowed only right after a narrow glyph was printed (no cursor
+/// move, SGR, erase or anything else in between) and never past the right edge; without it, any use fails.
 /// </summary>
-internal sealed class VtEmulator(int width, int height, bool legacy = false, bool allowScroll = false, bool leftRightMargins = false)
+internal sealed class VtEmulator(int width, int height, bool legacy = false, bool allowScroll = false, bool leftRightMargins = false,
+    bool repeat = false)
 {
     private (string Text, Style Style, bool Cont)[,] _grid = Blank(width, height);
     private string?[,] _links = new string?[width, height];
@@ -32,6 +35,8 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
     private bool _lrmm;
     private Style _pen;
     private bool _cursorVisible;
+    private Rune? _repeatable;   // the narrow glyph printed last, while nothing else has been sent since
+    private bool _atEdge;        // the last glyph ended at the right edge (the cursor is in the pending-wrap state)
 
     /// <summary>IL/DL sequences replayed so far, and those of them inside left/right margins.</summary>
     public int LineMoves { get; private set; }
@@ -40,6 +45,14 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
 
     /// <summary>Left/right margin support queries (DECRQM 69) received.</summary>
     public int MarginQueries { get; private set; }
+
+    /// <summary>XTVERSION queries received.</summary>
+    public int VersionQueries { get; private set; }
+
+    /// <summary>REP sequences replayed so far, and the cells they drew.</summary>
+    public int Repeats { get; private set; }
+
+    public int RepeatedCells { get; private set; }
 
     /// <summary>With allowScroll: rows scrolled off the top by line feeds on the last row, oldest first.</summary>
     public List<string> Scrollback { get; } = [];
@@ -113,6 +126,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 }
 
                 Osc(text[(i + 2)..end]);
+                _repeatable = null;
                 i = text[end] == '\u0007' ? end + 1 : end + 2;
                 continue;
             }
@@ -126,12 +140,22 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                     end++;
                 }
 
+                Rune? repeatable = _repeatable;
+                _repeatable = null;
+                if (text[end] == 'b')
+                {
+                    Repeat(text[(i + 2)..end], repeatable);   // REP keeps the cluster open, as printing does
+                    i = end + 1;
+                    continue;
+                }
+
                 Csi(text[(i + 2)..end], text[end]);
                 _lastX = -1;
                 i = end + 1;
                 continue;
             }
 
+            _repeatable = null;
             if (c == '\r')
             {
                 _lastX = -1;
@@ -287,6 +311,7 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         _lastX = _x;
         _lastY = _y;
         Put(rune.ToString(), width);
+        _repeatable = width == 1 ? rune : null;
     }
 
     private void Put(string glyph, int width)
@@ -318,7 +343,25 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
         }
 
         // DECAWM off: the cursor stops at the last column.
+        _atEdge = _x + width >= _w;
         _x = Math.Min(_x + width, _w - 1);
+    }
+
+    /// <summary>REP: print the glyph printed just before it <paramref name="param"/> more times.</summary>
+    private void Repeat(string param, Rune? glyph)
+    {
+        Assert.True(repeat, "REP on a terminal without it");
+        Assert.True(glyph.HasValue, $"REP at ({_x},{_y}) not right after a narrow glyph");
+        int n = param.Length > 0 ? int.Parse(param) : 1;
+        Repeats++;
+        RepeatedCells += n;
+        for (int k = 0; k < n; k++)
+        {
+            Assert.False(_atEdge, $"REP past the right edge on row {_y}");
+            Print(glyph.Value);
+        }
+
+        _repeatable = null;   // the renderer never repeats twice in a row
     }
 
     private void Csi(string param, char final)
@@ -422,6 +465,10 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 }
 
                 _x = _left;
+                break;
+            case 'q' when param == ">0":
+                // XTVERSION: the reply is the test's business.
+                VersionQueries++;
                 break;
             case 'q':
                 // DECSCUSR: "n q" (the space is an intermediate byte).

@@ -346,10 +346,22 @@ public class ShowcaseTests
         foreach (string row in (string[])[@"BY KIND +FLAGS", @"   4       4       4       4       4 +■ notify +7 of 20",
             @"▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅ ▅▅▅▅▅▅▅", @"feature bugfix   chore   docs    spike", @"■ enabled +17 of 20",
             @"critical ████████████▌ 5", @"BYTES PER FRAME +last 1234 B", @"RENDER \+ DIFF \+ WRITE +last 56 µs",
-            @"TERMINAL", @"■ L/R margins +off"])
+            @"TERMINAL", @"■ L/R margins +off", @"■ repeat \(REP\) +off"])
         {
             Assert.Matches(row, screen);
         }
+    }
+
+    [Fact]
+    public void Stats_page_says_when_the_terminal_repeats_glyphs()
+    {
+        var app = new ShowcaseApp { RepeatSequences = true };
+        using var term = new TestTerminal(app, 110, 34);
+        term.Press("]");
+        string screen = term.Text;
+        Assert.Matches(@"■ repeat \(REP\) +on", screen);
+        Assert.Matches(@"■ L/R margins +off", screen);
+        Assert.Matches(@"BY PRIORITY", screen);   // the flag fits above the next chart
     }
 
     [Fact]

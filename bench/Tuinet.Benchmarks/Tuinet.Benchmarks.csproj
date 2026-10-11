@@ -13,6 +13,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tuinet\Tuinet.csproj" />
+    <ProjectReference Include="..\..\samples\Tuinet.Samples.Showcase\Tuinet.Samples.Showcase.csproj" />
   </ItemGroup>
 
 </Project>

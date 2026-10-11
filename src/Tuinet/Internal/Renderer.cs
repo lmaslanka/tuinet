@@ -11,7 +11,8 @@ namespace Tuinet;
 /// When a band of rows moved up or down (a scrolling list), the terminal moves them itself
 /// (scroll margins + delete/insert line) and only the rows that are really new get painted. On terminals with
 /// left/right margins (DECLRMM) a band narrower than the screen moves too: a list beside a fixed panel.
-/// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes.
+/// Runs of blank cells are erased (EL to the end of the row, ECH inside it) when that is fewer bytes. On terminals known
+/// to have REP, a glyph followed by more of the same (a border, a rule, a bar) is drawn once and repeated.
 /// Hyperlinks (OSC 8) open and close around runs of cells with the same link; none stays open between writes.
 /// </summary>
 internal sealed class Renderer
@@ -76,6 +77,12 @@ internal sealed class Renderer
     /// bands narrower than the screen are moved by the terminal too.
     /// </summary>
     public bool LeftRightMargins { get; set; }
+
+    /// <summary>
+    /// The terminal has REP (<c>CSI n b</c>, repeat the character just printed; it said who it is in reply to
+    /// XTVERSION): a glyph followed by more of the same is drawn once, then repeated, when that is fewer bytes.
+    /// </summary>
+    public bool Repeat { get; set; }
 
     /// <summary>
     /// Screen row of buffer row 0. Zero on the alternate screen; in inline mode, where the live band starts.
@@ -186,14 +193,7 @@ internal sealed class Renderer
 
             Begin();
             _out.Reserve((last - first + 2) * MaxCellBytes + 64);
-            if (current.RowMayJoin(y))
-            {
-                RenderRow<JoinChecks>(cur, prev, y, first, last);
-            }
-            else
-            {
-                RenderRow<NoJoinChecks>(cur, prev, y, first, last);
-            }
+            RenderRow(current.RowMayJoin(y), cur, prev, y, first, last);
         }
 
         EndLink();
@@ -265,7 +265,7 @@ internal sealed class Renderer
 
         Begin();
         _out.Reserve((last - first + 2) * MaxCellBytes + 64);
-        RenderRow<JoinChecks>(row, blank, y, first, last);
+        RenderRow(mayJoin: true, row, blank, y, first, last);
     }
 
     /// <summary>
@@ -728,10 +728,34 @@ internal sealed class Renderer
     /// <summary>
     /// Rows whose glyphs could merge with a neighbour on the terminal (CellBuffer tracks it per row) take
     /// <see cref="JoinChecks"/>; all others take <see cref="NoJoinChecks"/>, which the JIT compiles to the
-    /// plain loop with no cluster logic at all.
+    /// plain loop with no cluster logic at all. Likewise, without <see cref="Repeat"/> there is no REP logic.
     /// </summary>
-    private void RenderRow<TJoin>(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+    private void RenderRow(bool mayJoin, ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
+    {
+        if (mayJoin)
+        {
+            if (Repeat)
+            {
+                RenderRow<JoinChecks, Repeats>(cur, prev, y, first, last);
+            }
+            else
+            {
+                RenderRow<JoinChecks, NoRepeats>(cur, prev, y, first, last);
+            }
+        }
+        else if (Repeat)
+        {
+            RenderRow<NoJoinChecks, Repeats>(cur, prev, y, first, last);
+        }
+        else
+        {
+            RenderRow<NoJoinChecks, NoRepeats>(cur, prev, y, first, last);
+        }
+    }
+
+    private void RenderRow<TJoin, TRepeat>(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int y, int first, int last)
         where TJoin : struct, IJoinPolicy
+        where TRepeat : struct, IRepeatPolicy
     {
         int width = cur.Length;
         int x = first;
@@ -837,6 +861,15 @@ internal sealed class Renderer
                 forceUntil = Math.Max(forceUntil, x + 1);
             }
 
+            // The same glyph again (a border, a rule, a bar): REP, right after the glyph it repeats (never after a
+            // cluster, which leaves the cursor to be placed again). The next cell's glyph and foreground are compared
+            // here, in one word; EmitRepeat checks the rest.
+            if (TRepeat.Enabled && advance == 1 && positioned && x + 1 < width
+                && Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cur[x + 1])) == Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in cell)))
+            {
+                advance += EmitRepeat(cur, prev, x, last, ref forceUntil);
+            }
+
             x += advance;
         }
     }
@@ -879,7 +912,7 @@ internal sealed class Renderer
         int count = toEnd ? width - x : spaces;
         bool more = !toEnd && (last > changed || forceUntil > changed);
         int cost = toEnd ? 3 : 3 + Digits(count) + (more ? 3 + Digits(count) : 0);
-        if (cost >= spaces)
+        if (cost >= spaces || (Repeat && cost > 1 + RepeatCost(spaces - 1) && RepeatsBlanks(cur, x, spaces, style)))
         {
             spacesUntil = changed;
             return x;
@@ -892,7 +925,7 @@ internal sealed class Renderer
 
         EndLink();
         _out.Reserve(80);
-        if (!_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode)))
+        if (ErasePenDiffers(style))
         {
             SetPen(style);
         }
@@ -918,7 +951,74 @@ internal sealed class Renderer
         return x + count;
     }
 
+    /// <summary>
+    /// Will <paramref name="spaces"/> blanks from <paramref name="x"/> be written as one space and a REP? Only if they
+    /// are all the same cell, and the space needs no SGR that erasing wouldn't: erasing needs only the background,
+    /// and an extra SGR costs more than REP saves (the next text may need another to undo it).
+    /// </summary>
+    private bool RepeatsBlanks(ReadOnlySpan<Cell> cur, int x, int spaces, Style style) =>
+        Same(cur.Slice(x + 1, spaces - 1), cur.Slice(x, spaces - 1)) && (PenMatches(in cur[x]) || ErasePenDiffers(style));
+
+    /// <summary>Erasing blanks of <paramref name="style"/> needs a new pen: it has another background, or reverse video.</summary>
+    private bool ErasePenDiffers(Style style) =>
+        !_penKnown || (_pen.Attrs & Attr.Reverse) != 0 || !_pen.Bg.Equals(ColorMapping.Map(style.Bg, _mode));
+
     private static int Digits(int n) => n < 10 ? 1 : n < 100 ? 2 : n < 1000 ? 3 : 4;
+
+    /// <summary>Bytes of <c>CSI n b</c> repeating a glyph <paramref name="count"/> times.</summary>
+    private static int RepeatCost(int count) => 3 + Digits(count);
+
+    /// <summary>
+    /// Cell <paramref name="x"/>, a narrow glyph, was just printed and the next cell is the same: repeat it with REP
+    /// (<c>CSI n b</c>) up to the last cell of the run that must be written, when that is fewer bytes than the glyphs
+    /// (5+ for ASCII, 3+ for 2-byte UTF-8, 2+ for box drawing and blocks). REP repeats the character printed just
+    /// before it, so it must follow the glyph directly: no cursor move, style change or erase in between. Only
+    /// single code points that never join a neighbour (no clusters, no marks, no emoji) and no links are repeated.
+    /// Returns the cells repeated, 0 for none.
+    /// </summary>
+    [MethodImpl(MethodImplOptions.NoInlining)]
+    private int EmitRepeat(ReadOnlySpan<Cell> cur, ReadOnlySpan<Cell> prev, int x, int last, ref int forceUntil)
+    {
+        ref readonly Cell cell = ref cur[x];
+        Rune rune = cell.RawRune;
+        if (cell.Tail != Cell.PlainNarrow || !Graphemes.Simple(rune.Value))
+        {
+            return 0;
+        }
+
+        // The run: the same cell over and over (each cell equals the one before it: a vectorized compare of the row with
+        // itself shifted by one), up to the last one that differs from the screen or must be repainted. Clean cells
+        // inside it are rewritten with the rest, which is cheaper than jumping over them.
+        int limit = Math.Min(cur.Length - 1, Math.Max(last, forceUntil));
+        int end = x + CommonPrefix(cur[(x + 1)..(limit + 1)], cur[x..limit]);
+        while (end > x && end > forceUntil && cell.Equals(prev[end]))
+        {
+            end--;
+        }
+
+        int count = end - x;
+        if (count == 0 || RepeatCost(count) >= count * rune.Utf8SequenceLength)
+        {
+            return 0;
+        }
+
+        _out.Bytes("\u001b["u8);
+        _out.Int(count);
+        _out.Byte((byte)'b');
+        _cx += count;
+        if (_cx >= _width)
+        {
+            _cx = -1;   // last column: the cursor may be in the pending-wrap state
+        }
+
+        // A wide glyph on screen across the run's right edge loses its right half: repaint the cell after the run.
+        if (prev[end].Width == 2)
+        {
+            forceUntil = Math.Max(forceUntil, end + 1);
+        }
+
+        return count;
+    }
 
     /// <summary>
     /// Emit a cell that is a cluster, or that could join the cell drawn just before it into one cluster
@@ -971,10 +1071,25 @@ internal sealed class Renderer
         return advance;
     }
 
-    /// <summary>Compile-time switch for <see cref="RenderRow{TJoin}"/> (folded away by the JIT).</summary>
+    /// <summary>Compile-time switches for <see cref="RenderRow{TJoin, TRepeat}"/> (folded away by the JIT).</summary>
     private interface IJoinPolicy
     {
         static abstract bool Enabled { get; }
+    }
+
+    private interface IRepeatPolicy
+    {
+        static abstract bool Enabled { get; }
+    }
+
+    private readonly struct Repeats : IRepeatPolicy
+    {
+        public static bool Enabled => true;
+    }
+
+    private readonly struct NoRepeats : IRepeatPolicy
+    {
+        public static bool Enabled => false;
     }
 
     private readonly struct JoinChecks : IJoinPolicy

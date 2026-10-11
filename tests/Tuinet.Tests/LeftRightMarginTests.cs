@@ -36,7 +36,7 @@ public class LeftRightMarginTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty);
-        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[0m{Esc}[2J", tty.WrittenText);
+        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
     }
 
     [Fact]
@@ -132,20 +132,26 @@ public class LeftRightMarginTests
     }
 
     [Theory]
-    [InlineData(31, false)]
-    [InlineData(32, false)]
-    [InlineData(33, false)]
-    [InlineData(34, false)]
-    [InlineData(35, true)]
-    [InlineData(36, true)]
-    public void Screen_matches_while_split_bands_scroll(int seed, bool legacyTerminal)
+    [InlineData(31, false, false)]
+    [InlineData(32, false, false)]
+    [InlineData(33, false, false)]
+    [InlineData(34, false, false)]
+    [InlineData(35, true, false)]
+    [InlineData(36, true, false)]
+    [InlineData(37, false, true)]
+    [InlineData(38, true, true)]
+    public void Screen_matches_while_split_bands_scroll(int seed, bool legacyTerminal, bool repeat)
     {
-        var (terminal, tty, screen) = Start(40, 14, Supported, legacyTerminal, leftRightMargins: true);
+        // With repeat the terminal also has REP: the panels' borders are repeated around the margin moves.
+        string reply = repeat ? Supported + "\u001bP>|kitty(0.36.4)\u001b\\" : Supported;
+        var (terminal, tty, screen) = Start(40, 14, reply, legacyTerminal, leftRightMargins: true, repeat);
         using (terminal)
         {
             Assert.True(terminal.LeftRightMarginsActive);
+            Assert.Equal(repeat, terminal.RepeatSequencesActive);
             Run(terminal, tty, screen, new Random(seed), $"seed {seed}");
             Assert.True(screen.ColumnMoves > 50, $"{screen.ColumnMoves} column moves of {screen.LineMoves} IL/DL");
+            Assert.True(repeat ? screen.Repeats > 0 : screen.Repeats == 0, $"{screen.Repeats} REP");
         }
     }
 
@@ -171,7 +177,7 @@ public class LeftRightMarginTests
         var tty = new TestTty(20, 10);
         tty.Enqueue("\u001b[5;1R");
         using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(3) });
-        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
+        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -296,13 +302,14 @@ public class LeftRightMarginTests
         return label.Length + written;
     }
 
-    private static (Terminal Terminal, TestTty Tty, VtEmulator Screen) Start(int width, int height, string reply, bool legacyTerminal, bool leftRightMargins)
+    private static (Terminal Terminal, TestTty Tty, VtEmulator Screen) Start(int width, int height, string reply, bool legacyTerminal,
+        bool leftRightMargins, bool repeat = false)
     {
         var tty = new TestTty(width, height);
         var terminal = new Terminal(tty);
         tty.Enqueue(reply);
         terminal.Poll(out _, 0);
-        var screen = new VtEmulator(width, height, legacyTerminal, leftRightMargins: leftRightMargins);
+        var screen = new VtEmulator(width, height, legacyTerminal, leftRightMargins: leftRightMargins, repeat: repeat);
         screen.Feed(tty.Written);
         Assert.Equal(1, screen.MarginQueries);
         return (terminal, tty, screen);

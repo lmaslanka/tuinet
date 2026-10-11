@@ -43,6 +43,60 @@ public class AllocationTests
     }
 
     [Fact]
+    public void Frames_with_repeat_sequences_allocate_nothing()
+    {
+        // The terminal names itself as kitty: borders, rules and bars are repeated with REP.
+        var tty = new NullTty(120, 40) { Input = "\u001bP>|kitty(0.36.4)\u001b\\x"u8.ToArray() };
+        using var terminal = new Terminal(tty);
+        Assert.True(terminal.Poll(out _, 0));
+        tty.Input = [];
+        Assert.True(terminal.RepeatSequencesActive);
+        var list = new ListState();
+        var table = new ListState();
+        var input = new TextInputState("hello");
+        var tabs = new TabsState();
+        for (int i = 0; i < 50; i++)
+        {
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 0; i < 1000; i++)
+        {
+            Frame(terminal, i, ref list, ref table, ref tabs, input);
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+    }
+
+    [Fact]
+    public void Polling_terminal_replies_allocates_nothing()
+    {
+        // Replies to the startup queries (DECRQM, XTVERSION, kitty flags) mixed with keys.
+        var tty = new NullTty(80, 24);
+        using var terminal = new Terminal(tty);
+        tty.Input = "j\u001b[?69;2$y\u001bP>|foot(1.18.1)\u001b\\k\u001b[?1u"u8.ToArray();
+        for (int i = 0; i < 100; i++)
+        {
+            terminal.Poll(out _, 0);
+        }
+
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        int keys = 0;
+        for (int i = 0; i < 10_000; i++)
+        {
+            if (terminal.Poll(out Event ev, 0) && ev.Kind == EventKind.Key)
+            {
+                keys++;
+            }
+        }
+
+        Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Assert.Equal(10_000, keys);
+        Assert.True(terminal.RepeatSequencesActive);
+    }
+
+    [Fact]
     public void Inline_frames_and_print_above_allocate_nothing()
     {
         var tty = new NullTty(120, 40) { Input = "\u001b[30;1R"u8.ToArray() };
