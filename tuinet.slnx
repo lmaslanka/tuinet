@@ -9,6 +9,7 @@
   </Folder>
   <Folder Name="/bench/">
     <Project Path="bench/Tuinet.Benchmarks/Tuinet.Benchmarks.csproj" />
+    <Project Path="bench/Tuinet.Comparisons/Tuinet.Comparisons.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Tuinet.Tests/Tuinet.Tests.csproj" />
