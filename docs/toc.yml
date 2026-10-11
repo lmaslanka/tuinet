@@ -1,0 +1,15 @@
+- name: Getting started
+  href: getting-started.md
+- name: Layout and styling
+  href: layout.md
+- name: Widgets
+  href: widgets.md
+- name: Input and the terminal
+  href: input.md
+- name: Testing
+  href: testing.md
+- name: Performance
+  href: performance.md
+- name: API reference
+  href: api/
+  homepage: api/index.md

@@ -1054,6 +1054,15 @@ implementation, and read the screen back:
 
 Every app must also exit with code 0, restore the terminal modes, and write nothing under `$HOME`.
 
+### Building the docs
+
+The docs site is built with [docfx](https://dotnet.github.io/docfx/), pinned in `dotnet-tools.json`. Sources are
+`docs/*.md`, `docs/toc.yml` and the XML docs in `src/Tuinet`; the API pages and `docs/_site/` are generated and not committed.
+
+```sh
+dotnet tool restore && dotnet docfx docs/docfx.json --serve   # builds docs/_site and serves it on localhost:8080
+```
+
 ### Releasing
 
 Pushing a `v*` tag runs [`release.yml`](https://github.com/lmaslanka/tuinet/blob/main/.github/workflows/release.yml):
@@ -1089,7 +1098,7 @@ tests/                           unit, widget, allocation, renderer fuzz, test-h
 tools/e2e/                       end-to-end checks in tmux
 tools/gen-width/                 Unicode width table generator
 tools/pack/                      package check (CI and release)
-docs/images/                     README screenshots
+docs/                            docs site sources (docfx); docs/images/ holds the screenshots
 ```
 
 ## 📄 License
