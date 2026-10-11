@@ -1,5 +1,7 @@
 #nullable enable
 const Tuinet.Terminal.MaxClipboardBytes = 74000 -> int
+const Tuinet.Terminal.MaxHeight = 1024 -> int
+const Tuinet.Terminal.MaxWidth = 4096 -> int
 const Tuinet.Widgets.Table.ScratchLength = 128 -> int
 override Tuinet.Cell.Equals(object? obj) -> bool
 override Tuinet.Cell.GetHashCode() -> int

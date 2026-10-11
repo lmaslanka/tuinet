@@ -345,7 +345,9 @@ internal sealed class UnixTty : ITty
     {
         if (LibC.GetWinSize(_outFd, _mac, out WinSize size) && size.Col > 0 && size.Row > 0)
         {
-            _size = new Size(size.Col, size.Row);
+            // The kernel takes any 16-bit pair from whoever owns the tty (an SSH client's window-change request,
+            // stty from another window); Terminal clamps again, but never let an absurd size out of here.
+            _size = new Size(Math.Min((int)size.Col, Terminal.MaxWidth), Math.Min((int)size.Row, Terminal.MaxHeight));
         }
     }
 

@@ -74,7 +74,7 @@ public sealed partial class Terminal : IDisposable
         Size size = FrameSize(_screen);
         _front = new CellBuffer(size.Width, size.Height);
         _back = new CellBuffer(size.Width, size.Height);
-        _out = new VtBuffer(size.Width * size.Height * 8 + 4096);
+        _out = new VtBuffer(checked(size.Width * size.Height * 8 + 4096));
         _leave = [];
         UpdateLeave();
         Enter();
@@ -87,6 +87,21 @@ public sealed partial class Terminal : IDisposable
 
     /// <summary>Longest text <see cref="CopyToClipboard"/> sends, in UTF-8 bytes (terminals cap OSC 52 around here).</summary>
     public const int MaxClipboardBytes = 74_000;
+
+    /// <summary>
+    /// Widest screen a terminal's size report is taken at face value; wider reports are clamped to this. The size
+    /// comes from the terminal, and so from an SSH peer or anyone with the same tty (<c>stty cols 60000</c>), and
+    /// every cell costs 16 bytes in two buffers: unbounded, it is an unbounded allocation or an integer overflow. 4096
+    /// columns is a few times the largest physical setups (an 8K display at a 4-pixel font is about 1920 wide).
+    /// </summary>
+    public const int MaxWidth = 4096;
+
+    /// <summary>
+    /// Tallest screen a terminal's size report is taken at face value; taller reports are clamped to this. See
+    /// <see cref="MaxWidth"/>. 1024 rows is a few times the largest physical setups (an 8K display at an 8-pixel
+    /// font is 540 rows); with <see cref="MaxWidth"/> it caps the frame buffers at about 160 MB.
+    /// </summary>
+    public const int MaxHeight = 1024;
 
     /// <summary>Open the process's controlling terminal (stdin/stdout, or /dev/tty when redirected).</summary>
     public static Terminal Open(TerminalOptions? options = null)
@@ -802,5 +817,9 @@ public sealed partial class Terminal : IDisposable
         BytesWritten += bytes.Length;
     }
 
-    private static Size Clamp(Size size) => new(Math.Max(1, size.Width), Math.Max(1, size.Height));
+    /// <summary>
+    /// A size as the tty reported it, made safe: at least one cell, at most <see cref="MaxWidth"/> ×
+    /// <see cref="MaxHeight"/>. Every size that reaches a buffer goes through here (start-up, resize, resume).
+    /// </summary>
+    private static Size Clamp(Size size) => new(Math.Clamp(size.Width, 1, MaxWidth), Math.Clamp(size.Height, 1, MaxHeight));
 }
