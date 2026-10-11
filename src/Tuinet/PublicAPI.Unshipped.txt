@@ -679,6 +679,7 @@ Tuinet.Widgets.Paragraph.Paragraph() -> void
 Tuinet.Widgets.Paragraph.Paragraph(System.ReadOnlySpan<char> text, Tuinet.Style style = default(Tuinet.Style)) -> void
 Tuinet.Widgets.Paragraph.Paragraph(Tuinet.StyledText text) -> void
 Tuinet.Widgets.Paragraph.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.Paragraph.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer, ref Tuinet.Widgets.ParagraphState! state) -> void
 Tuinet.Widgets.Paragraph.Scroll.get -> int
 Tuinet.Widgets.Paragraph.Scroll.init -> void
 Tuinet.Widgets.Paragraph.Scrollbar.get -> Tuinet.Widgets.ScrollbarMode
@@ -693,6 +694,12 @@ Tuinet.Widgets.Paragraph.Text.get -> System.ReadOnlySpan<char>
 Tuinet.Widgets.Paragraph.Text.init -> void
 Tuinet.Widgets.Paragraph.Wrap.get -> Tuinet.Widgets.TextWrap
 Tuinet.Widgets.Paragraph.Wrap.init -> void
+Tuinet.Widgets.ParagraphState
+Tuinet.Widgets.ParagraphState.LineCount(System.ReadOnlySpan<char> text, int width, Tuinet.Widgets.TextWrap wrap) -> int
+Tuinet.Widgets.ParagraphState.Invalidate() -> void
+Tuinet.Widgets.ParagraphState.ParagraphState() -> void
+Tuinet.Widgets.ParagraphState.VerifyText.get -> bool
+Tuinet.Widgets.ParagraphState.VerifyText.set -> void
 Tuinet.Widgets.ProgressBar
 Tuinet.Widgets.ProgressBar.EmptyChar.get -> char
 Tuinet.Widgets.ProgressBar.EmptyChar.init -> void

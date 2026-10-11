@@ -29,7 +29,7 @@ public sealed class TextPage() : Page("Text", "Paragraph · StyledText · Markup
             Scroll = _scroll,
             Scrollbar = ScrollbarMode.Auto,
             ScrollbarThumbStyle = Theme.Accent(Theme.Muted),
-        }, text);
+        }, text, ref _paragraph);
         """;
 
     private static readonly (string, string)[] Keys = [("w", "wrap"), ("a", "align"), ("↑/↓", "scroll")];
@@ -45,6 +45,7 @@ public sealed class TextPage() : Page("Text", "Paragraph · StyledText · Markup
         + "Styled text keeps its runs across wrapped lines; markup and the builder both write into memory you give "
         + "them, so drawing this page every frame allocates nothing.";
 
+    private ParagraphState _paragraph = new();   // passed by ref: not readonly
     private TextWrap _wrap = TextWrap.Word;
     private Alignment _alignment;
     private int _scroll;
@@ -74,11 +75,12 @@ public sealed class TextPage() : Page("Text", "Paragraph · StyledText · Markup
         // The paragraph's box below the two styled lines; its text wraps a column narrower while the bar shows.
         var box = new Rect(area.X, area.Y + 3, area.Width, Math.Max(0, area.Height - 3));
         var block = new Block { BorderType = BorderType.Rounded, BorderStyle = Theme.Faded };
+        // The state caches the layout, so measuring here and rendering below wrap the text once, not per frame.
         Rect text = block.Inner(box).Inset(1, 0);
-        int lines = Paragraph.LineCount(Text, text.Width, _wrap);
+        int lines = _paragraph.LineCount(Text, text.Width, _wrap);
         if (lines > text.Height)
         {
-            lines = Paragraph.LineCount(Text, text.Width - 1, _wrap);
+            lines = _paragraph.LineCount(Text, text.Width - 1, _wrap);
         }
 
         _scroll = Math.Clamp(_scroll, 0, Math.Max(0, lines - text.Height));
@@ -104,6 +106,6 @@ public sealed class TextPage() : Page("Text", "Paragraph · StyledText · Markup
             Scroll = _scroll,
             Scrollbar = ScrollbarMode.Auto,
             ScrollbarThumbStyle = Theme.Accent(Theme.Muted),
-        }, text);
+        }, text, ref _paragraph);
     }
 }

@@ -15,6 +15,8 @@ public class TextAreaBenchmarks
     private TextAreaState _wrapped = null!;
     private TextAreaState _unwrapped = null!;
     private string _screen = null!;
+    private string _long = null!;
+    private readonly ParagraphState _paragraph = new();
 
     [GlobalSetup]
     public void Setup()
@@ -22,6 +24,7 @@ public class TextAreaBenchmarks
         string text = string.Join('\n', Enumerable.Range(0, 100_000)
             .Select(i => $"{i:D6} the quick brown fox jumps over the lazy dog · 世界 👨‍👩‍👧 · and keeps on running until the line wraps around the edge at least once"));
         _screen = string.Join('\n', text.Split('\n').Skip(50_000).Take(60));
+        _long = string.Join('\n', text.Split('\n').Take(2000));
         _wrapped = Middle(new TextAreaState(text));
         _unwrapped = Middle(new TextAreaState(text) { SoftWrap = false });
     }
@@ -38,6 +41,32 @@ public class TextAreaBenchmarks
     {
         _buffer.Clear();
         _buffer.Render(new Paragraph(_screen) { Wrap = TextWrap.Word }, _buffer.Area);
+    }
+
+    /// <summary>A 2,000-line paragraph scrolled near its end: without a state every frame wraps the lines above the view.</summary>
+    [Benchmark(Description = "paragraph, 2000 lines, scrolled to the end")]
+    public void ParagraphScrolled()
+    {
+        _buffer.Clear();
+        _buffer.Render(new Paragraph(_long) { Wrap = TextWrap.Word, Scroll = 3900 }, _buffer.Area);
+    }
+
+    /// <summary>The same with a <see cref="ParagraphState"/>: the layout is cached, only the view is wrapped.</summary>
+    [Benchmark(Description = "paragraph, 2000 lines, scrolled, with state")]
+    public void ParagraphScrolledState()
+    {
+        _buffer.Clear();
+        ParagraphState state = _paragraph;
+        _buffer.Render(new Paragraph(_long) { Wrap = TextWrap.Word, Scroll = 3900 }, _buffer.Area, ref state);
+    }
+
+    /// <summary>Scrollbar.Auto at the top of the text: the whole text is measured each frame unless a state caches it.</summary>
+    [Benchmark(Description = "paragraph, 2000 lines, auto scrollbar, with state")]
+    public void ParagraphScrollbarState()
+    {
+        _buffer.Clear();
+        ParagraphState state = _paragraph;
+        _buffer.Render(new Paragraph(_long) { Wrap = TextWrap.Word, Scrollbar = ScrollbarMode.Auto }, _buffer.Area, ref state);
     }
 
     /// <summary>A keystroke and the frame after it, then its undo (so the document stays the same size).</summary>
