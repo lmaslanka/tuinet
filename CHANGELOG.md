@@ -22,6 +22,8 @@ The first release.
   on insertion, as the display already did; joiners inside clusters are kept.
 - `Markup.Parse` is linear on bracket-heavy text (a tag is at most 128 chars between the brackets).
 - `UnixTty.Read` throws on a persistent `poll()` error instead of spinning.
+- The grapheme cluster intern table is capped at 64 K entries (was 1 M), so untrusted text can't make the process
+  keep a hundred MB of clusters.
 - CI: actions pinned to commit SHAs, tag-derived values passed to shell through the environment, a vulnerable-package
   scan on every build, and a `global.json` SDK pin.
 
@@ -141,6 +143,25 @@ The first release.
   `Allocations.AssertNone` (the steady-state zero-allocation check). The sample tests use it, with styled snapshots
   of the Showcase screens and every Gallery page.
 - `CellBuffer.CopyTo`: an exact copy of the cells, links and cursor, allocating only when the destination grows.
+- `ParagraphState`: an optional, app-owned cache of a `Paragraph`'s line layout (`buffer.Render(paragraph, area,
+  ref state)`), so a long text renders in O(visible rows) at any scroll and `Scrollbar.Auto` doesn't re-measure it.
+  It checks the text each frame with a vectorized compare and can't go stale; `VerifyText = false` with
+  `Invalidate()` skips even that. `LineCount` measures from the cache. 2,000 lines scrolled to the end: 701 µs → 20 µs
+  a frame (2 µs without the check). Without a state, line enumeration is now linear (a 1 M-char line counts in
+  1.2 ms, was 1.2 s) and styled runs are no longer re-walked per line.
+- Text fast paths for every script: letters without combining marks (Cyrillic, Greek, Hebrew, Arabic, Thai, Indic,
+  CJK…) are measured and written in runs like ASCII, not segmented one cluster at a time. A full Cyrillic repaint at
+  200×60 goes from 563 µs to 133 µs; a wrapped `TextArea` frame from 309 µs to 39 µs (ASCII 55 → 17 µs).
+- Shorter cursor moves: the renderer picks the cheapest of CR, CUF, BS, CUB, CHA, LF, CUD and CUU over a full CUP,
+  so a caret moving left is 1 byte instead of 6, and a closing dialog goes from 313 to 152 bytes.
+- On terminals that report synchronized output (DEC 2026, asked with DECRQM at startup), frames no longer hide and
+  re-show a visible cursor around the paint: a keystroke in a focused input is 17 bytes instead of 29.
+  `Terminal.SynchronizedOutputActive` reports it.
+- Word wrap uses a line's full width: a space landing exactly on the right edge ends the line after the word before
+  it instead of wrapping that word early (as `TextArea` already did).
+- Smaller per-frame costs: screens taller than 256 rows no longer allocate per frame, `SetLink` skips re-encoding
+  plain ASCII URLs (5.7 → 3.3 µs per 100 calls), `Tabs` follows the selection in linear time, and `TreeView` and
+  `Popup` drop repeated work.
 - Docs site: topic pages and the API reference for `Tuinet` and `Tuinet.Testing`, built with docfx (pinned as a local
   dotnet tool), checked in CI with warnings as errors and published to GitHub Pages.
 - Gallery sample: every widget live beside the code that draws it. `tools/screenshots` regenerates the README and docs
