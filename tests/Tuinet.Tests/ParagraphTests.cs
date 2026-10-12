@@ -99,33 +99,57 @@ public class ParagraphTests
         string text = string.Join('\n', Enumerable.Range(0, 2000).Select(i => $"{i:D5} the quick brown fox jumps over the lazy dog and keeps running until the line wraps"));
         var buffer = new CellBuffer(60, 10);
         var state = new ParagraphState();
-        var paragraph = new Paragraph(text) { Wrap = TextWrap.Word, Scroll = 3900, Scrollbar = ScrollbarMode.Auto };
-        buffer.Render(paragraph, buffer.Area, ref state);   // builds the layout
+        buffer.Render(View(), buffer.Area, ref state);   // builds the layout
         var expected = new CellBuffer(60, 10);
-        expected.Render(paragraph, expected.Area);
+        expected.Render(View(), expected.Area);
         Assert.Equal(expected.ToString(), buffer.ToString());
 
-        var sw = new Stopwatch();
         long before = GC.GetAllocatedBytesForCurrentThread();
-        sw.Start();
-        for (int i = 0; i < 200; i++)
-        {
-            buffer.Clear();
-            buffer.Render(paragraph, buffer.Area, ref state);
-        }
-
-        TimeSpan cached = sw.Elapsed;
+        Cached(30);   // warm both paths up past tier-0 JIT before timing either
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
+        Uncached(30);
 
-        sw.Restart();
-        for (int i = 0; i < 200; i++)
+        // Interleaved rounds, best of each: a noisy CI runner or a late tier-up slows a round, not one side only.
+        TimeSpan cached = TimeSpan.MaxValue, uncached = TimeSpan.MaxValue;
+        for (int round = 0; round < 10; round++)
         {
-            expected.Clear();
-            expected.Render(paragraph, expected.Area);
+            var sw = Stopwatch.StartNew();
+            Cached(20);
+            if (sw.Elapsed < cached)
+            {
+                cached = sw.Elapsed;
+            }
+
+            sw.Restart();
+            Uncached(20);
+            if (sw.Elapsed < uncached)
+            {
+                uncached = sw.Elapsed;
+            }
         }
 
         // Without the state every frame wraps 3,900 lines to find the view; with it, the compare of the text and 10 lines.
-        Assert.True(cached < sw.Elapsed / 3, $"cached {cached.TotalMilliseconds:F1} ms vs {sw.Elapsed.TotalMilliseconds:F1} ms");
+        Assert.True(cached < uncached / 3, $"cached {cached.TotalMilliseconds:F2} ms vs {uncached.TotalMilliseconds:F2} ms");
+
+        void Cached(int frames)
+        {
+            for (int i = 0; i < frames; i++)
+            {
+                buffer.Clear();
+                buffer.Render(View(), buffer.Area, ref state);
+            }
+        }
+
+        void Uncached(int frames)
+        {
+            for (int i = 0; i < frames; i++)
+            {
+                expected.Clear();
+                expected.Render(View(), expected.Area);
+            }
+        }
+
+        Paragraph View() => new(text) { Wrap = TextWrap.Word, Scroll = 3900, Scrollbar = ScrollbarMode.Auto };
     }
 
     [Fact]
