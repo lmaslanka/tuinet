@@ -6,8 +6,8 @@ on:
   push:
     tags: ['v*']
 
-permissions:
-  contents: read
+# Nothing by default; each job asks for what it needs.
+permissions: {}
 
 concurrency:
   group: release-${{ github.ref }}
@@ -23,14 +23,16 @@ jobs:
     name: Build, test & pack
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    permissions:
+      contents: read
     outputs:
       version: ${{ steps.version.outputs.version }}
       prerelease: ${{ steps.version.outputs.prerelease }}
 
     steps:
-      - uses: actions/checkout@v7
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
 
@@ -69,24 +71,30 @@ jobs:
       - name: Restore
         run: dotnet restore tuinet.slnx
 
+      # The version comes from the tag name, which git lets contain shell metacharacters: it reaches the shell
+      # through the environment, never by ${{ }} interpolation into the script.
       - name: Build
-        run: dotnet build tuinet.slnx -c Release --no-restore -p:Version=${{ steps.version.outputs.version }}
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: dotnet build tuinet.slnx -c Release --no-restore -p:Version="$VERSION"
 
       - name: Test
         run: dotnet test tuinet.slnx -c Release --no-build
 
       - name: Pack
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
         run: |
           for project in src/Tuinet src/Tuinet.Testing; do
             dotnet pack "$project" -c Release --no-build \
-              -p:Version=${{ steps.version.outputs.version }} \
+              -p:Version="$VERSION" \
               -o artifacts/packages
           done
 
       - name: Verify package
         run: tools/pack/verify.sh artifacts/packages
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: release
           path: |
@@ -107,27 +115,29 @@ jobs:
       id-token: write   # GitHub OIDC token, exchanged for a one-hour nuget.org API key
 
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7.0.0
         with:
           name: release
           path: artifacts
 
-      - uses: actions/setup-dotnet@v6
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           dotnet-version: 10.0.x
 
       # Trusted Publishing: no stored API key. NUGET_USER is the nuget.org profile name (not the email).
       - name: NuGet login
         id: nuget-login
-        uses: NuGet/login@v1
+        uses: NuGet/login@8d196754b4036150537f80ac539e15c2f1028841 # v1.2.0
         with:
           user: ${{ secrets.NUGET_USER }}
 
       # The .snupkg next to the .nupkg is pushed to the symbol server automatically.
       - name: Push to NuGet
+        env:
+          NUGET_API_KEY: ${{ steps.nuget-login.outputs.NUGET_API_KEY }}
         run: >
           dotnet nuget push "artifacts/packages/*.nupkg"
-          --api-key "${{ steps.nuget-login.outputs.NUGET_API_KEY }}"
+          --api-key "$NUGET_API_KEY"
           --source https://api.nuget.org/v3/index.json
           --skip-duplicate
 
@@ -135,8 +145,12 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
           GH_REPO: ${{ github.repository }}
-        run: >
-          gh release create "$GITHUB_REF_NAME" artifacts/packages/*
-          --title "v${{ needs.pack.outputs.version }}"
-          --notes-file artifacts/release-notes.md
-          ${{ needs.pack.outputs.prerelease == 'true' && '--prerelease' || '' }}
+          VERSION: ${{ needs.pack.outputs.version }}
+          PRERELEASE: ${{ needs.pack.outputs.prerelease }}
+        run: |
+          flags=()
+          [ "$PRERELEASE" = true ] && flags+=(--prerelease)
+          gh release create "$GITHUB_REF_NAME" artifacts/packages/* \
+            --title "v$VERSION" \
+            --notes-file artifacts/release-notes.md \
+            "${flags[@]}"

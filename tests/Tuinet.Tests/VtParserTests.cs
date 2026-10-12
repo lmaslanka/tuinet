@@ -132,7 +132,7 @@ public class VtParserTests
     [Fact]
     public void Bracketed_paste_split_across_feeds()
     {
-        var parser = new VtParser();
+        var parser = new VtParser { BracketedPaste = true };
         parser.Feed("\u001b[200~hel"u8);
         Assert.False(parser.IsIncomplete);
         Assert.False(parser.TryTake(out _));
@@ -147,11 +147,101 @@ public class VtParserTests
     [Fact]
     public void Paste_does_not_interpret_escape_sequences()
     {
-        var parser = new VtParser();
+        var parser = new VtParser { BracketedPaste = true };
         parser.Feed("\u001b[200~\u001b[A\u0003\u001b[201~"u8);
         Assert.True(parser.TryTake(out Event paste));
         Assert.Equal("\u001b[A\u0003", paste.Paste);
         Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_with_a_false_start_of_the_end_marker_keeps_it_as_text()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~a\u001b[20\u001bb\u001b[201~"u8);
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal("a\u001b[20\u001bb", paste.Paste);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_start_is_ignored_when_bracketed_paste_is_off()
+    {
+        // A terminal left in mode 2004 by a previous program must not wedge an app that never asked for it.
+        var parser = new VtParser();
+        parser.Feed("\u001b[200~hi\u001b[201~"u8);
+        Assert.False(parser.InPaste);
+        Assert.True(parser.TryTake(out Event h));
+        Assert.True(h.Key.IsChar('h'));
+        Assert.True(parser.TryTake(out Event i));
+        Assert.True(i.Key.IsChar('i'));
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_without_an_end_marker_is_delivered_when_flushed()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~abc"u8);
+        Assert.True(parser.InPaste);
+        Assert.False(parser.IsIncomplete);                             // not subject to the escape timeout
+        parser.FlushIncomplete();
+        Assert.False(parser.InPaste);
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal("abc", paste.Paste);
+        parser.Feed("q"u8);
+        Assert.True(parser.TryTake(out Event key));
+        Assert.True(key.Key.IsChar('q'));
+    }
+
+    [Fact]
+    public void Empty_paste_without_an_end_marker_flushes_to_nothing()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        parser.FlushIncomplete();
+        Assert.False(parser.InPaste);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Paste_is_cut_at_the_cap_and_the_rest_is_dropped()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        byte[] chunk = new byte[1 << 20];
+        chunk.AsSpan().Fill((byte)'a');
+        for (int fed = 0; fed < Terminal.MaxPasteBytes + chunk.Length; fed += chunk.Length)
+        {
+            parser.Feed(chunk);
+        }
+
+        Assert.True(parser.InPaste);
+        Assert.False(parser.TryTake(out _));
+        parser.Feed("\u001b[201~x"u8);                                 // the end marker still ends it past the cap
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal(Terminal.MaxPasteBytes, paste.Paste!.Length);
+        Assert.True(parser.TryTake(out Event key));
+        Assert.True(key.Key.IsChar('x'));
+    }
+
+    [Fact]
+    public void Paste_cut_at_the_cap_does_not_split_a_character()
+    {
+        var parser = new VtParser { BracketedPaste = true };
+        parser.Feed("\u001b[200~"u8);
+        byte[] chunk = new byte[1 << 20];
+        chunk.AsSpan().Fill((byte)'a');
+        for (int fed = 0; fed + chunk.Length < Terminal.MaxPasteBytes; fed += chunk.Length)
+        {
+            parser.Feed(chunk);
+        }
+
+        parser.Feed(chunk.AsSpan(0, (1 << 20) - 1));                   // MaxPasteBytes - 1 bytes so far
+        parser.Feed("你好\u001b[201~"u8);                                // 3-byte characters straddle the cap
+        Assert.True(parser.TryTake(out Event paste));
+        Assert.Equal(Terminal.MaxPasteBytes - 1, paste.Paste!.Length);
+        Assert.EndsWith("aa", paste.Paste);
     }
 
     [Fact]
@@ -179,6 +269,97 @@ public class VtParserTests
 
     [Fact]
     public void Csi_R_without_a_query_is_f3() => Assert.True(Key("\u001b[1;5R").Is(KeyCode.F3, Modifiers.Ctrl));
+
+    [Fact]
+    public void Cursor_report_is_clamped_to_the_largest_screen()
+    {
+        var parser = new VtParser { ExpectCursorReport = true };
+        parser.Feed("\u001b[1000000;99999999999R"u8);
+        Assert.True(parser.TryTakeCursorReport(out int row, out int column));
+        Assert.Equal((Terminal.MaxHeight - 1, Terminal.MaxWidth - 1), (row, column));
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Theory]
+    [InlineData(0x80)]
+    [InlineData(0x85)]   // NEL
+    [InlineData(0x9B)]   // CSI
+    [InlineData(0x9F)]
+    public void Kitty_c1_code_points_are_not_keys(int codePoint)
+    {
+        var parser = new VtParser();
+        parser.Feed(Encoding.ASCII.GetBytes($"\u001b[{codePoint};5uz"));
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.True(ev.Key.IsChar('z'), $"U+{codePoint:X4} was delivered as a key");
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Kitty_code_point_after_c1_is_a_key() => Assert.Equal(new Rune(0xA0), Key("\u001b[160u").Rune);
+
+    [Fact]
+    public void Utf8_c1_code_points_are_not_keys()
+    {
+        var parser = new VtParser();
+        parser.Feed([0xC2, 0x85, (byte)'a', 0xC2, 0x9B, (byte)'b', 0xC2, 0xA0]);   // NEL, then CSI, then NBSP
+        Assert.True(parser.TryTake(out Event a));
+        Assert.True(a.Key.IsChar('a'));
+        Assert.True(parser.TryTake(out Event b));
+        Assert.True(b.Key.IsChar('b'));
+        Assert.True(parser.TryTake(out Event nbsp));
+        Assert.Equal(new Rune(0xA0), nbsp.Key.Rune);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Alt_prefix_does_not_outlive_a_dropped_c1()
+    {
+        var parser = new VtParser();
+        parser.Feed([0x1B, 0xC2, 0x85, (byte)'a']);
+        Assert.True(parser.TryTake(out Event a));
+        Assert.Equal(KeyEvent.Char('a'), a.Key);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Theory]
+    [InlineData("\u001bP>|kitty(0.3")]            // reply cut mid-payload
+    [InlineData("\u001bP>|kitty(0.36.4)\u001b")]   // reply cut inside ST
+    [InlineData("\u001bP>|")]                      // reply cut right after its signature
+    public void Unterminated_terminal_reply_is_dropped_not_typed(string input)
+    {
+        var parser = new VtParser();
+        parser.Feed(Encoding.UTF8.GetBytes(input));
+        Assert.True(parser.IsIncomplete);
+        parser.FlushIncomplete();
+        Assert.False(parser.IsIncomplete);
+        Assert.False(parser.TryTake(out _));
+        Assert.False(parser.RepeatSequences);
+        parser.Feed("x"u8);
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.Equal(KeyEvent.Char('x'), ev.Key);
+    }
+
+    [Fact]
+    public void Esc_P_alone_flushes_as_alt_shift_p()
+    {
+        var parser = new VtParser();
+        parser.Feed("\u001bP"u8);
+        parser.FlushIncomplete();
+        Assert.True(parser.TryTake(out Event ev));
+        Assert.Equal(KeyEvent.Char('P', Modifiers.Alt), ev.Key);
+        Assert.False(parser.TryTake(out _));
+    }
+
+    [Fact]
+    public void Esc_P_followed_by_a_key_is_alt_shift_p_and_the_key()
+    {
+        var parser = new VtParser();
+        parser.Feed("\u001bPx"u8);
+        Assert.True(parser.TryTake(out Event p));
+        Assert.Equal(KeyEvent.Char('P', Modifiers.Alt), p.Key);
+        Assert.True(parser.TryTake(out Event x));
+        Assert.Equal(KeyEvent.Char('x'), x.Key);
+    }
 
     private static KeyEvent Key(string input) => Key(Encoding.UTF8.GetBytes(input));
 

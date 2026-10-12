@@ -728,10 +728,11 @@ click every control in the edit dialog, and click outside the progress dialog to
 | `TerminalOptions` | Default | |
 |---|---|---|
 | `Mouse` / `MouseMotion` | off | Clicks, drags and wheel (SGR 1006) / also motion with no button held |
-| `BracketedPaste` | off | Pastes arrive as one `Paste` event |
+| `BracketedPaste` | off | Pastes arrive as one `Paste` event, cut at `Terminal.MaxPasteBytes` (16 MB) |
 | `FocusEvents` | off | `FocusGained` / `FocusLost` |
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
+| `PasteTimeoutMs` | 2000 | How long a paste may go quiet before what arrived is delivered as the paste |
 | `ScrollRegions` | on | Let the terminal move rows that scrolled, instead of repainting them: full-width bands, and narrower ones where the terminal reports left/right margins (`term.LeftRightMarginsActive`) |
 | `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
 | `RepeatSequences` | on | Draw a run of one glyph as the glyph and REP (`CSI n b`) on terminals that name themselves (XTVERSION) as having it (`term.RepeatSequencesActive`) |

@@ -252,7 +252,8 @@ internal sealed unsafe class WindowsTty : ITty
             int height = info.Window.Bottom - info.Window.Top + 1;
             if (width > 0 && height > 0)
             {
-                _size = new Size(width, height);
+                // Terminal clamps again, but never let an absurd window rectangle out of here.
+                _size = new Size(Math.Min(width, Terminal.MaxWidth), Math.Min(height, Terminal.MaxHeight));
             }
         }
     }

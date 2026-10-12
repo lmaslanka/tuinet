@@ -47,10 +47,11 @@ click every control in the edit dialog, and click outside the progress dialog to
 | `TerminalOptions` | Default | |
 |---|---|---|
 | `Mouse` / `MouseMotion` | off | Clicks, drags and wheel (SGR 1006) / also motion with no button held |
-| `BracketedPaste` | off | Pastes arrive as one `Paste` event |
+| `BracketedPaste` | off | Pastes arrive as one `Paste` event (see below) |
 | `FocusEvents` | off | `FocusGained` / `FocusLost` |
 | `ColorMode` | detected | `TrueColor`, `Indexed256`, `Basic16` or `None` |
 | `EscapeTimeoutMs` | 20 | How long a lone ESC waits before it counts as the Escape key |
+| `PasteTimeoutMs` | 2000 | How long a paste may go quiet before what arrived is delivered as the paste (see below) |
 | `ScrollRegions` | on | Let the terminal move rows that scrolled, instead of repainting them: full-width bands, and narrower ones where the terminal reports left/right margins (`term.LeftRightMarginsActive`) |
 | `EraseSequences` | on | Clear runs of blanks with EL/ECH instead of spaces (needs background color erase, which modern terminals have) |
 | `SuspendOnCtrlZ` | off | Ctrl+Z suspends the app inside `Poll` (see below) instead of arriving as a key |
@@ -59,6 +60,15 @@ click every control in the edit dialog, and click outside the progress dialog to
 | `Inline` | null | A band of `InlineOptions.Height` rows under the prompt instead of the alternate screen (see below) |
 
 Every mode is switched off again on exit, on a crash, or on a signal.
+
+**Paste.** With `BracketedPaste`, the terminal wraps pasted text in markers and it arrives as one `Paste` event
+with line endings normalized to `\n`; without it, the paste start marker is ignored and pasted text arrives as
+keys. The text is the clipboard's, so it is treated as untrusted: a paste is cut at `Terminal.MaxPasteBytes`
+(16 MB of UTF-8, on a character boundary) and the rest is dropped, and if the end marker never arrives (a dropped
+SSH connection, a multiplexer that lost it), the text received so far is delivered after `PasteTimeoutMs` of
+silence instead of swallowing every later key. Control characters inside a paste are passed through as text (text
+inputs drop them on insert); whether pasted text can contain the end marker itself, and so end the paste early, is
+up to the terminal, and modern ones neutralize it.
 
 **Kitty keyboard.** The keyboard encoding terminals inherited from the 1970s sends some keys as the same
 bytes: Ctrl+I is Tab, Ctrl+M is Enter, Ctrl+[ is Esc, and Ctrl+Shift+A is Ctrl+A. Esc is also the first byte

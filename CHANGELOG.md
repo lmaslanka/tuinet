@@ -9,6 +9,22 @@ every public API change is recorded in `src/Tuinet/PublicAPI.*.txt`.
 
 The first release.
 
+### Security
+- Terminal size reports (start-up, resize, resume) are clamped to `Terminal.MaxWidth` × `Terminal.MaxHeight`
+  (4096 × 1024): a hostile or absurd size from an SSH peer or `stty` can no longer overflow or allocate gigabytes.
+- Bracketed paste is bounded: a paste is cut at `Terminal.MaxPasteBytes` (16 MB), one whose end marker never
+  arrives is delivered after `TerminalOptions.PasteTimeoutMs` (2 s) of silence instead of swallowing every later
+  key, and the paste start marker is ignored unless `BracketedPaste` was requested.
+- Input parser: cursor position replies are clamped to the screen (a huge row no longer scrolls the scrollback
+  away in inline mode); C1 control code points are never delivered as `Char` keys; a terminal reply (DCS) cut off
+  by a slow link is dropped instead of being re-typed as keystrokes.
+- `TextInputState` and `TextAreaState` drop invisible format characters (bidi controls, zero-width space, BOM…)
+  on insertion, as the display already did; joiners inside clusters are kept.
+- `Markup.Parse` is linear on bracket-heavy text (a tag is at most 128 chars between the brackets).
+- `UnixTty.Read` throws on a persistent `poll()` error instead of spinning.
+- CI: actions pinned to commit SHAs, tag-derived values passed to shell through the environment, a vulnerable-package
+  scan on every build, and a `global.json` SDK pin.
+
 ### Added
 - Immediate-mode kernel: draw into a `CellBuffer` every frame; the renderer diffs it against the screen
   and sends only what changed, in one synchronized write per frame.

@@ -1,5 +1,8 @@
 #nullable enable
 const Tuinet.Terminal.MaxClipboardBytes = 74000 -> int
+const Tuinet.Terminal.MaxHeight = 1024 -> int
+const Tuinet.Terminal.MaxPasteBytes = 16777216 -> int
+const Tuinet.Terminal.MaxWidth = 4096 -> int
 const Tuinet.Widgets.Table.ScratchLength = 128 -> int
 override Tuinet.Cell.Equals(object? obj) -> bool
 override Tuinet.Cell.GetHashCode() -> int
@@ -432,6 +435,8 @@ Tuinet.TerminalOptions.EraseSequences.get -> bool
 Tuinet.TerminalOptions.EraseSequences.init -> void
 Tuinet.TerminalOptions.EscapeTimeoutMs.get -> int
 Tuinet.TerminalOptions.EscapeTimeoutMs.init -> void
+Tuinet.TerminalOptions.PasteTimeoutMs.get -> int
+Tuinet.TerminalOptions.PasteTimeoutMs.init -> void
 Tuinet.TerminalOptions.FocusEvents.get -> bool
 Tuinet.TerminalOptions.FocusEvents.init -> void
 Tuinet.TerminalOptions.Inline.get -> Tuinet.InlineOptions?

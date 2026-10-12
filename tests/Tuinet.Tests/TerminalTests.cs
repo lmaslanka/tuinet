@@ -258,6 +258,43 @@ public class TerminalTests
     }
 
     [Fact]
+    public void Paste_whose_end_never_comes_is_delivered_after_the_paste_timeout()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty, new TerminalOptions { BracketedPaste = true, PasteTimeoutMs = 20 });
+        tty.Enqueue("\u001b[200~abc");
+        Assert.False(terminal.Poll(out _, 0));                         // no wait, no flush
+        Assert.True(terminal.Poll(out Event ev, 1000));                 // returns after ~20 ms, not 1000
+        Assert.Equal(EventKind.Paste, ev.Kind);
+        Assert.Equal("abc", ev.Paste);
+
+        tty.Enqueue("\u0003");                                          // keys get through again
+        Assert.True(terminal.Poll(out ev, 0));
+        Assert.True(ev.Key.IsCtrl('c'));
+    }
+
+    [Fact]
+    public void Paste_in_progress_does_not_hold_poll_past_its_deadline()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty, new TerminalOptions { BracketedPaste = true, PasteTimeoutMs = 60_000 });
+        tty.Enqueue("\u001b[200~abc");
+        long start = Environment.TickCount64;
+        Assert.False(terminal.Poll(out _, 10));
+        Assert.True(Environment.TickCount64 - start < 5_000);
+    }
+
+    [Fact]
+    public void Paste_start_is_ignored_without_bracketed_paste()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        tty.Enqueue("\u001b[200~q");
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.True(ev.Key.IsChar('q'));
+    }
+
+    [Fact]
     public void Control_characters_in_text_never_reach_the_terminal()
     {
         var tty = new TestTty();
@@ -424,5 +461,74 @@ public class TerminalTests
         terminal.BeginFrame().SetString(0, 0, "same");
         terminal.Present();
         Assert.Contains("same", tty.WrittenText);
+    }
+
+    // The size comes from the terminal (or an SSH peer, or stty on a shared tty). 65535² is the largest winsize,
+    // 46341² is the first square that overflows int, int.MaxValue² would overflow any arithmetic.
+    [Theory]
+    [InlineData(65535, 65535)]
+    [InlineData(46341, 46341)]
+    [InlineData(int.MaxValue, int.MaxValue)]
+    [InlineData(100, 65535)]
+    public void Hostile_terminal_size_at_startup_is_clamped(int width, int height)
+    {
+        // Inline mode: the same clamp, but a two-row frame, so the cases don't each allocate 160 MB of buffers
+        // (which perturbs the allocation tests running in parallel). The full-screen buffers are covered below.
+        var tty = new TestTty(width, height);
+        tty.Enqueue("\u001b[1;1R");
+        using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(2) });
+        Assert.Equal(new Size(Math.Min(width, Terminal.MaxWidth), 2), terminal.Size);
+        terminal.BeginFrame().SetString(0, 0, "ok");
+        terminal.Present();
+        Assert.Contains("ok", tty.WrittenText);
+    }
+
+    [Fact]
+    public void Largest_winsize_at_startup_fits_the_frame_buffers()
+    {
+        // 65535 x 65535 wrapped int in new Cell[width * height] and threw out of the constructor.
+        var tty = new TestTty(65535, 65535);
+        using var terminal = new Terminal(tty);
+        Assert.Equal(new Size(Terminal.MaxWidth, Terminal.MaxHeight), terminal.Size);
+        terminal.BeginFrame().SetString(0, 0, "ok");
+        terminal.Present();
+        Assert.Contains("ok", tty.WrittenText);
+    }
+
+    [Theory]
+    [InlineData(0, 0)]
+    [InlineData(-1, -5)]
+    [InlineData(int.MinValue, int.MinValue)]
+    public void Degenerate_terminal_size_becomes_one_cell(int width, int height)
+    {
+        var tty = new TestTty(width, height);
+        using var terminal = new Terminal(tty);
+        Assert.Equal(new Size(1, 1), terminal.Size);
+        terminal.BeginFrame();
+        terminal.Present();
+    }
+
+    [Fact]
+    public void Hostile_resize_during_the_session_is_clamped()
+    {
+        var tty = new TestTty();
+        using var terminal = new Terminal(tty);
+        terminal.BeginFrame();
+        terminal.Present();
+
+        tty.Resize(65535, 65535);
+        Assert.True(terminal.Poll(out Event ev, 0));
+        Assert.Equal(EventKind.Resize, ev.Kind);
+        Assert.Equal(new Size(Terminal.MaxWidth, Terminal.MaxHeight), ev.Size);
+        terminal.BeginFrame().SetString(0, 0, "big");
+        terminal.Present();
+        Assert.Equal(new Size(Terminal.MaxWidth, Terminal.MaxHeight), terminal.Size);
+
+        tty.Resize(0, -1);
+        Assert.True(terminal.Poll(out ev, 0));
+        Assert.Equal(new Size(1, 1), ev.Size);
+        terminal.BeginFrame();
+        terminal.Present();
+        Assert.Equal(new Size(1, 1), terminal.Size);
     }
 }

@@ -170,7 +170,7 @@ public class TestingTests
     public void Test_terminal_input_goes_through_the_parser()
     {
         var app = new Counter();
-        using var term = new TestTerminal(app, 30, 5);
+        using var term = new TestTerminal(app, 30, 5, new TerminalOptions { BracketedPaste = true });
         term.Input("j\u001b[A\u001b[1;5Cé");
         Assert.Equal(["j", "Up", "Ctrl+Right", "é"], app.Keys);
         Assert.Equal(2, term.Terminal.Frames);                        // one burst, one frame

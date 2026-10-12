@@ -362,6 +362,43 @@ public class InputWidgetTests
     }
 
     [Fact]
+    public void Text_input_drops_invisible_format_characters()
+    {
+        // Bidi overrides and isolates, ZWSP, word joiner, BOM, LRM/RLM, ALM: never drawn, never under the caret,
+        // but a "Trojan Source" payload in whatever the app does with Text.
+        var state = new TextInputState();
+        state.Insert("safe‮evil​﻿⁦x⁩‎‏؜⁠!");
+        Assert.Equal("safeevilx!", state.Text);
+
+        foreach (int cp in (ReadOnlySpan<int>)[0x200B, 0x202E, 0x2066, 0xFEFF, 0x2060, 0xE0001, 0x1D173])
+        {
+            state.Insert(new Rune(cp));
+        }
+
+        Assert.Equal("safeevilx!", state.Text);
+        Assert.Equal("a‮b\nc", "a‮b\nc");
+        var area = new TextAreaState("a‮b\nc​");
+        Assert.Equal("ab\nc", area.Text);
+        var constructed = new TextInputState("﻿name");
+        Assert.Equal("name", constructed.Text);
+    }
+
+    [Fact]
+    public void Text_input_keeps_joiners_tags_and_visible_format_characters()
+    {
+        var family = new TextInputState("👨‍👩‍👧");                   // ZWJ sequence
+        Assert.Equal("👨‍👩‍👧", family.Text);
+
+        var state = new TextInputState();
+        state.Insert("a‍b‌c­d؀۝");                      // ZWJ, ZWNJ, soft hyphen, prepended number signs
+        Assert.Equal("a‍b‌c­d؀۝", state.Text);
+        state.Insert("🏴\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F");   // England: tag sequence
+        Assert.EndsWith("🏴\U000E0067\U000E0062\U000E0065\U000E006E\U000E0067\U000E007F", state.Text);
+        state.Insert(new Rune(0x200D));
+        Assert.EndsWith("‍", state.Text);
+    }
+
+    [Fact]
     public void Text_input_keeps_marks_and_joiners_that_are_typed()
     {
         var state = new TextInputState();

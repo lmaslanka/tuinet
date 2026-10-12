@@ -51,6 +51,7 @@ public sealed partial class Terminal : IDisposable
     private bool _resumed;
     private bool _inFrame;
     private long _frameStart;
+    private long _pasteSince;   // tick of the last byte read while a paste was in progress
     private bool _disposed;
 
     public Terminal(ITty tty, TerminalOptions? options = null)
@@ -64,6 +65,7 @@ public sealed partial class Terminal : IDisposable
         _ownsTty = ownsTty;
         _options = options;
         _inline = options.Inline;
+        _parser.BracketedPaste = options.BracketedPaste;
         _renderer = new Renderer(options.ColorMode ?? ColorMode.TrueColor, options.ScrollRegions, options.EraseSequences)
         {
             ParkCursor = _inline is not null,
@@ -74,7 +76,7 @@ public sealed partial class Terminal : IDisposable
         Size size = FrameSize(_screen);
         _front = new CellBuffer(size.Width, size.Height);
         _back = new CellBuffer(size.Width, size.Height);
-        _out = new VtBuffer(size.Width * size.Height * 8 + 4096);
+        _out = new VtBuffer(checked(size.Width * size.Height * 8 + 4096));
         _leave = [];
         UpdateLeave();
         Enter();
@@ -87,6 +89,28 @@ public sealed partial class Terminal : IDisposable
 
     /// <summary>Longest text <see cref="CopyToClipboard"/> sends, in UTF-8 bytes (terminals cap OSC 52 around here).</summary>
     public const int MaxClipboardBytes = 74_000;
+
+    /// <summary>
+    /// Widest screen a terminal's size report is taken at face value; wider reports are clamped to this. The size
+    /// comes from the terminal, and so from an SSH peer or anyone with the same tty (<c>stty cols 60000</c>), and
+    /// every cell costs 16 bytes in two buffers: unbounded, it is an unbounded allocation or an integer overflow. 4096
+    /// columns is a few times the largest physical setups (an 8K display at a 4-pixel font is about 1920 wide).
+    /// </summary>
+    public const int MaxWidth = 4096;
+
+    /// <summary>
+    /// Tallest screen a terminal's size report is taken at face value; taller reports are clamped to this. See
+    /// <see cref="MaxWidth"/>. 1024 rows is a few times the largest physical setups (an 8K display at an 8-pixel
+    /// font is 540 rows); with <see cref="MaxWidth"/> it caps the frame buffers at about 160 MB.
+    /// </summary>
+    public const int MaxHeight = 1024;
+
+    /// <summary>
+    /// Longest paste delivered, in UTF-8 bytes (16 MB); a longer one is cut here, on a character boundary, and the
+    /// rest is read and dropped. Paste text is the one input the parser must buffer in full, and its length is the
+    /// terminal's (or the clipboard's) choice, so without a cap a paste is an unbounded allocation.
+    /// </summary>
+    public const int MaxPasteBytes = 16 << 20;
 
     /// <summary>Open the process's controlling terminal (stdin/stdout, or /dev/tty when redirected).</summary>
     public static Terminal Open(TerminalOptions? options = null)
@@ -388,10 +412,25 @@ public sealed partial class Terminal : IDisposable
             }
 
             int remaining = timeoutMs < 0 ? -1 : (int)Math.Max(0, deadline - Environment.TickCount64);
+            if (_parser.InPaste && timeoutMs != 0)
+            {
+                // A paste whose end marker never comes must not swallow every later key: once it has been quiet for
+                // PasteTimeoutMs, what arrived is the paste. Wait no longer than that (or the caller's deadline).
+                long idle = Environment.TickCount64 - _pasteSince;
+                if (idle >= _options.PasteTimeoutMs)
+                {
+                    _parser.FlushIncomplete();
+                    continue;
+                }
+
+                int wait = (int)(_options.PasteTimeoutMs - idle);
+                remaining = remaining < 0 ? wait : Math.Min(remaining, wait);
+            }
+
             int n = _tty.Read(_readBuf, remaining);
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
                 continue;
             }
 
@@ -399,6 +438,16 @@ public sealed partial class Terminal : IDisposable
             {
                 return TryNext(out ev);
             }
+        }
+    }
+
+    /// <summary>Parse the first <paramref name="n"/> bytes of <see cref="_readBuf"/>, noting when a paste last got bytes.</summary>
+    private void Feed(int n)
+    {
+        _parser.Feed(_readBuf.AsSpan(0, n));
+        if (_parser.InPaste)
+        {
+            _pasteSince = Environment.TickCount64;
         }
     }
 
@@ -489,7 +538,7 @@ public sealed partial class Terminal : IDisposable
 
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
                 continue;
             }
 
@@ -585,10 +634,14 @@ public sealed partial class Terminal : IDisposable
             int n = _tty.Read(_readBuf, remaining);
             if (n > 0)
             {
-                _parser.Feed(_readBuf.AsSpan(0, n));
+                Feed(n);
             }
         }
 
+        // The reply is the terminal's to make up: keep it on the screen, so the band is never placed (and the
+        // screen never scrolled) by more than the screen's height.
+        row = Math.Min(row, _screen.Height - 1);
+        column = Math.Min(column, _screen.Width - 1);
         return true;
     }
 
@@ -802,5 +855,9 @@ public sealed partial class Terminal : IDisposable
         BytesWritten += bytes.Length;
     }
 
-    private static Size Clamp(Size size) => new(Math.Max(1, size.Width), Math.Max(1, size.Height));
+    /// <summary>
+    /// A size as the tty reported it, made safe: at least one cell, at most <see cref="MaxWidth"/> ×
+    /// <see cref="MaxHeight"/>. Every size that reaches a buffer goes through here (start-up, resize, resume).
+    /// </summary>
+    private static Size Clamp(Size size) => new(Math.Clamp(size.Width, 1, MaxWidth), Math.Clamp(size.Height, 1, MaxHeight));
 }
