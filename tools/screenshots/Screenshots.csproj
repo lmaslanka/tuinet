@@ -9,8 +9,8 @@
 
   <!-- Only the font parser comes from a package: glyph outlines go through our own rasterizer and PNG writer, so
        the same input gives the same bytes on every machine (no system fonts, no native code, no SIMD-dependent
-       blending). SixLabors.Fonts 2.x: Six Labors Split License, which is Apache-2.0 for open-source use; 3.x and later
-       require a license key at build time. -->
+       blending). SixLabors.Fonts 2.1.x: Six Labors Split License, which is Apache-2.0 for open-source use; 2.2.0 and
+       later require a license key at build time (Dependabot ignores them, see .github/dependabot.yml). -->
   <ItemGroup>
     <PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
   </ItemGroup>
