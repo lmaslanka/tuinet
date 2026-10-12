@@ -16,3 +16,7 @@ updates:
     groups:
       nuget:
         patterns: ["*"]
+    ignore:
+      # 2.2.0 and later fail the build without a Six Labors license key (tools/screenshots).
+      - dependency-name: "SixLabors.Fonts"
+        versions: [">= 2.2.0"]
