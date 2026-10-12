@@ -12,7 +12,7 @@
        blending). SixLabors.Fonts 2.x: Six Labors Split License, which is Apache-2.0 for open-source use; 3.x and later
        require a license key at build time. -->
   <ItemGroup>
-    <PackageReference Include="SixLabors.Fonts" Version="2.1.3" />
+    <PackageReference Include="SixLabors.Fonts" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>
