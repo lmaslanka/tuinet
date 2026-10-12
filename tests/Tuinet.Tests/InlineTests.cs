@@ -25,7 +25,7 @@ public class InlineTests
         Assert.Equal(new Size(20, 3), terminal.Size);
         Assert.Equal(
             "\u001b[?25l\u001b[?7l\u001b[?2027h" + "\u001b[6n"
-            + "\u001b[?2026h\u001b[0m\u001b[5H\u001b[J" + "\u001b[?69$p\u001b[>0q\r\u001b[K" + "\u001b[?2026l",
+            + "\u001b[?2026h\u001b[0m\u001b[5H\u001b[J" + "\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K" + "\u001b[?2026l",
             tty.WrittenText);
     }
 
@@ -34,7 +34,7 @@ public class InlineTests
     {
         var tty = new TestTty(20, 10);
         using var terminal = Start(tty, height: 3, row: 4, column: 7);
-        Assert.EndsWith("\u001b[6H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[6H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -43,7 +43,7 @@ public class InlineTests
         var tty = new TestTty(20, 10);
         using var terminal = Start(tty, height: 3, row: 8);
         // Rows 8..10 don't fit: one line feed on the last row scrolls the prompt up, and the band is rows 7..9.
-        Assert.EndsWith("\u001b[0m\u001b[10H\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[0m\u001b[10H\n\u001b[8H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -53,12 +53,12 @@ public class InlineTests
         // feeds), not after a million newlines that would scroll the scrollback away.
         var tty = new TestTty(20, 10);
         using var terminal = Start(tty, height: 3, row: 999_999);
-        Assert.EndsWith("\u001b[0m\u001b[10H\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[0m\u001b[10H\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
         Assert.True(tty.Written.Length < 200);
 
         var wide = new TestTty(20, 10);
         using var second = Start(wide, height: 3, row: 999_999, column: 999_999);   // text on that row: next row
-        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", wide.WrittenText);
+        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", wide.WrittenText);
     }
 
     [Fact]
@@ -66,7 +66,7 @@ public class InlineTests
     {
         var tty = new TestTty(20, 10);
         using var terminal = new Terminal(tty, Inline(3, timeoutMs: 50));
-        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
+        Assert.EndsWith("\u001b[10H\n\n\n\u001b[8H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", tty.WrittenText);
     }
 
     [Fact]
@@ -104,9 +104,9 @@ public class InlineTests
         terminal.Present();
         tty.ClearWritten();
         terminal.Dispose();
-        // The cursor is parked on band row 0: down to row 1 (screen row 3), then the shell continues on the next
-        // line. No ?1049l.
-        Assert.Equal("\r\n\r\n\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h", tty.WrittenText);
+        // The cursor is parked on band row 0, column 0: a line feed down to row 1 (screen row 3), then the shell
+        // continues on the next line. No ?1049l.
+        Assert.Equal("\n\r\n\u001b[0m\u001b[?2027l\u001b[?7h\u001b[?25h", tty.WrittenText);
     }
 
     [Fact]
@@ -276,7 +276,7 @@ public class InlineTests
         string text = tty.WrittenText;
         Assert.DoesNotContain("?1049", text);
         Assert.Contains("\u001b[6n", text[tty.Suspends[0]..]);
-        Assert.EndsWith("\u001b[8H\u001b[J\u001b[?69$p\u001b[>0q\r\u001b[K\u001b[?2026l", text);
+        Assert.EndsWith("\u001b[8H\u001b[J\u001b[?69$p\u001b[?2026$p\u001b[>0q\r\u001b[K\u001b[?2026l", text);
     }
 
     private static void Present(Terminal terminal, string text)

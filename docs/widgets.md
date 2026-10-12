@@ -9,7 +9,7 @@ owns and passes in. Run `./run gallery` to see every widget next to the code tha
 | Widget | State | What it does |
 |---|---|---|
 | `Block` | | Borders (plain, rounded, double, thick, dashed), plain or styled title and footer with alignment, background, `Inner(area)` |
-| `Paragraph` | | Multi-line plain or styled text with word/char wrapping, alignment and scroll; optional scrollbar; `LineCount` |
+| `Paragraph` | `ParagraphState` (optional) | Multi-line plain or styled text with word/char wrapping, alignment and scroll; optional scrollbar; `LineCount`. With a state, the layout is cached and a scrolled frame costs only the lines in view |
 | `ListView<T>` | `ListState` | Virtualized, selectable, scrolls to follow the selection, highlight symbol, optional scrollbar; click, wheel and scrollbar drag |
 | `TreeView<T>` | `TreeState` | Hierarchy with `[+]`/`[-]` expanders and `├─`/`└─` guides, lazy children, cached rows (a frame draws only what's visible), selection that follows its node; keys, click on the expander, wheel and scrollbar drag |
 | `Table<T>` | `ListState` | Header and columns with constraint widths, left/center/right alignment, per-cell styles, separators, zebra stripes, sort arrow, optional scrollbar; click, wheel, scrollbar drag and header hit-testing |

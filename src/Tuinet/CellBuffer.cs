@@ -1,4 +1,3 @@
-using System.Buffers;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Runtime.Intrinsics;
@@ -307,10 +306,6 @@ public sealed class CellBuffer
         }
     }
 
-    /// <summary>' ' to '~'. (IndexOfAnyExceptInRange allocates on this path; SearchValues doesn't.)</summary>
-    private static readonly SearchValues<char> PrintableAscii =
-        SearchValues.Create(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
-
     /// <summary>Bytes 4-7 of a cell: the foreground color.</summary>
     private static readonly Vector128<byte> FgBytes = Vector128.Create(0, 0, 0, 0, 255, 255, 255, 255, 0, 0, 0, 0, 0, 0, 0, (byte)0);
 
@@ -580,12 +575,19 @@ public sealed class CellBuffer
         var continuation = Cell.Continuation(style);
         ulong under = 0;
         bool primed = !layered;
+        int pending = -1;   // UnicodeWidth.Info of text[i], when the previous code point looked it up as its follower
         while (i < text.Length)
         {
             char c = text[i];
+            int info = pending >= 0 ? pending : UnicodeWidth.Info(c);
+            pending = -1;
 
-            // Fast path: a run of printable ASCII, one cell per char, in constant-color segments.
-            if (col >= 0 && (uint)(c - 0x20) < 0x5F)
+            // Fast path: a run of glyphs of one width (one char each) that can't join a neighbour, copied from the
+            // template in constant-color segments. Printable ASCII is found with a vectorized scan, letters of other
+            // scripts (Cyrillic, Greek, Hebrew, Arabic…) and CJK with one table lookup each. A char followed by
+            // something that could join it (a combining mark) is left to the cluster path below, with the mark.
+            int glyph = info & UnicodeWidth.WidthMask;
+            if (col >= 0 && (info & UnicodeWidth.NeverJoins) != 0 && glyph != 0)
             {
                 if (!wrote)
                 {
@@ -593,26 +595,19 @@ public sealed class CellBuffer
                     wrote = true;
                 }
 
-                int run = Math.Min(text.Length - i, limit - col);
-                if (run <= 0)
+                int max = Math.Min(text.Length - i, (limit - col) / glyph);
+                if (max <= 0)
                 {
                     return Finish(row, col, wrote, out complete, done: false);
                 }
 
-                // A combining mark (or other extender) after the last letter belongs to that letter's
-                // cluster: leave the letter to the cluster path below.
-                int stop = text.Slice(i, Math.Min(text.Length - i, run + 1)).IndexOfAnyExcept(PrintableAscii);
-                if (stop > 0 && stop <= run && text[i + stop] >= 0x300)
-                {
-                    run = stop - 1;
-                }
-
+                int run = (uint)(c - 0x20) < 0x5F ? Graphemes.AsciiRun(text[i..], max) : Graphemes.GlyphRun(text[i..], max, glyph);
                 if (run == 0)
                 {
                     goto Cluster;
                 }
 
-                Span<Cell> dest = row.Slice(col, run);
+                Span<Cell> dest = row.Slice(col, run * glyph);
                 ReadOnlySpan<char> chars = text.Slice(i, run);
                 int n = 0;
                 while (n < run)
@@ -620,32 +615,28 @@ public sealed class CellBuffer
                     int segment = run;
                     if (layered)
                     {
-                        ulong bits = Cell.ColorBits(ref dest[n]);
+                        ulong bits = Cell.ColorBits(ref dest[n * glyph]);
                         if (!primed || bits != under)
                         {
                             under = bits;
-                            template = new Cell(Cell.Space, Layer(style, dest[n].Style), 1, CellFlags.None);
+                            template = new Cell(Cell.Space, Layer(style, dest[n * glyph].Style), 1, CellFlags.None);
                             continuation = Cell.Continuation(template.Style);
                             primed = true;
                         }
 
                         segment = n + 1;
-                        while (segment < run && Cell.ColorBits(ref dest[segment]) == bits)
+                        while (segment < run && Cell.ColorBits(ref dest[segment * glyph]) == bits)
                         {
                             segment++;
                         }
                     }
 
-                    int written = WriteAscii(chars[n..segment], dest[n..segment], in template);
-                    n += written;
-                    if (n < segment)
-                    {
-                        break;
-                    }
+                    WriteGlyphs(chars[n..segment], dest[(n * glyph)..(segment * glyph)], in template, in continuation, glyph);
+                    n = segment;
                 }
 
-                i += n;
-                col += n;
+                i += run;
+                col += run * glyph;
                 continue;
             }
 
@@ -655,13 +646,16 @@ public sealed class CellBuffer
             int width;
             int id = -1;
             bool joinable = false;
-            if (Graphemes.Simple(c) && (i + 1 == text.Length || Graphemes.Simple(text[i + 1])))
+            // One table lookup per code point: the follower's is kept for the next iteration.
+            int next = i + 1 < text.Length ? UnicodeWidth.Info(text[i + 1]) : UnicodeWidth.NeverJoins;
+            if ((info & next & UnicodeWidth.NeverJoins) != 0)
             {
-                // One code point that can't join its neighbour (most CJK and symbol text). Simple chars
-                // are never surrogates, so the rune needs no validation.
+                // One code point that can't join its neighbour (letters of any script without marks, CJK,
+                // symbols). Simple chars are never surrogates, so the rune needs no validation.
                 length = 1;
                 rune = Unsafe.BitCast<int, Rune>(c);
-                width = UnicodeWidth.Of(c);
+                width = info & UnicodeWidth.WidthMask;
+                pending = next;
             }
             else
             {
@@ -756,22 +750,27 @@ public sealed class CellBuffer
     }
 
     /// <summary>
-    /// Write printable ASCII until the first other char; returns chars written. Each cell is two
-    /// 8-byte stores: the template's words with the rune (low 32 bits of the first word) replaced.
+    /// Write <paramref name="chars"/>, each one non-surrogate glyph of <paramref name="width"/> columns (the caller
+    /// checked), into <paramref name="dest"/> (<paramref name="width"/> cells per char). Each cell is two 8-byte
+    /// stores: the template's words with the rune (low 32 bits of the first word) replaced, and for wide glyphs the
+    /// continuation cell after it.
     /// </summary>
-    private static int WriteAscii(ReadOnlySpan<char> chars, Span<Cell> dest, in Cell template)
+    private static void WriteGlyphs(ReadOnlySpan<char> chars, Span<Cell> dest, in Cell template, in Cell continuation, int width)
     {
-        int length = Math.Min(chars.Length, dest.Length);
+        int length = Math.Min(chars.Length, dest.Length / width);
         if (!BitConverter.IsLittleEndian)
         {
-            int i = 0;
-            for (; i < length && (uint)(chars[i] - 0x20) < 0x5F; i++)
+            for (int i = 0; i < length; i++)
             {
-                dest[i] = template;
-                Cell.Patch(ref dest[i], new Rune(chars[i]), 1);
+                dest[i * width] = template;
+                Cell.Patch(ref dest[i * width], new Rune(chars[i]), width);
+                if (width == 2)
+                {
+                    dest[i * 2 + 1] = continuation;
+                }
             }
 
-            return i;
+            return;
         }
 
         ref ulong source = ref Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in template));
@@ -779,20 +778,30 @@ public sealed class CellBuffer
         ulong high = Unsafe.Add(ref source, 1);
         ref ulong target = ref Unsafe.As<Cell, ulong>(ref MemoryMarshal.GetReference(dest));
         ref char text = ref MemoryMarshal.GetReference(chars);
-        int n = 0;
-        for (; n < length; n++)
+        if (width == 1)
         {
-            uint a = Unsafe.Add(ref text, n);
-            if (a - 0x20 >= 0x5F)
+            for (int n = 0; n < length; n++)
             {
-                break;
+                Unsafe.Add(ref target, 2 * n) = low | Unsafe.Add(ref text, n);
+                Unsafe.Add(ref target, 2 * n + 1) = high;
             }
 
-            Unsafe.Add(ref target, 2 * n) = low | a;
-            Unsafe.Add(ref target, 2 * n + 1) = high;
+            return;
         }
 
-        return n;
+        Cell wide = template;
+        Cell.Patch(ref wide, Cell.Space, 2);   // the width byte lives in the second word
+        high = Unsafe.Add(ref Unsafe.As<Cell, ulong>(ref wide), 1);
+        ref ulong tail = ref Unsafe.As<Cell, ulong>(ref Unsafe.AsRef(in continuation));
+        ulong tailLow = tail;
+        ulong tailHigh = Unsafe.Add(ref tail, 1);
+        for (int n = 0; n < length; n++)
+        {
+            Unsafe.Add(ref target, 4 * n) = low | Unsafe.Add(ref text, n);
+            Unsafe.Add(ref target, 4 * n + 1) = high;
+            Unsafe.Add(ref target, 4 * n + 2) = tailLow;
+            Unsafe.Add(ref target, 4 * n + 3) = tailHigh;
+        }
     }
 
     /// <summary>Default colors in <paramref name="style"/> keep the colors of <paramref name="under"/>; attributes are replaced.</summary>

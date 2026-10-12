@@ -398,7 +398,8 @@ public readonly ref struct TreeView<TSource> : IStatefulWidget<TreeState>
     public void Render(Rect area, CellBuffer buffer, ref TreeState state)
     {
         state.Rebuild(_source);
-        buffer.Render(new ListView<Rows>(new Rows(this, state))
+        var rows = new Rows(this, state, TextWidth.Of(ExpandedSymbol), TextWidth.Of(CollapsedSymbol), TextWidth.Of(LeafSymbol));
+        buffer.Render(new ListView<Rows>(rows)
         {
             SelectedStyle = SelectedStyle,
             HighlightSymbol = HighlightSymbol,
@@ -409,14 +410,12 @@ public readonly ref struct TreeView<TSource> : IStatefulWidget<TreeState>
         }, area, ref state.List);
     }
 
-    /// <summary>Draw row <paramref name="row"/>: guides, expander, label.</summary>
-    private void RenderRow(TreeState state, int row, Rect area, CellBuffer buffer, bool selected)
+    /// <summary>Draw row <paramref name="row"/>: guides, expander, label. The symbol widths are measured once per frame.</summary>
+    private void RenderRow(TreeState state, int row, Rect area, CellBuffer buffer, bool selected, int expandedWidth, int collapsedWidth, int leafWidth)
     {
         int node = state.NodeAt(row);
         int depth = state.DepthAt(row);
         ulong mask = state.LastMaskAt(row);
-        int expandedWidth = TextWidth.Of(ExpandedSymbol);
-        int collapsedWidth = TextWidth.Of(CollapsedSymbol);
         int levels = Math.Max(0, (area.Width - Math.Max(expandedWidth, collapsedWidth) - MinLabelWidth) / TreeState.Level);
         state.SetLayout(area.X, levels, expandedWidth, collapsedWidth);
 
@@ -450,12 +449,28 @@ public readonly ref struct TreeView<TSource> : IStatefulWidget<TreeState>
             return;
         }
 
-        ReadOnlySpan<char> expander = !_source.HasChildren(node) ? LeafSymbol
-            : state.IsExpanded(node) ? ExpandedSymbol : CollapsedSymbol;
+        ReadOnlySpan<char> expander;
+        int expanderWidth;
+        if (!_source.HasChildren(node))
+        {
+            expander = LeafSymbol;
+            expanderWidth = leafWidth;
+        }
+        else if (state.IsExpanded(node))
+        {
+            expander = ExpandedSymbol;
+            expanderWidth = expandedWidth;
+        }
+        else
+        {
+            expander = CollapsedSymbol;
+            expanderWidth = collapsedWidth;
+        }
+
         if (!expander.IsEmpty)
         {
             buffer.SetString(x, y, expander, ExpanderStyle, area.Right - x);
-            x += TextWidth.Of(expander);
+            x += expanderWidth;
         }
 
         if (x < area.Right)
@@ -465,13 +480,13 @@ public readonly ref struct TreeView<TSource> : IStatefulWidget<TreeState>
     }
 
     /// <summary>The visible rows as list items, so the tree draws (and scrolls, and hit-tests) through <see cref="ListView{TSource}"/>.</summary>
-    private readonly ref struct Rows(TreeView<TSource> view, TreeState state) : IListSource
+    private readonly ref struct Rows(TreeView<TSource> view, TreeState state, int expandedWidth, int collapsedWidth, int leafWidth) : IListSource
     {
         private readonly TreeView<TSource> _view = view;
 
         public int Count => state.Count;
 
         public void RenderItem(int index, Rect area, CellBuffer buffer, bool selected) =>
-            _view.RenderRow(state, index, area, buffer, selected);
+            _view.RenderRow(state, index, area, buffer, selected, expandedWidth, collapsedWidth, leafWidth);
     }
 }

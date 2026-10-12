@@ -1,3 +1,4 @@
+using System.Buffers;
 using System.Collections.Concurrent;
 using System.Globalization;
 using System.Runtime.CompilerServices;
@@ -8,8 +9,8 @@ namespace Tuinet;
 /// <summary>
 /// Grapheme clusters: what a reader sees as one character, possibly several code points
 /// (e + combining accent, 👨‍👩‍👧, ❤️, 🇵🇱, Hangul jamo). Boundaries follow UAX #29 via
-/// <see cref="StringInfo.GetNextTextElementLength(ReadOnlySpan{char})"/>, with fast paths so plain
-/// Latin and CJK text never calls it.
+/// <see cref="StringInfo.GetNextTextElementLength(ReadOnlySpan{char})"/>, with fast paths so text in any
+/// script without marks (Latin, Cyrillic, Greek, Hebrew, Arabic letters, CJK, Hangul syllables…) never calls it.
 /// <para>
 /// Multi-code-point clusters are interned process-wide: a cell stores the cluster's id, and equal
 /// clusters get equal ids in every buffer, so the renderer's byte-wise row diff stays correct.
@@ -18,11 +19,19 @@ namespace Tuinet;
 /// </summary>
 internal static class Graphemes
 {
-    /// <summary>Past this many distinct clusters, new ones degrade to their first code point.</summary>
-    private const int MaxEntries = 1 << 20;
+    /// <summary>
+    /// Past this many distinct clusters, new ones degrade to their first code point. Entries are never released, so
+    /// the cap bounds what untrusted text (a log viewer, a chat) can make the process keep: 64 K clusters of at most
+    /// <see cref="MaxChars"/> chars is a few MB.
+    /// </summary>
+    private const int MaxEntries = 1 << 16;
 
     /// <summary>Longer clusters (pathological stacks of marks) are cut to this many chars when stored.</summary>
     public const int MaxChars = 64;
+
+    /// <summary>' ' to '~'. (IndexOfAnyExceptInRange allocates on this path; SearchValues doesn't.)</summary>
+    public static readonly SearchValues<char> PrintableAscii =
+        SearchValues.Create(" !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~");
 
     // Lookups are lock-free (the common case: a cluster seen before); inserts take the lock to assign ids.
     private static readonly Lock Gate = new();
@@ -35,11 +44,23 @@ internal static class Graphemes
 
     /// <summary>
     /// The cluster at the start of <paramref name="text"/> (non-empty): its length in chars, first code point,
-    /// width in columns, and whether it is more than one code point.
+    /// width in columns, and whether it is more than one code point. A code point that can't join the one after
+    /// it (see <see cref="Simple"/>) is answered without decoding or segmenting.
     /// </summary>
     public static int Next(ReadOnlySpan<char> text, out Rune first, out int width, out bool multi)
     {
-        int length = Length(text);
+        char c = text[0];
+        int info = UnicodeWidth.Info(c);
+        if ((info & UnicodeWidth.NeverJoins) != 0 && (text.Length == 1 || Simple(text[1])))
+        {
+            // Simple chars are never surrogates, so the rune needs no validation.
+            first = Unsafe.BitCast<int, Rune>(c);
+            width = info & UnicodeWidth.WidthMask;
+            multi = false;
+            return 1;
+        }
+
+        int length = text.Length == 1 ? 1 : StringInfo.GetNextTextElementLength(text);
         Rune.DecodeFromUtf16(text, out first, out int consumed);
         multi = length > consumed;
         width = multi ? Width(text[..length], out _) : UnicodeWidth.Of(first.Value);
@@ -54,17 +75,98 @@ internal static class Graphemes
             return 1;
         }
 
-        char c = text[0];
-        char next = text[1];
-
-        // Two code points that can never join (no extenders, no Hangul jamo, no regional indicators,
-        // no prepend marks): break between them without the full rule set.
-        if (Simple(c) && Simple(next))
+        // Two code points that can never join: break between them without the full rule set.
+        if (Simple(text[0]) && Simple(text[1]))
         {
             return 1;
         }
 
         return StringInfo.GetNextTextElementLength(text);
+    }
+
+    /// <summary>
+    /// Chars of printable ASCII (one column each) at the start of <paramref name="text"/>, looking at no more than
+    /// <paramref name="max"/> (at least 1). A last char followed by something that could join it (a combining
+    /// mark, VS16…) is left out, so the caller's cluster path takes the pair. 0 when the text doesn't start with a
+    /// usable run.
+    /// </summary>
+    public static int AsciiRun(ReadOnlySpan<char> text, int max)
+    {
+        int n = Math.Min(text.Length, max);
+        int stop = text[..Math.Min(text.Length, n + 1)].IndexOfAnyExcept(PrintableAscii);   // one past n: a mark there?
+        if (stop < 0 || stop > n)
+        {
+            return n;
+        }
+
+        return stop > 0 && text[stop] >= 0x300 && !Simple(text[stop]) ? stop - 1 : stop;
+    }
+
+    /// <summary>
+    /// Chars at the start of <paramref name="text"/> that are single code points which can't join their follower
+    /// (see <see cref="Simple"/>), so each is one glyph of a known width, taking no more than
+    /// <paramref name="maxColumns"/> columns in all; <paramref name="columns"/> is what they take. Stops before a
+    /// char that might join the next (the cluster path takes the pair) and before one that doesn't fit. One table
+    /// lookup per char: the follower's lookup is reused when it becomes the current char.
+    /// </summary>
+    public static int SimpleRun(ReadOnlySpan<char> text, int maxColumns, out int columns)
+    {
+        columns = 0;
+        int i = 0;
+        if (text.IsEmpty)
+        {
+            return 0;
+        }
+
+        int info = UnicodeWidth.Info(text[0]);
+        while ((info & UnicodeWidth.NeverJoins) != 0)
+        {
+            int next = i + 1 < text.Length ? UnicodeWidth.Info(text[i + 1]) : UnicodeWidth.NeverJoins;
+            int w = info & UnicodeWidth.WidthMask;
+            if ((next & UnicodeWidth.NeverJoins) == 0 || columns + w > maxColumns)
+            {
+                break;
+            }
+
+            columns += w;
+            if (++i == text.Length)
+            {
+                break;
+            }
+
+            info = next;
+        }
+
+        return i;
+    }
+
+    /// <summary>
+    /// Like <see cref="SimpleRun"/> for cell writes: chars at the start of <paramref name="text"/> (at most
+    /// <paramref name="max"/>, which is at least 1) that are each one glyph of <paramref name="width"/> columns
+    /// (1 or 2) that never joins, each followed by a simple char or the end. One table lookup per char.
+    /// </summary>
+    public static int GlyphRun(ReadOnlySpan<char> text, int max, int width)
+    {
+        int wanted = UnicodeWidth.NeverJoins | width;
+        int i = 0;
+        int info = UnicodeWidth.Info(text[0]);
+        while ((info & (UnicodeWidth.NeverJoins | UnicodeWidth.WidthMask)) == wanted)
+        {
+            int next = i + 1 < text.Length ? UnicodeWidth.Info(text[i + 1]) : UnicodeWidth.NeverJoins;
+            if ((next & UnicodeWidth.NeverJoins) == 0)
+            {
+                break;
+            }
+
+            if (++i == max || i == text.Length)
+            {
+                break;
+            }
+
+            info = next;
+        }
+
+        return i;
     }
 
     /// <summary>
@@ -169,21 +271,14 @@ internal static class Graphemes
     }
 
     /// <summary>
-    /// Code points that never join their neighbours: Latin below the combining marks; punctuation, arrows,
-    /// math, box drawing, blocks, shapes, symbols, dingbats and braille (U+2010–U+2027, U+2030–U+205F,
-    /// U+2190–U+2BFF: no extenders, joiners or prepend marks there); CJK ideographs, kana (without the
-    /// combining sound marks) and precomposed Hangul syllables. Surrogates are not simple.
+    /// Code points that never join another simple code point into one cluster (UAX #29): everything but
+    /// extenders, joiners, spacing and prepend marks, regional indicators, Hangul jamo, surrogates and the emoji
+    /// plane (where the renderer places the next cell explicitly). Letters of every script are simple; their
+    /// combining marks are not. Generated into UnicodeWidth.g.cs from GraphemeBreakProperty and emoji-data; the
+    /// first 768 code points (Latin, before the combining marks) are answered without the table.
     /// </summary>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
-    public static bool Simple(int c) =>
-        c < 0x300 ||
-        (uint)(c - 0x4E00) <= 0x9FFF - 0x4E00 ||
-        (uint)(c - 0xAC00) <= 0xD7A3 - 0xAC00 ||
-        (uint)(c - 0x3041) <= 0x3096 - 0x3041 ||
-        (uint)(c - 0x30A1) <= 0x30FA - 0x30A1 ||
-        (uint)(c - 0x2190) <= 0x2BFF - 0x2190 ||
-        (uint)(c - 0x2010) <= 0x2027 - 0x2010 ||
-        (uint)(c - 0x2030) <= 0x205F - 0x2030;
+    public static bool Simple(int c) => (uint)c < 0x300 || (UnicodeWidth.Info(c) & UnicodeWidth.NeverJoins) != 0;
 
     private readonly record struct Entry(string Text, Rune First, byte Legacy);
 }

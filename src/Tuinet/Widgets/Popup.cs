@@ -64,7 +64,9 @@ public readonly ref struct Popup : IWidget
             buffer.SetStyle(new Rect(box.X + ShadowWidth, box.Bottom, box.Width, ShadowHeight), ShadowStyle);
         }
 
+        // The fill puts Block.Style in every cell, so the block renders without it (its border and title styles are
+        // layered over the fill just the same) instead of patching the same style over the whole box once more.
         buffer.Fill(box, Block.Style);
-        buffer.Render(Block, box);
+        buffer.Render(Block with { Style = default, BorderStyle = Block.Style.Patch(Block.BorderStyle) }, box);
     }
 }

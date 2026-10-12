@@ -25,6 +25,12 @@ public class RenderBenchmarks
     private CellBuffer _blank = null!;
     private CellBuffer _rules = null!;
     private CellBuffer _bars = null!;
+    private CellBuffer _cyrillicA = null!;
+    private CellBuffer _cyrillicB = null!;
+    private CellBuffer _column = null!;
+    private CellBuffer _caret = null!;
+    private CellBuffer _caretLeft = null!;
+    private CellBuffer _caretDown = null!;
 
     /// <summary>The terminal has REP (repeat the last glyph): runs of one glyph are drawn once and repeated.</summary>
     [Params(false, true)]
@@ -38,6 +44,20 @@ public class RenderBenchmarks
         _a = Screen(0);
         _b = Screen(1);
         _same = Screen(0);
+        _cyrillicA = Screen(0, cyrillic: true);
+        _cyrillicB = Screen(1, cyrillic: true);
+        _column = Screen(0);
+        for (int y = 0; y < H; y++)
+        {
+            _column.SetRune(W - 1, y, new System.Text.Rune('│'), new Style(Color.Rgb(200, 200, 0), default));   // a border recolors on focus
+        }
+
+        _caret = Screen(0);
+        _caret.SetCursor(30, 10);
+        _caretLeft = Screen(0);
+        _caretLeft.SetCursor(29, 10);
+        _caretDown = Screen(0);
+        _caretDown.SetCursor(30, 11);
         _oneCell = Screen(0);
         _oneCell.SetRune(100, 30, new System.Text.Rune('#'));
         _scrolled = Screen(0, shift: 1);
@@ -118,6 +138,20 @@ public class RenderBenchmarks
     [Benchmark(Description = "full repaint, styled")]
     public int FullRepaint() => Render(_b, _a);
 
+    /// <summary>The same repaint with Cyrillic text: two UTF-8 bytes per glyph, no clusters, no join checks.</summary>
+    [Benchmark(Description = "full repaint, cyrillic")]
+    public int FullRepaintCyrillic() => Render(_cyrillicB, _cyrillicA);
+
+    /// <summary>One cell per row changes in the last column (a vertical border recolors, a scrollbar track).</summary>
+    [Benchmark(Description = "vertical column")]
+    public int VerticalColumn() => Render(_column, _a);
+
+    /// <summary>Only the cursor moves one cell left (Backspace or Left in an input); the screen is unchanged.</summary>
+    public int CaretLeft() => RenderAfter(_caretLeft, _caret);
+
+    /// <summary>Only the cursor moves one row down in the same column.</summary>
+    public int CaretDown() => RenderAfter(_caretDown, _caret);
+
     private int Render(CellBuffer current, CellBuffer previous) => Render(current, previous, _renderer);
 
     private int Render(CellBuffer current, CellBuffer previous, Renderer renderer)
@@ -125,6 +159,15 @@ public class RenderBenchmarks
         _out.Clear();
         renderer.AfterClear();
         renderer.Render(current, previous, _out);
+        return _out.Length;
+    }
+
+    /// <summary>Bytes of the frame <paramref name="current"/> after <paramref name="previous"/> was shown (cursor position known).</summary>
+    private int RenderAfter(CellBuffer current, CellBuffer previous)
+    {
+        Render(previous, _blank);
+        _out.Clear();
+        _renderer.Render(current, previous, _out);
         return _out.Length;
     }
 
@@ -162,8 +205,15 @@ public class RenderBenchmarks
     }
 
     /// <summary>Text on every row; colors vary per row (a gradient) so every row needs its own SGR.</summary>
-    internal static CellBuffer Screen(int seed, int shift = 0)
+    internal static CellBuffer Screen(int seed, int shift = 0, bool cyrillic = false)
     {
+        string text = (seed, cyrillic) switch
+        {
+            (0, false) => "the quick brown fox jumps over the lazy dog",
+            (_, false) => "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG",
+            (0, true) => "съешь же ещё этих мягких французских булок",
+            _ => "СЪЕШЬ ЖЕ ЕЩЁ ЭТИХ МЯГКИХ ФРАНЦУЗСКИХ БУЛОК",
+        };
         var buffer = new CellBuffer(W, H);
         for (int y = 0; y < H; y++)
         {
@@ -172,7 +222,7 @@ public class RenderBenchmarks
             buffer.Fill(buffer.Area.Row(y), style);
             for (int x = 0; x < W; x += 44)
             {
-                buffer.SetString(x, y, seed == 0 ? "the quick brown fox jumps over the lazy dog" : "THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG", style);
+                buffer.SetString(x, y, text, style);
             }
         }
 

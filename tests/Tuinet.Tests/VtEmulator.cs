@@ -186,6 +186,16 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 continue;
             }
 
+            if (c == '\b')
+            {
+                // BS: one column left, never past the first; it ends a cluster like any control.
+                Assert.True(_x > 0, "BS in column 0");
+                _lastX = -1;
+                _x--;
+                i++;
+                continue;
+            }
+
             Assert.True(c >= 0x20, $"control byte 0x{(int)c:X2} emitted");
             Rune.DecodeFromUtf16(text.AsSpan(i), out Rune rune, out int consumed);
             i += consumed;
@@ -376,6 +386,25 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
             case 'C':
                 _x = Math.Min(_x + (param.Length > 0 ? int.Parse(param) : 1), _w - 1);
                 break;
+            case 'D':
+                // CUB: the renderer never asks for more than there is to the left.
+                _x -= param.Length > 0 ? int.Parse(param) : 1;
+                Assert.True(_x >= 0, $"CUB {param} past column 0");
+                break;
+            case 'G':
+                // CHA: absolute column on the current row.
+                _x = (param.Length > 0 ? int.Parse(param) : 1) - 1;
+                Assert.True(_x < _w, $"CHA {param} past the right edge");
+                break;
+            case 'A':
+                _y -= param.Length > 0 ? int.Parse(param) : 1;
+                Assert.True(_y >= 0, $"CUU {param} past the top");
+                break;
+            case 'B':
+                // CUD stops at the bottom margin on a real terminal; the renderer never relies on that.
+                _y += param.Length > 0 ? int.Parse(param) : 1;
+                Assert.True(_y <= _bottom, $"CUD {param} past the bottom margin");
+                break;
             case 'J' when param == "2":
                 _grid = Blank(_w, _h, _pen.Bg);
                 _links = new string?[_w, _h];
@@ -429,9 +458,13 @@ internal sealed class VtEmulator(int width, int height, bool legacy = false, boo
                 _y = 0;
                 break;
             case 'p':
-                // DECRQM for left/right margin mode: the reply is the test's business.
-                Assert.Equal("?69$", param);
-                MarginQueries++;
+                // DECRQM for left/right margin mode or synchronized output: the reply is the test's business.
+                Assert.True(param is "?69$" or "?2026$", $"unexpected DECRQM {param}");
+                if (param == "?69$")
+                {
+                    MarginQueries++;
+                }
+
                 break;
             case 'L' or 'M':
                 // IL / DL: insert or delete lines at the cursor row, inside the margins; new lines

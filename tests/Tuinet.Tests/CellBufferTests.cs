@@ -435,4 +435,19 @@ public class EraseTests
         Color[] colors = [Color.Default, Color.Red, Color.Indexed(200), Color.Rgb(1, 2, 3), Color.Hex(0xFFFFFF)];
         return new Style(colors[random.Next(colors.Length)], colors[random.Next(colors.Length)], (Attr)random.Next(0, 256));
     }
+
+    [Fact]
+    public void A_url_given_encoded_and_the_same_url_given_raw_are_one_link()
+    {
+        // Plain URLs skip the percent-encoding; one that needs it must still meet the same key.
+        var buffer = new CellBuffer(8, 3);
+        buffer.SetLink(new Rect(0, 0, 4, 1), "https://x.io/a%20b/é");
+        buffer.SetLink(new Rect(0, 1, 4, 1), "https://x.io/a b/\u00e9");
+        buffer.SetLink(new Rect(0, 2, 4, 1), "https://x.io/a%20b/%C3%A9");
+        Assert.Equal("https://x.io/a%20b/%C3%A9", buffer[0, 0].Link);
+        Assert.Equal(buffer[0, 0], buffer[0, 1]);
+        Assert.Equal(buffer[0, 0], buffer[0, 2]);
+        Assert.False(buffer.SetLink(new Rect(0, 0, 4, 1), "https://x.io/\u001b[2J"));   // a control: refused either way
+        Assert.Null(buffer[0, 0].Link);
+    }
 }

@@ -88,7 +88,7 @@ public class RepeatSequenceTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty);
-        Assert.Contains($"{Esc}[?69$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
+        Assert.Contains($"{Esc}[?69$p{Esc}[?2026$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
     }
 
     [Fact]
@@ -123,7 +123,7 @@ public class RepeatSequenceTests
         var tty = new TestTty(20, 10);
         tty.Enqueue("\u001b[5;1R");
         using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(3), ScrollRegions = false });
-        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
+        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?2026$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
     }
 
     [Fact]

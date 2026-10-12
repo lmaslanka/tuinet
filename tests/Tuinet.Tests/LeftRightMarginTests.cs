@@ -36,7 +36,7 @@ public class LeftRightMarginTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty);
-        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
+        Assert.Contains($"{Esc}[?2027h{Esc}[?69$p{Esc}[?2026$p{Esc}[>0q{Esc}[0m{Esc}[2J", tty.WrittenText);
     }
 
     [Fact]
@@ -55,7 +55,7 @@ public class LeftRightMarginTests
     {
         var tty = new TestTty();
         using var terminal = new Terminal(tty, new TerminalOptions { ScrollRegions = false });
-        Assert.DoesNotContain("$p", tty.WrittenText);
+        Assert.DoesNotContain("?69$p", tty.WrittenText);
         tty.Enqueue(Supported);
         terminal.Poll(out _, 0);
         Assert.False(terminal.LeftRightMarginsActive);
@@ -86,9 +86,9 @@ public class LeftRightMarginTests
     [Fact]
     public void Without_margins_the_list_rows_are_repainted()
     {
-        // Every row's changed digit is rewritten.
+        // Every row's changed digit is rewritten: after each one, BS and LF (2 bytes) reach the next row's digit.
         Assert.Equal(
-            $"{Esc}[?2026h{Esc}[1;10H1{Esc}[2;10H2{Esc}[3;10H3{Esc}[4;10H4{Esc}[5;10H5{Esc}[?2026l",
+            $"{Esc}[?2026h{Esc}[1;10H1\b\n2\b\n3\b\n4\b\n5{Esc}[?2026l",
             Render(Split(first: 1), Split(first: 0), margins: false));
     }
 
@@ -177,7 +177,7 @@ public class LeftRightMarginTests
         var tty = new TestTty(20, 10);
         tty.Enqueue("\u001b[5;1R");
         using var terminal = new Terminal(tty, new TerminalOptions { Inline = new InlineOptions(3) });
-        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
+        Assert.EndsWith($"{Esc}[5H{Esc}[J{Esc}[?69$p{Esc}[?2026$p{Esc}[>0q\r{Esc}[K{Esc}[?2026l", tty.WrittenText);
     }
 
     [Fact]
