@@ -7,6 +7,8 @@ every public API change is recorded in `src/Tuinet/PublicAPI.*.txt`.
 
 ## [Unreleased]
 
+## [0.1.0] - 2026-10-14
+
 The first release.
 
 ### Security
@@ -170,4 +172,5 @@ The first release.
   methodology and results in the README.
 - Native AOT and trimming compatible.
 
-[Unreleased]: https://github.com/lmaslanka/tuinet/commits/main
+[Unreleased]: https://github.com/lmaslanka/tuinet/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/lmaslanka/tuinet/releases/tag/v0.1.0

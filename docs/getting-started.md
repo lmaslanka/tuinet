@@ -2,7 +2,13 @@
 
 **Requirements:** the .NET 10 SDK and a terminal with VT support. That covers essentially every modern terminal on Linux and macOS, plus Windows Terminal and conhost on Windows 10+.
 
-TUI.NET isn't on NuGet yet. Reference the project directly, or pack it locally (the package and namespace are `Tuinet`):
+Add the package (the package and namespace are `Tuinet`):
+
+```sh
+dotnet add package Tuinet
+```
+
+To build from source instead, pack it locally:
 
 ```sh
 git clone https://github.com/lmaslanka/tuinet.git

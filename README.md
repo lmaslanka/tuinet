@@ -72,7 +72,13 @@ Zero allocations per frame · one `write` per frame · Native AOT
 
 **Requirements:** the .NET 10 SDK and a terminal with VT support. That covers essentially every modern terminal on Linux and macOS, plus Windows Terminal and conhost on Windows 10+.
 
-TUI.NET isn't on NuGet yet. Reference the project directly, or pack it locally (the package and namespace are `Tuinet`):
+Add the package (the package and namespace are `Tuinet`):
+
+```sh
+dotnet add package Tuinet
+```
+
+To build from source instead, pack it locally:
 
 ```sh
 git clone https://github.com/lmaslanka/tuinet.git
@@ -873,7 +879,7 @@ public void Shows_the_title()
 }
 ```
 
-The `Tuinet.Testing` package (`dotnet pack src/Tuinet.Testing`, next to `Tuinet`) drives whole apps and
+The `Tuinet.Testing` package (`dotnet add package Tuinet.Testing`, released next to `Tuinet`) drives whole apps and
 snapshots their screens. It works with any test framework: a failed check throws `ScreenAssertionException`.
 `TestTerminal` runs an `IApp` the way `Terminal.Run` does, over a real `Terminal` on the in-memory `TestTty`,
 with a frame after each input and a clock the test sets. Calls chain, and `Click("Close")` clicks wherever

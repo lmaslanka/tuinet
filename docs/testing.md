@@ -4,6 +4,7 @@ Testing helpers come in two parts. The library itself has `TestTty`, an in-memor
 `Terminal` writes. The separate `Tuinet.Testing` package, released next to `Tuinet` with the same version, adds a
 driver for whole apps, styled snapshots, screen assertions and an allocation check. Both use the `Tuinet.Testing`
 namespace. The package works with any test framework: a failed check throws `ScreenAssertionException`.
+Install it with `dotnet add package Tuinet.Testing`.
 
 ## Rendering into a buffer
 
