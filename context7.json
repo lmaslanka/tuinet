@@ -1,0 +1,16 @@
+{
+  "$schema": "https://context7.com/schema/context7.json",
+  "projectTitle": "TUI.NET",
+  "description": "Immediate-mode terminal UI library for .NET 10: redraw the whole UI each frame into a cell buffer; TUI.NET diffs it and writes only the changes. Zero allocations per frame, Native AOT.",
+  "folders": ["docs"],
+  "excludeFolders": ["docs/plans", "docs/api", "docs/_site", "docs/images"],
+  "excludeFiles": ["CHANGELOG.md", "LICENSE", "performance_review.md", "security_review.md"],
+  "rules": [
+    "Install with `dotnet add package Tuinet`; the namespaces are Tuinet and Tuinet.Widgets. Requires .NET 10.",
+    "TUI.NET is immediate mode: keep state in your app and redraw the whole UI every frame (BeginFrame, render, Present). There is no widget tree to retain or update.",
+    "Prefer `term.Run(app)` with an IApp (Handle returns false to quit, Render draws everything) over a hand-written loop.",
+    "In a manual loop, drain pending input with `term.Poll(out ev, 0)` before drawing once, so a burst of keys costs one frame.",
+    "Test UIs with Tuinet.Testing (`dotnet add package Tuinet.Testing`): TestTerminal drives an IApp without a real terminal, and Snapshot.Verify compares a frame with a committed snapshot."
+  ],
+  "previousVersions": []
+}
