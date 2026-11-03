@@ -99,7 +99,7 @@ public class AppTests
 
         Assert.All(app.Events, e => Assert.Equal(EventKind.Tick, e.Kind));
         Assert.True(app.Times[^1] >= 40, $"woke at {app.Times[^1]} ms");
-        Assert.InRange(tty.ReadTimeouts[0], 1, 40);   // not Infinite: the loop waits only until the alarm
+        Assert.InRange(tty.ReadTimeouts[0], 0, 40);   // not Infinite: the loop waits only until the alarm (0 if the first frame took longer)
     }
 
     [Fact]
