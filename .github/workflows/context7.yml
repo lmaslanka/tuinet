@@ -1,0 +1,31 @@
+name: Context7
+
+# Asks Context7 to re-index the docs (docs/ and the README) after they change on main.
+# One-time setup: create an API key in the Context7 dashboard and add it as the CONTEXT7_API_KEY repo secret.
+on:
+  push:
+    branches: [main]
+    paths: [docs/**, README.md, context7.json, .github/workflows/context7.yml]
+  workflow_dispatch:
+
+permissions: {}
+
+concurrency:
+  group: context7
+  cancel-in-progress: true
+
+jobs:
+  refresh:
+    name: Refresh
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Trigger a Context7 refresh
+        env:
+          CONTEXT7_API_KEY: ${{ secrets.CONTEXT7_API_KEY }}
+        run: |
+          curl -sS --fail-with-body -X POST https://context7.com/api/v1/refresh \
+            -H "Content-Type: application/json" \
+            -H "Authorization: Bearer $CONTEXT7_API_KEY" \
+            -d '{"libraryName": "/lmaslanka/tuinet"}'
