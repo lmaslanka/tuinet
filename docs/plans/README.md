@@ -27,6 +27,20 @@ One plan per gap found in the 2026-10-03 review. Priority 1 is next.
 | 16 | [Test helpers for library users](16-test-helpers.md) ✅ done | nice to have | S | 6 |
 | 17 | [Docs, gallery, comparison benchmarks](17-docs-and-comparisons.md) ✅ done | nice to have | M | 6 |
 
+## 0.2: forms, layout and feedback
+
+Picked on 2026-11-05 for business apps. Plan 18 (images) was dropped, so the numbers continue at 19. Work order:
+20c → 20b → 19a → 19b → 20a → 19c.
+
+| # | Plan | Type | Effort | Priority |
+|---|---|---|---|---|
+| 19a | [Radio group](19a-radio-group.md) | missing | S | 2 |
+| 19b | [Slider and number input](19b-slider-number-input.md) | missing | M | 3 |
+| 19c | [Date input and calendar](19c-date-input-calendar.md) | missing | M–L | 4 |
+| 20a | [Resizable split panes](20a-split-panes.md) | missing | M | 5 |
+| 20b | [Toasts](20b-toasts.md) | missing | S–M | 2 |
+| 20c | [Key hints and status bar](20c-key-hints-status-bar.md) ✅ done | missing | S | 1 |
+
 Ground rules for every plan: 0 bytes allocated per steady-state frame, bytes written per frame as a
 product metric, AOT/trim clean, stateless `readonly ref struct` widgets with app-owned state, and no
 retained widget tree or focus manager.

@@ -947,6 +947,67 @@ public class ShowcaseTests
     }
 
     /// <summary>The first cell of <paramref name="text"/> (<see cref="CellBufferTesting.FindText"/> gives all the cells it covers).</summary>
+    [Fact]
+    public void Status_bar_shows_the_page_the_items_and_the_last_frame_time()
+    {
+        var app = new ShowcaseApp();
+        using var term = new TestTerminal(app, 110, 34);
+        Assert.Matches(@"q quit +List  ·  20 items  $", term.Screen.RowText(32));
+        app.RecordFrame(1234, TimeSpan.FromMicroseconds(56));
+        term.Press("]]");
+        Assert.Matches(@"q quit +Groups  ·  20 items  ·  56 µs  $", term.Screen.RowText(32));
+    }
+
+    [Fact]
+    public void A_narrow_terminal_drops_whole_hints_and_keeps_quit()
+    {
+        using var term = new TestTerminal(new ShowcaseApp(), 110, 34);
+        Assert.Contains("ctrl+p commands", term.Text);
+        Assert.DoesNotContain("m menu", term.Text);       // priority 0: the first to go
+        term.Resize(50, 34);
+        string row = term.Screen.RowText(32);
+        Assert.Equal("  j/k move  ·  q quit          List  ·  20 items  ", row);
+        term.Resize(30, 34);
+        Assert.Equal("  q quit   List  ·  20 items  ", term.Screen.RowText(32));
+    }
+
+    [Fact]
+    public void Clicking_a_key_hint_runs_its_key()
+    {
+        var app = new ShowcaseApp();
+        using var term = new TestTerminal(app, 110, 34);
+        (int x, int y) = Find(term.Screen, "ctrl+p commands");
+        term.Click(x + 9, y);                              // on "commands"
+        Assert.True(app.Palette.IsOpen);
+        term.Key(KeyCode.Escape);
+
+        (x, y) = Find(term.Screen, "j/k move");
+        term.Click(x, y).Click(x + 7, y);
+        Assert.Equal(2, app.Selected);
+        term.Click(x + 9, y);                              // the separator after it: nothing
+        Assert.Equal(2, app.Selected);
+
+        term.Click("enter edit");
+        Assert.Contains("EDIT ITEM · 03", term.Text);
+        term.Key(KeyCode.Escape);
+
+        Rect quit = term.FindText("q quit");
+        term.Mouse(MouseKind.Down, quit.X, quit.Y, MouseButton.Left);   // the press quits: no release follows
+        Assert.False(term.IsRunning);
+    }
+
+    [Fact]
+    public void Clicking_fold_on_the_groups_page_folds_the_selected_group()
+    {
+        var app = new ShowcaseApp();
+        using var term = new TestTerminal(app, 110, 34);
+        term.Press("]]").Key(KeyCode.Home);                          // feature
+        Assert.True(app.Groups.IsExpanded(ItemTree.KindGroup));
+        term.Click("←/→ fold");
+        Assert.False(app.Groups.IsExpanded(ItemTree.KindGroup));
+        Assert.Contains("[+] feature (4)", term.Text);
+    }
+
     private static (int X, int Y) Find(CellBuffer buffer, string text)
     {
         Rect at = buffer.FindText(text);

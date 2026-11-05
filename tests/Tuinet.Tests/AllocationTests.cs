@@ -9,6 +9,7 @@ public class AllocationTests
     private static readonly string[] Pages = [.. Enumerable.Range(0, 12).Select(i => $"page {i}")];
     private static readonly double[] History = [.. Enumerable.Range(0, 120).Select(i => (double)(i * 37 % 101))];
     private static readonly Bar[] Bars = [new(3, "feature"), new(7.5, "bugfix", new Style(Color.Red, Color.Default)), new(1, "世界"), new(12, "docs")];
+    private static readonly KeyHint[] Hints = [new("j/k", "move", 2), new("enter", "edit", 1), new("?", "help"), new("世界", "wide"), new("q", "quit", 3)];
     private static readonly TableColumn[] Columns =
     [
         new("name", Constraint.Fill()),
@@ -301,6 +302,12 @@ public class AllocationTests
         var status = new StyledTextBuilder(stackalloc char[48], stackalloc StyledRun[6]);
         status.Append("frame ", new Style(Color.BrightBlack, Color.Default));
         status.Append(tick, new Style(Color.Green, Color.Default, Attr.Bold));
+        var statusRow = new Rect(0, rows[2].Y, 40, 1);
+        frame.Render(new StatusBar { Center = "center", Right = status.Build(), Style = new Style(Color.White, Color.Blue) }, statusRow);
+        var hints = new KeyHints(Hints) { KeyStyle = new Style(Color.Blue, Color.Default, Attr.Bold) };
+        var room = new Rect(0, rows[2].Y, 10 + tick % 30, 1);   // the hints drop and come back as the room changes
+        frame.Render(hints, room);
+        hints.HintAt(tick % 40, rows[2].Y, room);
         frame.SetText(60, rows[2].Y, status.Build(), 20);
         frame.SetMarkup(80, rows[2].Y, "[b fg=#F5A623]q[/] quit  [u]?[/] help", default, 20);
         frame.Render(new Paragraph(status.Build()) { Wrap = TextWrap.Word, Scrollbar = ScrollbarMode.Auto }, new Rect(100, rows[2].Y, 10, 1));

@@ -7,6 +7,14 @@ every public API change is recorded in `src/Tuinet/PublicAPI.*.txt`.
 
 ## [Unreleased]
 
+### Added
+- `KeyHints` and `KeyHint`: a row of key hints that drops whole hints when narrow (lowest `Priority` first, ties
+  from the end) instead of cutting one, with `HintAt` for clicks and `Measure` for right-alignment.
+- `StatusBar`: one filled row with `Left`, `Center` and `Right` styled segments; the right one wins a collision,
+  the others are cut with an ellipsis.
+- Showcase: the bottom row is a `StatusBar` (page, item count, last frame time) with `KeyHints` beside it; clicking
+  a hint presses its key.
+
 ## [0.1.0] - 2026-10-14
 
 The first release.

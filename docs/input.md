@@ -35,13 +35,14 @@ checkboxes), keep the `Rect` you rendered into and test it with `ev.Mouse.IsClic
 | `DropdownState.HandleMouse(ev, count)` | Click opens; click an item to pick it; wheel scrolls the list; click elsewhere cancels |
 | `tabs.HandleMouse(ev, ref state)` | Click selects a tab; click on `‹` `›` or the wheel scrolls the bar |
 | `tabs.TabAt(x, y, state)` | Tab drawn at a cell, or -1 |
+| `hints.HintAt(x, y, area)` | Key hint drawn at a cell when rendered into `area`, or -1 (separators too) |
 | `popup.Frame(area)` | The box without its shadow, for click-outside tests |
 | `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included); Shift+click or drag selects |
 | `TextAreaState.HandleMouse(ev)` | The same on wrapped rows, plus the wheel scrolls and a drag past the edge scrolls |
 | `MouseEvent.IsClick` / `IsWheel` / `WheelDelta` / `IsIn(rect)` / `IsClickIn(rect)` | Conveniences |
 
 Widgets act on the press (`MouseKind.Down`), as most terminal apps do. The showcase uses all of these:
-click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, click a tab,
+click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, click a tab or a key hint,
 click every control in the edit dialog, and click outside the progress dialog to close it.
 
 | `TerminalOptions` | Default | |
