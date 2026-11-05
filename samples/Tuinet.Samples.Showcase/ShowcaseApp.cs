@@ -29,6 +29,7 @@ public sealed class ShowcaseApp : IApp
     private int _lastClickNode = -1;
     private long _nowMs;
     private bool _quit;
+    private Rect _hintsArea;   // where the key hints were last drawn, for clicks
 
     // The context menu: right-click a row, or 'm' for the selected one. Its anchor is null for "under the selected row".
     private readonly MenuItem[] _menuItems =
@@ -232,6 +233,13 @@ public sealed class ShowcaseApp : IApp
 
         if (ev.Kind == EventKind.Mouse)
         {
+            // A click on a key hint presses its key.
+            int hint = ev.Mouse.IsClick ? PageHints().HintAt(ev.Mouse.X, ev.Mouse.Y, _hintsArea) : -1;
+            if (hint >= 0)
+            {
+                return HandleEvent(Page == GroupsPage ? GroupHintKeys[hint] : ListHintKeys[hint], nowMs);
+            }
+
             HandleMouse(ev.Mouse, nowMs);
             return true;
         }
@@ -544,7 +552,7 @@ public sealed class ShowcaseApp : IApp
         Layout.Horizontal(rows[2], [Constraint.Fill(), Constraint.Length(38)], columns, spacing: 3);
         RenderPanel(buffer, columns[0]);
         RenderDetails(buffer, columns[1]);
-        RenderKeys(buffer, rows[3], Page == GroupsPage ? GroupKeyHints : KeyHints);
+        RenderStatus(buffer, rows[3]);
 
         if (_menuOpen)
         {
@@ -838,28 +846,59 @@ public sealed class ShowcaseApp : IApp
         return buffer.SetString(x, y, label, on ? Theme.Body : Theme.Dim, right - x);
     }
 
-    private static readonly (string Key, string Action)[] KeyHints =
-        [("j/k", "move"), ("enter", "edit"), ("space", "toggle"), ("m", "menu"), ("[ ]", "tabs"), ("ctrl+p", "commands"), ("q", "quit")];
+    // The bottom row's hints, with the key each one presses when clicked. When the row is narrow the lowest priorities
+    // go first: quit, move and edit stay longest, and the palette (which reaches every action) next.
+    private static readonly KeyHint[] ListHints =
+    [
+        new("j/k", "move", 3), new("enter", "edit", 3), new("space", "toggle", 1), new("m", "menu"),
+        new("[ ]", "tabs", 2), new("ctrl+p", "commands", 2), new("q", "quit", 4),
+    ];
 
-    private static readonly (string Key, string Action)[] GroupKeyHints =
-        [("j/k", "move"), ("←/→", "fold"), ("enter", "edit"), ("space", "toggle"), ("[ ]", "tabs"), ("ctrl+p", "commands"), ("q", "quit")];
+    private static readonly Event[] ListHintKeys =
+    [
+        Event.FromChar('j'), Event.FromKey(KeyCode.Enter), Event.FromChar(' '), Event.FromChar('m'),
+        Event.FromChar(']'), Event.FromChar('p', Modifiers.Ctrl), Event.FromChar('q'),
+    ];
 
-    private static void RenderKeys(CellBuffer buffer, Rect row, (string Key, string Action)[] hints)
+    private static readonly KeyHint[] GroupHints =
+    [
+        new("j/k", "move", 3), new("←/→", "fold", 1), new("enter", "edit", 3), new("space", "toggle", 1),
+        new("[ ]", "tabs", 2), new("ctrl+p", "commands", 2), new("q", "quit", 4),
+    ];
+
+    private static readonly Event[] GroupHintKeys =
+    [
+        Event.FromChar('j'), Event.FromKey(KeyCode.Left), Event.FromKey(KeyCode.Enter), Event.FromChar(' '),   // ←: fold, or up to the group
+        Event.FromChar(']'), Event.FromChar('p', Modifiers.Ctrl), Event.FromChar('q'),
+    ];
+
+    /// <summary>The page's key hints; render and clicks use the same one.</summary>
+    private KeyHints PageHints() => new(Page == GroupsPage ? GroupHints : ListHints)
     {
-        var keys = new StyledTextBuilder(stackalloc char[112], stackalloc StyledRun[32]);
-        foreach ((string key, string action) in hints)
-        {
-            if (keys.Length > 0)
-            {
-                keys.Append("  ·  ", Theme.Faded);
-            }
+        KeyStyle = Theme.Heading(Theme.Blue),
+        ActionStyle = Theme.Dim,
+        SeparatorStyle = Theme.Faded,
+    };
 
-            keys.Append(key, Theme.Heading(Theme.Blue));
-            keys.Append(" ");
-            keys.Append(action, Theme.Dim);
+    /// <summary>The bottom row: "page · 20 items · 312 µs" on the right, and the key hints that fit in the room left of it.</summary>
+    private void RenderStatus(CellBuffer buffer, Rect row)
+    {
+        var status = new StyledTextBuilder(stackalloc char[48], stackalloc StyledRun[8]);
+        status.Append(Pages[Page], Theme.Dim);
+        status.Append("  ·  ", Theme.Faded);
+        status.Append(_items.Length, Theme.Body);
+        status.Append(" items", Theme.Dim);
+        if (_frameMicroseconds.Count > 0)
+        {
+            status.Append("  ·  ", Theme.Faded);
+            status.Append(_frameMicroseconds.Last, Theme.Body, "F0");
+            status.Append(" µs", Theme.Dim);
         }
 
-        buffer.SetText(row.X, row.Y, keys.Build(), row.Width);
+        StyledText right = status.Build();
+        buffer.Render(new StatusBar { Right = right }, row);
+        _hintsArea = new Rect(row.X, row.Y, Math.Max(0, row.Width - TextWidth.Of(right) - 3), 1);
+        buffer.Render(PageHints(), _hintsArea);
     }
 
     private const int ColumnSpacing = 2;

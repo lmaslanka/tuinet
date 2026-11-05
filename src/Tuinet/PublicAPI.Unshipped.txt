@@ -1,1 +1,43 @@
 #nullable enable
+~override Tuinet.Widgets.KeyHint.Equals(object obj) -> bool
+override Tuinet.Widgets.KeyHint.GetHashCode() -> int
+~override Tuinet.Widgets.KeyHint.ToString() -> string
+static Tuinet.Widgets.KeyHint.operator !=(Tuinet.Widgets.KeyHint left, Tuinet.Widgets.KeyHint right) -> bool
+static Tuinet.Widgets.KeyHint.operator ==(Tuinet.Widgets.KeyHint left, Tuinet.Widgets.KeyHint right) -> bool
+Tuinet.Widgets.KeyHint
+Tuinet.Widgets.KeyHint.Action.get -> string!
+Tuinet.Widgets.KeyHint.Action.init -> void
+Tuinet.Widgets.KeyHint.Deconstruct(out string! Key, out string! Action, out int Priority) -> void
+Tuinet.Widgets.KeyHint.Equals(Tuinet.Widgets.KeyHint other) -> bool
+Tuinet.Widgets.KeyHint.Key.get -> string!
+Tuinet.Widgets.KeyHint.KeyHint(string! Key, string! Action, int Priority = 0) -> void
+Tuinet.Widgets.KeyHint.KeyHint() -> void
+Tuinet.Widgets.KeyHint.Key.init -> void
+Tuinet.Widgets.KeyHint.Priority.get -> int
+Tuinet.Widgets.KeyHint.Priority.init -> void
+Tuinet.Widgets.KeyHints
+Tuinet.Widgets.KeyHints.ActionStyle.get -> Tuinet.Style
+Tuinet.Widgets.KeyHints.ActionStyle.init -> void
+Tuinet.Widgets.KeyHints.HintAt(int x, int y, Tuinet.Rect area) -> int
+Tuinet.Widgets.KeyHints.KeyHints(System.ReadOnlySpan<Tuinet.Widgets.KeyHint> hints) -> void
+Tuinet.Widgets.KeyHints.KeyHints() -> void
+Tuinet.Widgets.KeyHints.KeyStyle.get -> Tuinet.Style
+Tuinet.Widgets.KeyHints.KeyStyle.init -> void
+Tuinet.Widgets.KeyHints.Measure(int width) -> int
+Tuinet.Widgets.KeyHints.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.KeyHints.Separator.get -> System.ReadOnlySpan<char>
+Tuinet.Widgets.KeyHints.Separator.init -> void
+Tuinet.Widgets.KeyHints.SeparatorStyle.get -> Tuinet.Style
+Tuinet.Widgets.KeyHints.SeparatorStyle.init -> void
+Tuinet.Widgets.KeyHints.Width.get -> int
+Tuinet.Widgets.StatusBar
+Tuinet.Widgets.StatusBar.Center.get -> Tuinet.StyledText
+Tuinet.Widgets.StatusBar.Center.init -> void
+Tuinet.Widgets.StatusBar.Left.get -> Tuinet.StyledText
+Tuinet.Widgets.StatusBar.Left.init -> void
+Tuinet.Widgets.StatusBar.Render(Tuinet.Rect area, Tuinet.CellBuffer! buffer) -> void
+Tuinet.Widgets.StatusBar.Right.get -> Tuinet.StyledText
+Tuinet.Widgets.StatusBar.Right.init -> void
+Tuinet.Widgets.StatusBar.StatusBar() -> void
+Tuinet.Widgets.StatusBar.Style.get -> Tuinet.Style
+Tuinet.Widgets.StatusBar.Style.init -> void

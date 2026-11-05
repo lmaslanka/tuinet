@@ -39,7 +39,7 @@ Picked on 2026-11-05 for business apps. Plan 18 (images) was dropped, so the num
 | 19c | [Date input and calendar](19c-date-input-calendar.md) | missing | M–L | 4 |
 | 20a | [Resizable split panes](20a-split-panes.md) | missing | M | 5 |
 | 20b | [Toasts](20b-toasts.md) | missing | S–M | 2 |
-| 20c | [Key hints and status bar](20c-key-hints-status-bar.md) | missing | S | 1 |
+| 20c | [Key hints and status bar](20c-key-hints-status-bar.md) ✅ done | missing | S | 1 |
 
 Ground rules for every plan: 0 bytes allocated per steady-state frame, bytes written per frame as a
 product metric, AOT/trim clean, stateless `readonly ref struct` widgets with app-owned state, and no

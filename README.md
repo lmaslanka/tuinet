@@ -34,7 +34,7 @@ Zero allocations per frame · one `write` per frame · Native AOT
   - Text in any script without combining marks (Cyrillic, Greek, Hebrew, Arabic, CJK…) is written as fast as ASCII, from a generated table; only grapheme clusters are segmented.
 - **Zero allocations.** Steady-state rendering and input polling allocate nothing. Tests enforce this, so there are no GC pauses between a key press and the frame it produces.
 - **Batteries included.**
-  - Widgets: blocks, paragraphs, virtualized lists, tables and trees, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars and spinners.
+  - Widgets: blocks, paragraphs, virtualized lists, tables and trees, scrollbars, text inputs, multi-line text areas, dropdowns, checkboxes, buttons, progress bars, spinners, key hints and a status bar.
   - A constraint layout.
   - Truecolor with automatic fallback to 256 or 16 colors.
   - Inline mode: a live band under the shell prompt (progress, spinners, prompts) with logs printed above
@@ -579,6 +579,41 @@ When the titles don't fit, it scrolls to keep the selected one visible and shows
 anywhere are yours: the showcase uses `[`/`]` and Alt+1…9, because terminals don't report Ctrl+Tab without the
 kitty keyboard protocol.
 
+### Key hints and status bar
+
+```csharp
+// Built once. When the row is narrow, the lowest priority goes first (ties: from the end).
+static readonly KeyHint[] Hints =
+    [new("j/k", "move", 2), new("enter", "edit", 2), new("space", "toggle"), new("ctrl+p", "commands", 1), new("q", "quit", 3)];
+
+var hints = new KeyHints(Hints)
+{
+    KeyStyle = new Style(Color.Cyan, default, Attr.Bold),
+    ActionStyle = new Style(Color.BrightBlack, default),
+    Separator = "  ·  ",                                   // the default
+};
+
+// The bottom row: a status on the right, the hints in the room left of it.
+StyledText status = "NORMAL · 3 files";
+frame.Render(new StatusBar { Right = status, Style = new Style(Color.Default, Color.Hex(0x1C2433)) }, row);
+Rect room = new(row.X, row.Y, row.Width - TextWidth.Of(status) - 2, 1);
+frame.Render(hints, room);
+
+// input: a click on a hint does what its key does
+if (ev.Kind == EventKind.Mouse && ev.Mouse.IsClick && hints.HintAt(ev.Mouse.X, ev.Mouse.Y, room) is >= 0 and int hit)
+    RunKey(Hints[hit]);
+```
+
+`KeyHints` drops whole hints when they don't fit, never cutting one mid-word, and keeps the order of the rest: give
+quit and the moves the highest priority and they survive the narrowest screen. A hint wider than the row on its own
+is never shown. `HintAt` works the fit out again from the same hints and area, so nothing is stored between frames;
+`Measure(width)` gives the columns the fitted hints take, to right-align them.
+
+`StatusBar` fills a row with its `Style` and places three `StyledText` segments in it: `Right` first, then `Left`
+in the room before it, then `Center` (centered on the row if it fits there, otherwise in the gap). A segment that
+doesn't fit is cut with an ellipsis, wide glyphs included, and neighbors keep a blank column apart. Both widgets
+measure with `TextWidth` and allocate nothing.
+
 ### Menus and the command palette
 
 ```csharp
@@ -723,13 +758,14 @@ checkboxes), keep the `Rect` you rendered into and test it with `ev.Mouse.IsClic
 | `DropdownState.HandleMouse(ev, count)` | Click opens; click an item to pick it; wheel scrolls the list; click elsewhere cancels |
 | `tabs.HandleMouse(ev, ref state)` | Click selects a tab; click on `‹` `›` or the wheel scrolls the bar |
 | `tabs.TabAt(x, y, state)` | Tab drawn at a cell, or -1 |
+| `hints.HintAt(x, y, area)` | Key hint drawn at a cell when rendered into `area`, or -1 (separators too) |
 | `popup.Frame(area)` | The box without its shadow, for click-outside tests |
 | `TextInputState.HandleMouse(ev)` | Click puts the caret on the clicked character (wide glyphs and clusters included); Shift+click or drag selects |
 | `TextAreaState.HandleMouse(ev)` | The same on wrapped rows, plus the wheel scrolls and a drag past the edge scrolls |
 | `MouseEvent.IsClick` / `IsWheel` / `WheelDelta` / `IsIn(rect)` / `IsClickIn(rect)` | Conveniences |
 
 Widgets act on the press (`MouseKind.Down`), as most terminal apps do. The showcase uses all of these:
-click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, click a tab,
+click rows, double-click to edit, wheel-scroll the table, drag its scrollbar, click a header to sort, click a tab or a key hint,
 click every control in the edit dialog, and click outside the progress dialog to close it.
 
 | `TerminalOptions` | Default | |
@@ -959,6 +995,8 @@ public void Key_in_frame_out()
 | `TextArea` | `TextAreaState` | Multi-line editing: soft wrap or sideways scroll, line numbers, selection, undo/redo, placeholder; click, drag and wheel; only visible lines are measured |
 | `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below, optional shadow; click to open and pick |
 | `Tabs` | `TabsState` | One-row tab bar, dividers, scrolls with `‹` `›` when the titles don't fit, fits in a block border; click and wheel |
+| `KeyHints` | | A row of key hints that drops whole hints by priority when narrow, never cutting one; `HintAt` for clicks |
+| `StatusBar` | | One row with left, center and right styled segments: right first, the rest cut with an ellipsis |
 | `Popup` | | Shadow + fill + `Block` over existing content; `Outer` sizes it from its content, `Rect.PlaceNear` places it by an anchor |
 | `Menu` | `MenuState` | Popup action list: mnemonics, right-aligned shortcuts, separators joined to the border, disabled items; keys, click and hover |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
@@ -1033,7 +1071,7 @@ Tests guard these properties too:
 
 | Test | Guards |
 |---|---|
-| `AllocationTests` | 1,000 frames with widgets and charts, 1,000 text area frames with caret keys, 1,000 open-menu frames with keys and pointer moves, fuzzy scoring, and 10,000 key polls allocate 0 bytes |
+| `AllocationTests` | 1,000 frames with widgets, charts, key hints and a status bar, 1,000 text area frames with caret keys, 1,000 open-menu frames with keys and pointer moves, fuzzy scoring, and 10,000 key polls allocate 0 bytes |
 | `RendererFuzzTests` | Random frames, replayed through a VT emulator, must reproduce the buffer exactly: every glyph, color and attribute, plus the cursor |
 | `TerminalTests` | Exact bytes for a one-cell change; control characters in text never reach the terminal |
 
@@ -1119,7 +1157,7 @@ For a pre-release, tag `vx.y.z-rc.1` and skip steps 2 and 3. Its notes come from
 
 ```
 src/Tuinet/                      the library
-  Widgets/                       Block, Popup, Menu, Tabs, Paragraph, ListView, Table, TreeView, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
+  Widgets/                       Block, Popup, Menu, Tabs, KeyHints, StatusBar, Paragraph, ListView, Table, TreeView, Scrollbar, TextInput, TextArea, Dropdown, Checkbox, Button, ProgressBar, Sparkline, BarChart
   Internal/                      renderer, VT parser, width tables, crash guard
   Platform/                      Unix and Windows backends
   Testing/                       TestTty

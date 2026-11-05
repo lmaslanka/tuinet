@@ -18,6 +18,8 @@ owns and passes in. Run `./run gallery` to see every widget next to the code tha
 | `TextArea` | `TextAreaState` | Multi-line editing: soft wrap or sideways scroll, line numbers, selection, undo/redo, placeholder; click, drag and wheel; only visible lines are measured |
 | `Dropdown<T>` | `DropdownState` | Select box with a popup list that flips above when there's no room below, optional shadow; click to open and pick |
 | `Tabs` | `TabsState` | One-row tab bar, dividers, scrolls with `‹` `›` when the titles don't fit, fits in a block border; click and wheel |
+| `KeyHints` | | A row of key hints that drops whole hints by priority when narrow, never cutting one; `HintAt` for clicks |
+| `StatusBar` | | One row with left, center and right styled segments: right first, the rest cut with an ellipsis |
 | `Popup` | | Shadow + fill + `Block` over existing content; `Outer` sizes it from its content, `Rect.PlaceNear` places it by an anchor |
 | `Menu` | `MenuState` | Popup action list: mnemonics, right-aligned shortcuts, separators joined to the border, disabled items; keys, click and hover |
 | `Checkbox` | your `bool` | One-row symbol + label, or a large `Boxed` square |
@@ -342,6 +344,41 @@ When the titles don't fit, it scrolls to keep the selected one visible and shows
 `TabsState.Handle` takes ←/→ and Home/End for when the bar itself has focus. Shortcuts that switch tabs from
 anywhere are yours: the showcase uses `[`/`]` and Alt+1…9, because terminals don't report Ctrl+Tab without the
 kitty keyboard protocol.
+
+## Key hints and status bar
+
+```csharp
+// Built once. When the row is narrow, the lowest priority goes first (ties: from the end).
+static readonly KeyHint[] Hints =
+    [new("j/k", "move", 2), new("enter", "edit", 2), new("space", "toggle"), new("ctrl+p", "commands", 1), new("q", "quit", 3)];
+
+var hints = new KeyHints(Hints)
+{
+    KeyStyle = new Style(Color.Cyan, default, Attr.Bold),
+    ActionStyle = new Style(Color.BrightBlack, default),
+    Separator = "  ·  ",                                   // the default
+};
+
+// The bottom row: a status on the right, the hints in the room left of it.
+StyledText status = "NORMAL · 3 files";
+frame.Render(new StatusBar { Right = status, Style = new Style(Color.Default, Color.Hex(0x1C2433)) }, row);
+Rect room = new(row.X, row.Y, row.Width - TextWidth.Of(status) - 2, 1);
+frame.Render(hints, room);
+
+// input: a click on a hint does what its key does
+if (ev.Kind == EventKind.Mouse && ev.Mouse.IsClick && hints.HintAt(ev.Mouse.X, ev.Mouse.Y, room) is >= 0 and int hit)
+    RunKey(Hints[hit]);
+```
+
+`KeyHints` drops whole hints when they don't fit, never cutting one mid-word, and keeps the order of the rest: give
+quit and the moves the highest priority and they survive the narrowest screen. A hint wider than the row on its own
+is never shown. `HintAt` works the fit out again from the same hints and area, so nothing is stored between frames;
+`Measure(width)` gives the columns the fitted hints take, to right-align them.
+
+`StatusBar` fills a row with its `Style` and places three `StyledText` segments in it: `Right` first, then `Left`
+in the room before it, then `Center` (centered on the row if it fits there, otherwise in the gap). A segment that
+doesn't fit is cut with an ellipsis, wide glyphs included, and neighbors keep a blank column apart. Both widgets
+measure with `TextWidth` and allocate nothing.
 
 ## Menus and the command palette
 

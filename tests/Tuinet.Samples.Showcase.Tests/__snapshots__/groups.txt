@@ -30,4 +30,4 @@
   │   ├─ [+] high (1)                                           │ │
   │                                                               │
   ╰───────────────────────────────────────────────────────────────╯
-  j/k move  ·  ←/→ fold  ·  enter edit  ·  space toggle  ·  [ ] tabs  ·  ctrl+p commands  ·  q quit
+  j/k move  ·  ←/→ fold  ·  enter edit  ·  [ ] tabs  ·  ctrl+p commands  ·  q quit       Groups  ·  20 items
